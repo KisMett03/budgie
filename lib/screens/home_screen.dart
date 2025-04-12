@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.dispose();
     super.dispose();
   }
-
+// This function is called when the user taps on a navigation item.
   // Handle navigation item taps.
   void _onNavTapped(int index) {
     setState(() {
