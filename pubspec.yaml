@@ -1,0 +1,46 @@
+name: budgie
+description: "Budgetting Mobile application"
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+
+  # Firebase
+  firebase_core: ^2.25.4
+  firebase_auth: ^4.17.4
+  cloud_firestore: ^4.15.4
+  fl_chart: ^0.70.2
+  flutter_secure_storage: ^9.2.4
+  hugeicons: ^0.0.10
+  google_sign_in: ^6.3.0
+  sign_in_with_apple: ^7.0.1
+  sign_in_button: ^3.1.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+
+
+flutter:
+
+  uses-material-design: true
+  assets:
+    - assets/image/logo.png
+
+
+

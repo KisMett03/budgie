@@ -1,0 +1,4 @@
+#Thu Apr 10 18:38:00 MYT 2025
+base.0=C\:\\Users\\kaili\\Documents\\FlutterProject\\budgie\\android\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
