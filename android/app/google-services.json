@@ -12,7 +12,20 @@
           "package_name": "com.kai.budgie"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1055222295322-k80e7oskgl4ma1f57bv3c86errpbm8d4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kai.budgie",
+            "certificate_hash": "60c0d14b1093d86d342ceabd938f45bf6bc7149d"
+          }
+        },
+        {
+          "client_id": "1055222295322-uohcqf0b2b1rc89hm68pnbqt5ja8rin4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBGmEIMbXgK86msSpvt_BDVAN_zfvp3e70"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1055222295322-uohcqf0b2b1rc89hm68pnbqt5ja8rin4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1055222295322-cqegjfgvn826g8pc01bqko1h1rv9m5vf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kai.budgie"
+              }
+            }
+          ]
         }
       }
     }
