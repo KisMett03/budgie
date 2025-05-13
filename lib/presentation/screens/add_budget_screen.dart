@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../../domain/entities/budget.dart';
 import '../../domain/entities/category.dart';
 import '../viewmodels/budget_viewmodel.dart';
+import '../viewmodels/expenses_viewmodel.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_constants.dart';
 import '../utils/category_manager.dart';
@@ -10,6 +12,7 @@ import '../widgets/custom_card.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/date_picker_button.dart';
 import '../widgets/submit_button.dart';
+import '../../core/services/budget_calculation_service.dart';
 
 class AddBudgetScreen extends StatefulWidget {
   final String? monthId;
@@ -106,12 +109,15 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
   }
 
   void _loadBudgetData(String monthId) async {
-    final vm = Provider.of<BudgetViewModel>(context, listen: false);
-    await vm.loadBudget(monthId);
+    final budgetVM = Provider.of<BudgetViewModel>(context, listen: false);
+
+    // 直接从数据库加载预算数据
+    // 预算的剩余金额已经在添加/更新/删除支出时自动更新到数据库
+    await budgetVM.loadBudget(monthId);
 
     if (!mounted) return;
 
-    final budget = vm.budget;
+    final budget = budgetVM.budget;
     if (budget != null) {
       _totalBudgetNotifier.value = budget.total;
 
@@ -161,14 +167,42 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       for (final catId in _budgetCategoryIds) {
         final val =
             double.tryParse(_categoryControllers[catId]?.text ?? '') ?? 0;
+        // 初始时设置预算 left = budget
         cats[catId] = CategoryBudget(budget: val, left: val);
       }
 
+      // 创建新预算对象
       final newBudget = Budget(total: total, left: total, categories: cats);
 
       if (!mounted) return;
-      await Provider.of<BudgetViewModel>(context, listen: false)
-          .saveBudget(_currentMonthId, newBudget);
+      final budgetVM = Provider.of<BudgetViewModel>(context, listen: false);
+      final expensesVM = Provider.of<ExpensesViewModel>(context, listen: false);
+
+      // 保存预算数据
+      await budgetVM.saveBudget(_currentMonthId, newBudget);
+
+      if (!mounted) return;
+
+      // 从月份ID获取年月并计算剩余预算
+      try {
+        final parts = _currentMonthId.split('-');
+        if (parts.length == 2) {
+          final year = int.parse(parts[0]);
+          final month = int.parse(parts[1]);
+
+          // 获取当月支出并计算剩余预算
+          final expenses = expensesVM.getExpensesForMonth(year, month);
+
+          // 使用预算计算服务更新预算剩余金额
+          final updatedBudget = await BudgetCalculationService.calculateBudget(
+              newBudget, expenses);
+
+          // 将更新后的预算保存到数据库
+          await budgetVM.saveBudget(_currentMonthId, updatedBudget);
+        }
+      } catch (e) {
+        debugPrint('Error calculating budget after save: $e');
+      }
 
       if (!mounted) return;
 
@@ -180,7 +214,13 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         ),
       );
 
-      Navigator.pop(context);
+      // 使用Future.delayed确保预算更新后再返回上一页面
+      // 这样可以确保用户在返回分析页面时看到最新数据
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,6 +264,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
           children: [
             // 日期选择按钮
             DatePickerButton(
+              prefix: 'Budget for',
               date: _selectedDate,
               onDateChanged: _onDateChanged,
               themeColor: AppTheme.primaryColor,
@@ -369,7 +410,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               iconColor: AppTheme.primaryColor,
               child: Column(
                 children: _budgetCategoryIds.map((catId) {
-                  // 获取类别对象（如果可用）
                   final category = CategoryManager.getCategoryFromId(catId);
                   final categoryIcon = category != null
                       ? CategoryManager.getIcon(category)
@@ -381,33 +421,115 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                       ? CategoryManager.getName(category)
                       : CategoryManager.getNameFromId(catId);
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: categoryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            categoryIcon,
-                            color: categoryColor,
-                            size: 20,
-                          ),
+                  // 获取该类别的剩余预算（如果有）
+                  final categoryBudget = Provider.of<BudgetViewModel>(context)
+                      .budget
+                      ?.categories[catId];
+                  final hasExistingBudget = categoryBudget != null;
+                  final remainingBudget =
+                      hasExistingBudget ? categoryBudget.left : 0.0;
+                  final budgetPercentage =
+                      hasExistingBudget && categoryBudget.budget > 0
+                          ? (remainingBudget / categoryBudget.budget)
+                              .clamp(0.0, 1.0)
+                          : 0.0;
+
+                  // 状态颜色
+                  final statusColor = remainingBudget <= 0
+                      ? Colors.red
+                      : budgetPercentage < 0.3
+                          ? Colors.orange
+                          : Colors.green.shade700;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: categoryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                categoryIcon,
+                                color: categoryColor,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomTextField.currency(
+                                controller: _categoryControllers[catId],
+                                labelText: categoryName,
+                                currencySymbol: 'MYR',
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: CustomTextField.currency(
-                            controller: _categoryControllers[catId],
-                            labelText: categoryName,
-                            currencySymbol: 'MYR',
+                      ),
+
+                      // 类别预算剩余信息
+                      if (hasExistingBudget) ...[
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(left: 52.0, bottom: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Remaining:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    'MYR ${remainingBudget.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: statusColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Stack(
+                                children: [
+                                  Container(
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                  FractionallySizedBox(
+                                    widthFactor: budgetPercentage,
+                                    child: Container(
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: statusColor,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   );
                 }).toList(),
               ),

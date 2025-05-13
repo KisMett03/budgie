@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../../core/constants/routes.dart';
+import '../../core/router/page_transition.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/animated_float_button.dart';
+import 'add_expense_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -35,9 +38,8 @@ class ProfileScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: user?.photoUrl != null
-                ? NetworkImage(user!.photoUrl!)
-                : null,
+            backgroundImage:
+                user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
             child: user?.photoUrl == null
                 ? const Icon(Icons.person, size: 50)
                 : null,
@@ -85,11 +87,21 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       extendBody: true,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, Routes.expenses),
+      floatingActionButton: AnimatedFloatButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            PageTransition(
+              child: const AddExpenseScreen(),
+              type: TransitionType.fadeAndSlideUp,
+              settings: const RouteSettings(name: Routes.expenses),
+            ),
+          );
+        },
         backgroundColor: const Color(0xFFF57C00),
         shape: const CircleBorder(),
         enableFeedback: true,
+        reactToRouteChange: true,
         child: const Icon(Icons.add, color: Color(0xFFFBFCF8)),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

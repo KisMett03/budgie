@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/budget.dart';
+import '../../domain/entities/category.dart' as app_category;
+import '../utils/category_manager.dart';
 
 class BudgetCard extends StatelessWidget {
   final Budget? budget;
@@ -178,7 +180,133 @@ class BudgetCard extends StatelessWidget {
               ),
             ),
           ),
+
+        // 添加类别预算详情
+        if (budget!.categories.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+          const Text(
+            'Categories',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCategoryList(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildCategoryList() {
+    final categories = budget!.categories.entries.toList();
+
+    // 按剩余预算百分比排序（从低到高）
+    categories.sort((a, b) {
+      final percentA = a.value.left / a.value.budget;
+      final percentB = b.value.left / b.value.budget;
+      return percentA.compareTo(percentB);
+    });
+
+    return Column(
+      children: categories.map((entry) {
+        final catId = entry.key;
+        final catBudget = entry.value;
+
+        // 尝试获取类别信息
+        final category = CategoryManager.getCategoryFromId(catId);
+        final categoryIcon = category != null
+            ? CategoryManager.getIcon(category)
+            : Icons.category;
+        final categoryColor =
+            category != null ? CategoryManager.getColor(category) : Colors.grey;
+        final categoryName =
+            category != null ? CategoryManager.getName(category) : catId;
+
+        // 计算百分比
+        final percentage = catBudget.budget > 0
+            ? (catBudget.left / catBudget.budget).clamp(0.0, 1.0)
+            : 0.0;
+
+        // 状态颜色
+        final statusColor = catBudget.left <= 0
+            ? Colors.red
+            : percentage < 0.3
+                ? Colors.orange
+                : Colors.green.shade700;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: categoryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  categoryIcon,
+                  size: 18,
+                  color: categoryColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          categoryName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          'MYR ${catBudget.left.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Stack(
+                      children: [
+                        Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        FractionallySizedBox(
+                          widthFactor: percentage,
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

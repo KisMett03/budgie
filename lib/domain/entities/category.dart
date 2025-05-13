@@ -6,7 +6,6 @@ enum Category {
   utilities,
   shopping,
   entertainment,
-  health,
   education,
   travel,
   medical,

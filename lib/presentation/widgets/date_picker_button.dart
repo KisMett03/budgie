@@ -50,28 +50,38 @@ class DatePickerButton extends StatelessWidget {
 
   Future<void> _showDatePicker(BuildContext context, Color themeColor,
       DateTime firstDate, DateTime lastDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: date,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      helpText: 'Select Month',
-      initialDatePickerMode: DatePickerMode.year,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: themeColor,
+    try {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: date,
+        firstDate: firstDate,
+        lastDate: lastDate,
+        helpText: 'Select Month',
+        initialDatePickerMode: DatePickerMode.year,
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: themeColor,
+              ),
             ),
-          ),
-          child: child!,
-        );
-      },
-    );
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+      );
 
-    if (picked != null &&
-        (picked.year != date.year || picked.month != date.month)) {
-      onDateChanged(picked);
+      if (picked != null &&
+          (picked.year != date.year || picked.month != date.month)) {
+        onDateChanged(picked);
+      }
+    } catch (e) {
+      debugPrint('Error in date picker: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to open date picker: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

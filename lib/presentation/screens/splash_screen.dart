@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/routes.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../../core/errors/app_error.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -19,26 +21,50 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuthState() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    try {
+      // 添加短暂延迟以显示启动屏幕
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
-    final viewModel = Provider.of<AuthViewModel>(context, listen: false);
-    final route = viewModel.isAuthenticated ? Routes.home : Routes.login;
+      final viewModel = Provider.of<AuthViewModel>(context, listen: false);
 
-    if (route == Routes.login) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          settings: RouteSettings(name: route),
-          pageBuilder: (_, __, ___) => const LoginScreen(),
-          transitionDuration: const Duration(milliseconds: 1200),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(
-            opacity: animation,
-            child: child,
+      // 强制刷新认证状态
+      await viewModel.refreshAuthState();
+
+      if (!mounted) return;
+
+      final route = viewModel.isAuthenticated ? Routes.home : Routes.login;
+      debugPrint('认证状态: ${viewModel.isAuthenticated ? "已登录" : "未登录"}');
+
+      if (viewModel.isAuthenticated) {
+        debugPrint('当前用户ID: ${FirebaseAuth.instance.currentUser?.uid}');
+      }
+
+      // 导航到适当的屏幕
+      if (route == Routes.login) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            settings: RouteSettings(name: route),
+            pageBuilder: (_, __, ___) => const LoginScreen(),
+            transitionDuration: const Duration(milliseconds: 1200),
+            transitionsBuilder: (_, animation, __, child) => FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
           ),
-        ),
-      );
-    } else {
-      Navigator.of(context).pushReplacementNamed(route);
+        );
+      } else {
+        Navigator.of(context).pushReplacementNamed(route);
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Splash screen error: $e');
+      final error = AppError.from(e, stackTrace);
+      error.log();
+
+      // 出错时默认导航到登录页面
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(Routes.login);
+      }
     }
   }
 
@@ -65,6 +91,10 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 32),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
             ),
           ],
         ),

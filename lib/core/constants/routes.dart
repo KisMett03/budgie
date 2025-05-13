@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../presentation/screens/splash_screen.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/home_screen.dart';
-import '../../presentation/unused/expenses_screen.dart';
 import '../../presentation/screens/setting_screen.dart';
 import '../../presentation/screens/profile_screen.dart';
 import '../../presentation/screens/analytic_screen.dart';

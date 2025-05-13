@@ -11,7 +11,6 @@ class CategoryManager {
     Category.utilities: Color(0xFF2196F3), // 蓝色
     Category.shopping: Color(0xFFE91E63), // 粉红色
     Category.entertainment: Color(0xFF9C27B0), // 紫色
-    Category.health: Color(0xFFFF5722), // 深橙色
     Category.education: Color(0xFF009688), // 青色
     Category.travel: Color(0xFF4CAF50), // 绿色
     Category.medical: Color(0xFFE91E63), // 粉红色
@@ -26,7 +25,6 @@ class CategoryManager {
     Category.utilities: Icons.power,
     Category.shopping: Icons.shopping_bag,
     Category.entertainment: Icons.movie,
-    Category.health: Icons.medical_services,
     Category.education: Icons.school,
     Category.travel: Icons.flight_takeoff,
     Category.medical: Icons.local_hospital,
@@ -41,7 +39,6 @@ class CategoryManager {
     Category.utilities: 'Utilities',
     Category.shopping: 'Shopping',
     Category.entertainment: 'Entertainment',
-    Category.health: 'Health',
     Category.education: 'Education',
     Category.travel: 'Travel',
     Category.medical: 'Medical',

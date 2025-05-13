@@ -64,7 +64,7 @@ class SubmitButton extends StatelessWidget {
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -72,10 +72,10 @@ class SubmitButton extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Text(
                     loadingText,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,

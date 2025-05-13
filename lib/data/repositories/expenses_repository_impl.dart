@@ -3,23 +3,47 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/category.dart' as app_category;
 import '../../domain/repositories/expenses_repository.dart';
+import '../../core/errors/app_error.dart';
 
 class ExpensesRepositoryImpl implements ExpensesRepository {
   final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  ExpensesRepositoryImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  ExpensesRepositoryImpl({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
 
-  String get _userId => FirebaseAuth.instance.currentUser!.uid;
+  // 安全获取用户ID
+  String? get _userId {
+    final user = _auth.currentUser;
+    return user?.uid;
+  }
 
-  CollectionReference<Map<String, dynamic>> get _expensesCollection =>
-      _firestore.collection('users').doc(_userId).collection('expenses');
+  // 检查认证状态
+  void _checkAuthentication() {
+    if (_userId == null) {
+      throw AuthError.unauthenticated();
+    }
+  }
+
+  // 安全获取expenses集合
+  CollectionReference<Map<String, dynamic>> _getExpensesCollection() {
+    final userId = _userId;
+    if (userId == null) {
+      throw AuthError.unauthenticated();
+    }
+    return _firestore.collection('users').doc(userId).collection('expenses');
+  }
 
   @override
   Future<List<Expense>> getExpenses() async {
     try {
-      final snapshot =
-          await _expensesCollection.orderBy('date', descending: true).get();
+      _checkAuthentication();
+      final collection = _getExpensesCollection();
+      final snapshot = await collection.orderBy('date', descending: true).get();
+
       return snapshot.docs.map((doc) {
         final data = doc.data();
         final categoryString = data['category'] as String?;
@@ -41,15 +65,21 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
           currency: data['currency'] as String? ?? 'MYR',
         );
       }).toList();
-    } catch (e) {
-      throw Exception('Failed to get expenses: $e');
+    } catch (e, stackTrace) {
+      if (e is AuthError) {
+        throw e;
+      }
+      throw DataError('Failed to get expenses: ${e.toString()}',
+          originalError: e, stackTrace: stackTrace);
     }
   }
 
   @override
   Future<void> addExpense(Expense expense) async {
     try {
-      await _expensesCollection.add({
+      _checkAuthentication();
+      final collection = _getExpensesCollection();
+      await collection.add({
         'remark': expense.remark,
         'amount': expense.amount,
         'date': Timestamp.fromDate(expense.date),
@@ -58,15 +88,21 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
         'description': expense.description,
         'currency': expense.currency,
       });
-    } catch (e) {
-      throw Exception('Failed to add expense: $e');
+    } catch (e, stackTrace) {
+      if (e is AuthError) {
+        throw e;
+      }
+      throw DataError('Failed to add expense: ${e.toString()}',
+          originalError: e, stackTrace: stackTrace);
     }
   }
 
   @override
   Future<void> updateExpense(Expense expense) async {
     try {
-      await _expensesCollection.doc(expense.id).update({
+      _checkAuthentication();
+      final collection = _getExpensesCollection();
+      await collection.doc(expense.id).update({
         'remark': expense.remark,
         'amount': expense.amount,
         'date': Timestamp.fromDate(expense.date),
@@ -75,17 +111,27 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
         'description': expense.description,
         'currency': expense.currency,
       });
-    } catch (e) {
-      throw Exception('Failed to update expense: $e');
+    } catch (e, stackTrace) {
+      if (e is AuthError) {
+        throw e;
+      }
+      throw DataError('Failed to update expense: ${e.toString()}',
+          originalError: e, stackTrace: stackTrace);
     }
   }
 
   @override
   Future<void> deleteExpense(String id) async {
     try {
-      await _expensesCollection.doc(id).delete();
-    } catch (e) {
-      throw Exception('Failed to delete expense: $e');
+      _checkAuthentication();
+      final collection = _getExpensesCollection();
+      await collection.doc(id).delete();
+    } catch (e, stackTrace) {
+      if (e is AuthError) {
+        throw e;
+      }
+      throw DataError('Failed to delete expense: ${e.toString()}',
+          originalError: e, stackTrace: stackTrace);
     }
   }
 }

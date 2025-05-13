@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/routes.dart';
 import '../widgets/auth_button.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -133,16 +134,78 @@ class _LoginScreenState extends State<LoginScreen>
                       textColor: Colors.black87,
                       onPressed: () async {
                         try {
-                          await viewModel.signInWithGoogle();
-                          if (mounted) {
-                            Navigator.of(context).pushReplacementNamed(Routes.home);
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Sign in failed: ${e.toString()}'),
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const Center(
+                              child: CircularProgressIndicator(),
                             ),
                           );
+
+                          // Simple approach - just call Google sign-in
+                          await viewModel.signInWithGoogle();
+
+                          // Close the loading dialog
+                          if (mounted && Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+
+                          // Check authentication state
+                          if (viewModel.isAuthenticated) {
+                            debugPrint(
+                                'Login success, navigating to home screen');
+                            if (mounted) {
+                              Navigator.of(context)
+                                  .pushReplacementNamed(Routes.home);
+                            }
+                          } else {
+                            // Failed to authenticate
+                            final errorMessage = viewModel.error ??
+                                'Login failed: Unable to authenticate';
+                            debugPrint('Login failed: $errorMessage');
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errorMessage),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 5),
+                                  action: SnackBarAction(
+                                    label: 'Retry',
+                                    textColor: Colors.white,
+                                    onPressed: () =>
+                                        _retrySignIn(context, viewModel),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          // Close the loading dialog
+                          if (mounted && Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+
+                          final errorMsg = e.toString();
+                          debugPrint('Login exception: $errorMsg');
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Login failed: ${_formatErrorMessage(errorMsg)}'),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 5),
+                                action: SnackBarAction(
+                                  label: 'Retry',
+                                  textColor: Colors.white,
+                                  onPressed: () =>
+                                      _retrySignIn(context, viewModel),
+                                ),
+                              ),
+                            );
+                          }
                         }
                       },
                     ),
@@ -170,5 +233,70 @@ class _LoginScreenState extends State<LoginScreen>
         ],
       ),
     );
+  }
+
+  // Simple retry method
+  void _retrySignIn(BuildContext context, AuthViewModel viewModel) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Try sign-in again
+      await viewModel.signInWithGoogle();
+
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Navigate if successful
+      if (viewModel.isAuthenticated && mounted) {
+        Navigator.of(context).pushReplacementNamed(Routes.home);
+      } else if (mounted) {
+        final error = viewModel.error ?? 'Authentication failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Authentication failed: ${_formatErrorMessage(e.toString())}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Helper to format error messages
+  String _formatErrorMessage(String error) {
+    if (error.contains('network')) {
+      return 'Network connection issue. Please check your internet connection.';
+    } else if (error.contains('cancel')) {
+      return 'Sign-in was cancelled';
+    } else if (error.contains('credential')) {
+      return 'Authentication failed';
+    } else if (error.length > 100) {
+      return '${error.substring(0, 100)}...';
+    }
+    return error;
   }
 }
