@@ -1,21 +1,25 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/user.dart' as domain;
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final firebase_auth.FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
+  final FirebaseFirestore _firestore;
 
   AuthRepositoryImpl({
     firebase_auth.FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
+    FirebaseFirestore? firestore,
   })  : _auth = auth ?? _initFirebaseAuth(),
         _googleSignIn = googleSignIn ??
             GoogleSignIn(
               scopes: ['email', 'profile'],
-            );
+            ),
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   // Initialize Firebase Auth with persistence settings
   static firebase_auth.FirebaseAuth _initFirebaseAuth() {
@@ -29,23 +33,43 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Stream<domain.User?> get authStateChanges =>
-      _auth.authStateChanges().map((firebaseUser) {
-        if (firebaseUser == null) return null;
-        return _mapFirebaseUserToDomain(firebaseUser);
-      });
+  Stream<domain.User?> get authStateChanges {
+    return _auth.authStateChanges().asyncMap((firebaseUser) async {
+      if (firebaseUser == null) return null;
+      return await _mapFirebaseUserToDomain(firebaseUser);
+    });
+  }
 
   // Map Firebase user to domain User - handle potential null values
-  domain.User _mapFirebaseUserToDomain(firebase_auth.User user) {
+  Future<domain.User> _mapFirebaseUserToDomain(firebase_auth.User user) async {
     final displayName = user.displayName?.isNotEmpty == true
         ? user.displayName
         : 'User ${user.uid.substring(0, 5)}';
+
+    // 获取用户设置
+    String currency = 'MYR';
+    String theme = 'light';
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        if (userData != null) {
+          currency = userData['currency'] ?? 'MYR';
+          theme = userData['theme'] ?? 'light';
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user settings: $e');
+    }
 
     return domain.User(
       id: user.uid,
       email: user.email ?? '', // Handle null email
       displayName: displayName,
       photoUrl: user.photoURL,
+      currency: currency,
+      theme: theme,
     );
   }
 
@@ -63,7 +87,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       debugPrint(
           'getCurrentUser: Found user: ${user.uid}, email: ${user.email}');
-      return _mapFirebaseUserToDomain(user);
+      return await _mapFirebaseUserToDomain(user);
     } catch (e) {
       debugPrint('Error getting current user: $e');
       // Return null instead of throwing to avoid crashes
@@ -83,7 +107,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) {
         throw Exception('Failed to sign in: No user returned');
       }
-      return _mapFirebaseUserToDomain(user);
+      return await _mapFirebaseUserToDomain(user);
     } catch (e) {
       debugPrint('Email sign-in error: $e');
       throw Exception('Failed to sign in: $e');
@@ -102,7 +126,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) {
         throw Exception('Failed to create user: No user returned');
       }
-      return _mapFirebaseUserToDomain(user);
+      return await _mapFirebaseUserToDomain(user);
     } catch (e) {
       debugPrint('Create user error: $e');
       throw Exception('Failed to create user: $e');
@@ -161,12 +185,7 @@ class AuthRepositoryImpl implements AuthRepository {
       debugPrint('Firebase sign-in successful: ${user.uid}');
 
       // 6. Immediately return the mapped user without any additional processing
-      final domainUser = domain.User(
-        id: user.uid,
-        email: user.email ?? '',
-        displayName: user.displayName ?? googleUser.displayName ?? 'User',
-        photoUrl: user.photoURL ?? googleUser.photoUrl,
-      );
+      final domainUser = await _mapFirebaseUserToDomain(user);
 
       debugPrint('Returning user: ${domainUser.id}');
       return domainUser;
@@ -238,6 +257,32 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       debugPrint('Update profile error: $e');
       throw Exception('Failed to update profile: $e');
+    }
+  }
+
+  // 更新用户设置
+  @override
+  Future<void> updateUserSettings({String? currency, String? theme}) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('Cannot update settings: No authenticated user');
+      }
+
+      final Map<String, dynamic> updates = {};
+      if (currency != null) updates['currency'] = currency;
+      if (theme != null) updates['theme'] = theme;
+
+      if (updates.isNotEmpty) {
+        await _firestore.collection('users').doc(user.uid).set(
+              updates,
+              SetOptions(merge: true),
+            );
+        debugPrint('User settings updated successfully');
+      }
+    } catch (e) {
+      debugPrint('Error updating user settings: $e');
+      throw Exception('Failed to update user settings: $e');
     }
   }
 }

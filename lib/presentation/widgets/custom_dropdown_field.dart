@@ -45,6 +45,8 @@ class CustomDropdownField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return DropdownButtonFormField<T>(
       value: value,
       items: items
@@ -52,9 +54,10 @@ class CustomDropdownField<T> extends StatelessWidget {
                 value: item,
                 child: Text(
                   itemLabelBuilder(item),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: AppTheme.fontFamily,
                     fontWeight: FontWeight.w400,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ))
@@ -62,21 +65,25 @@ class CustomDropdownField<T> extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: isRequired ? '$labelText *' : labelText,
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           fontFamily: AppTheme.fontFamily,
-          color: Colors.black54,
+          color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
         ),
         prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       validator: validator ??
           (isRequired
               ? (value) => value == null ? 'Please select $labelText' : null
               : null),
+      iconEnabledColor: Theme.of(context).colorScheme.primary,
+      dropdownColor: Theme.of(context).cardColor,
     );
   }
 }

@@ -10,12 +10,14 @@ import 'core/router/app_router.dart';
 import 'presentation/viewmodels/expenses_viewmodel.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/budget_viewmodel.dart';
+import 'presentation/viewmodels/theme_viewmodel.dart';
 import 'di/injection_container.dart' as di;
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/analytic_screen.dart';
 import 'presentation/screens/setting_screen.dart';
 import 'presentation/screens/profile_screen.dart';
 import 'presentation/widgets/animated_float_button.dart';
+import 'presentation/utils/app_theme.dart';
 
 Future<void> main() async {
   // Ensure we can call async code before runApp()
@@ -54,6 +56,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => di.sl<AuthViewModel>()),
           ChangeNotifierProvider(create: (_) => di.sl<ExpensesViewModel>()),
           ChangeNotifierProvider(create: (_) => di.sl<BudgetViewModel>()),
+          ChangeNotifierProvider(create: (_) => ThemeViewModel()),
           // TODO: add more providers here as you build out other features
         ],
         child: const BudgieApp(),
@@ -106,12 +109,11 @@ class BudgieApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeViewModel = Provider.of<ThemeViewModel>(context);
+
     return MaterialApp(
       title: 'Budgie',
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-        fontFamily: 'Lexend',
-      ),
+      theme: themeViewModel.theme,
       debugShowCheckedModeBanner: false,
 
       // 添加导航键

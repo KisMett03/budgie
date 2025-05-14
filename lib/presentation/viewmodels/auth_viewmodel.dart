@@ -250,6 +250,30 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> updateUserSettings({String? currency, String? theme}) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      debugPrint('Updating user settings: currency=$currency, theme=$theme');
+      await _authRepository.updateUserSettings(
+        currency: currency,
+        theme: theme,
+      );
+
+      // Refresh user data after update
+      _currentUser = await _authRepository.getCurrentUser();
+      debugPrint('User settings updated successfully');
+    } catch (e) {
+      debugPrint('User settings update error: $e');
+      _error = 'Failed to update user settings: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     _authSubscription?.cancel();

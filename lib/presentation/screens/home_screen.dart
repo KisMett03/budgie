@@ -58,29 +58,31 @@ class _HomeScreenState extends State<HomeScreen> {
     final totalAmount = vm.getTotalExpenses();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBody: true,
       appBar: AppBar(
-        title: const Text('Home',
-            style: TextStyle(fontFamily: 'Lexend', fontSize: 20)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: Text('Home'),
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
 
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFF57C00)))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary))
           : CustomScrollView(
               slivers: [
+                const SliverPadding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                ),
                 // Month selector
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: DatePickerButton(
                       date: _selectedDate,
-                      themeColor: const Color(0xFFF57C00),
+                      themeColor: Theme.of(context).colorScheme.primary,
                       prefix: 'Expenses for',
                       onDateChanged: _onDateChanged,
                     ),
@@ -96,10 +98,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'Total: MYR ${totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFF57C00),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
@@ -182,11 +184,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-        backgroundColor: const Color(0xFFF57C00),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         shape: const CircleBorder(),
         enableFeedback: true,
         reactToRouteChange: true,
-        child: const Icon(Icons.add, color: Color(0xFFFBFCF8)),
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 

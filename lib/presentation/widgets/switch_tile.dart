@@ -21,10 +21,16 @@ class SwitchTile extends StatelessWidget {
           trailing: Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFFF57C00),
+            activeColor: Theme.of(context).colorScheme.primary,
           ),
         ),
-        const Divider(height: 1, thickness: 1, indent: 18, endIndent: 25),
+        Divider(
+          height: 1,
+          thickness: 1,
+          indent: 18,
+          endIndent: 25,
+          color: Theme.of(context).dividerColor,
+        ),
       ],
     );
   }

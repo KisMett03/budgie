@@ -48,6 +48,7 @@ class DateTimePickerField extends StatelessWidget {
         dateFormat ?? DateFormat(AppConstants.dateFormat);
     final effectiveTimeFormat =
         timeFormat ?? DateFormat(AppConstants.timeFormat);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,8 +64,11 @@ class DateTimePickerField extends StatelessWidget {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade400),
+                    color: Theme.of(context).cardColor,
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade400),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(AppTheme.borderRadius),
                       bottomLeft: Radius.circular(AppTheme.borderRadius),
@@ -77,9 +81,10 @@ class DateTimePickerField extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         effectiveDateFormat.format(dateTime),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: AppTheme.fontFamily,
                           fontSize: 14,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
@@ -90,7 +95,7 @@ class DateTimePickerField extends StatelessWidget {
             Container(
               width: 1,
               height: 48,
-              color: Colors.grey.shade400,
+              color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade400,
             ),
             Expanded(
               child: InkWell(
@@ -101,8 +106,11 @@ class DateTimePickerField extends StatelessWidget {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade400),
+                    color: Theme.of(context).cardColor,
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade400),
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(AppTheme.borderRadius),
                       bottomRight: Radius.circular(AppTheme.borderRadius),
@@ -115,9 +123,10 @@ class DateTimePickerField extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         effectiveTimeFormat.format(dateTime),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: AppTheme.fontFamily,
                           fontSize: 14,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],

@@ -41,7 +41,12 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? Colors.white;
+    final effectiveColor = color ?? Theme.of(context).cardColor;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final shadowColor = isDarkMode
+        ? Colors.black.withOpacity(0.3)
+        : Colors.black.withOpacity(0.1);
+
     final card = Container(
       width: width,
       height: height,
@@ -53,7 +58,7 @@ class CustomCard extends StatelessWidget {
         boxShadow: elevation > 0
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: shadowColor,
                   blurRadius: elevation * 2,
                   offset: Offset(0, elevation),
                 ),
@@ -114,34 +119,40 @@ class CustomCard extends StatelessWidget {
       showSplash: showSplash,
       width: width,
       height: height,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  color: iconColor ?? AppTheme.primaryColor,
-                  size: 20,
+      child: Builder(builder: (context) {
+        final titleColor = Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black87;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    color: iconColor ?? AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: titleColor,
+                  ),
                 ),
-                const SizedBox(width: 8),
               ],
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontFamily,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        );
+      }),
     );
   }
 

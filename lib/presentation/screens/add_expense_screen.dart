@@ -127,27 +127,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           AppConstants.newExpenseTitle,
-          style: TextStyle(
-            fontFamily: AppTheme.fontFamily,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: Theme.of(context).dividerColor,
+          ),
         ),
       ),
       body: SafeArea(
@@ -289,7 +285,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                   ),
                   child: _isSubmitting
-                      ? const Row(
+                      ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const SizedBox(
@@ -312,16 +308,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             ),
                           ],
                         )
-                      : const Row(
+                      : Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(Icons.add, size: 20, color: Colors.white),
-                            SizedBox(width: 8),
+                          children: [
+                            const Icon(Icons.add, size: 20),
+                            const SizedBox(width: 8),
                             Text(
                               AppConstants.addButtonText +
                                   " " +
                                   AppConstants.newExpenseTitle,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontFamily,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,

@@ -9,4 +9,5 @@ abstract class AuthRepository {
   Future<void> resetPassword(String email);
   Future<void> updateProfile({String? displayName, String? photoUrl});
   Future<User> signInWithGoogle();
-} 
+  Future<void> updateUserSettings({String? currency, String? theme});
+}

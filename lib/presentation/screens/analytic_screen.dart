@@ -104,7 +104,9 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            isAuthError ? 'Login to view your Budgets' : _errorMessage ?? 'Error occurred',
+            isAuthError
+                ? 'Login to view your Budgets'
+                : _errorMessage ?? 'Error occurred',
             style: TextStyle(color: Colors.red[300]),
             textAlign: TextAlign.center,
           ),
@@ -132,70 +134,78 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const themeColor = Color(0xFFF57C00);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytic'),
+        title: Text('Analytic'),
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xfffafafa),
-        elevation: 0,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 使用DatePickerButton组件保持UI一致性
-          Padding(
-            padding: EdgeInsets.all(16.0),
-            child: DatePickerButton(
-              date: _selectedDate,
-              themeColor: themeColor,
-              prefix: 'Budget for',
-              onDateChanged: _onDateChanged,
-            ),
-          ),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            )
+          : _errorMessage != null
+              ? _buildErrorWidget()
+              : CustomScrollView(
+                  slivers: [
+                    // 顶部间距
+                    const SliverPadding(
+                      padding: EdgeInsets.only(top: 16.0),
+                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                    ),
 
-          // 预算卡片
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: themeColor))
-                : _errorMessage != null
-                    ? _buildErrorWidget()
-                    : Consumer<BudgetViewModel>(
-                        builder: (context, vm, _) {
-                          return SingleChildScrollView(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Column(
-                              children: [
-                                BudgetCard(
-                                  budget: vm.budget,
-                                  onTap: () async {
-                                    if (!mounted) return;
-                                    Navigator.push(
-                                      context,
-                                      PageTransition(
-                                        child: AddBudgetScreen(
-                                          monthId: _currentMonthId,
-                                        ),
-                                        type: TransitionType.slideRight,
-                                      ),
-                                    ).then((_) {
-                                      _loadBudgetData();
-                                    });
-                                  },
-                                ),
-
-                                // 这里可以添加其他分析内容
-                                // ...
-                              ],
-                            ),
-                          );
-                        },
+                    // 日期选择器
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      sliver: SliverToBoxAdapter(
+                        child: DatePickerButton(
+                          date: _selectedDate,
+                          themeColor: Theme.of(context).colorScheme.primary,
+                          prefix: 'Budget for',
+                          onDateChanged: _onDateChanged,
+                        ),
                       ),
-          ),
-        ],
-      ),
+                    ),
+
+                    // 预算卡片
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16.0),
+                      sliver: SliverToBoxAdapter(
+                        child: Consumer<BudgetViewModel>(
+                          builder: (context, vm, _) {
+                            return BudgetCard(
+                              budget: vm.budget,
+                              onTap: () async {
+                                if (!mounted) return;
+                                Navigator.push(
+                                  context,
+                                  PageTransition(
+                                    child: AddBudgetScreen(
+                                      monthId: _currentMonthId,
+                                    ),
+                                    type: TransitionType.slideRight,
+                                  ),
+                                ).then((_) {
+                                  _loadBudgetData();
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // 这里可以添加其他分析内容
+                    // ...
+
+                    // 底部填充
+                    const SliverPadding(
+                      padding: EdgeInsets.only(bottom: 80.0),
+                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                    ),
+                  ],
+                ),
       extendBody: true,
       floatingActionButton: AnimatedFloatButton(
         onPressed: () {
@@ -208,11 +218,11 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
             ),
           );
         },
-        backgroundColor: const Color(0xFFF57C00),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         shape: const CircleBorder(),
         enableFeedback: true,
         reactToRouteChange: true,
-        child: const Icon(Icons.add, color: Color(0xFFFBFCF8)),
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomNavBar(

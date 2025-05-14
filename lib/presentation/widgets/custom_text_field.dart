@@ -91,6 +91,8 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return TextFormField(
       controller: controller,
       initialValue: controller == null ? initialValue : null,
@@ -107,7 +109,15 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadius),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
+        labelStyle: TextStyle(
+          color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+        ),
+        hintStyle: TextStyle(
+          color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       keyboardType: isMultiline ? TextInputType.multiline : keyboardType,
       obscureText: isPassword,
@@ -121,9 +131,10 @@ class CustomTextField extends StatelessWidget {
                   ? AppConstants.requiredFieldMessage
                   : null
               : null),
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: AppTheme.fontFamily,
         fontSize: 16,
+        color: Theme.of(context).textTheme.bodyMedium?.color,
       ),
     );
   }

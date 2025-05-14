@@ -36,6 +36,10 @@ class BottomNavBar extends StatelessWidget {
       Routes.profile,
     ];
 
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final backgroundColor = Theme.of(context).colorScheme.surface;
+
     return SizedBox(
       height: 80,
       child: Stack(
@@ -44,7 +48,7 @@ class BottomNavBar extends StatelessWidget {
           // Custom painted background with notch
           Positioned.fill(
             child: CustomPaint(
-              painter: _NavBarPainter(),
+              painter: _NavBarPainter(backgroundColor),
             ),
           ),
           // Nav bar icons
@@ -119,16 +123,17 @@ class BottomNavBar extends StatelessWidget {
                       Icon(
                         icons[idx],
                         color: isSelected
-                            ? const Color(0xFFF57C00)
-                            : Colors.black54,
+                            ? primaryColor
+                            : textColor.withOpacity(0.6),
+                        size: 24,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         labels[idx],
                         style: TextStyle(
                           color: isSelected
-                              ? const Color(0xFFF57C00)
-                              : Colors.black54,
+                              ? primaryColor
+                              : textColor.withOpacity(0.6),
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 12,
@@ -148,10 +153,14 @@ class BottomNavBar extends StatelessWidget {
 }
 
 class _NavBarPainter extends CustomPainter {
+  final Color backgroundColor;
+
+  _NavBarPainter(this.backgroundColor);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFFBFCF8)
+      ..color = backgroundColor
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
 

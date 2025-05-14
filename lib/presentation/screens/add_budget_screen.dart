@@ -241,19 +241,9 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          AppConstants.setBudgetTitle,
-          style: TextStyle(
-            fontFamily: AppTheme.fontFamily,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 0,
+        title: Text(AppConstants.setBudgetTitle),
       ),
       body: Form(
         key: _formKey,
@@ -315,10 +305,10 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                 children: [
                                   Text(
                                     'Allocated: MYR ${totalAllocated.toStringAsFixed(2)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: AppTheme.fontFamily,
                                       fontSize: 14,
-                                      color: Colors.black54,
+                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                                     ),
                                   ),
                                   Text(
@@ -539,7 +529,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         padding: const EdgeInsets.all(16.0),
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),

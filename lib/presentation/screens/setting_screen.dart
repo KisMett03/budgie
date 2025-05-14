@@ -3,12 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/theme_viewmodel.dart';
 import '../../core/constants/routes.dart';
 import '../../core/router/page_transition.dart';
 import '../widgets/switch_tile.dart';
+import '../widgets/dropdown_tile.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/animated_float_button.dart';
+import '../utils/app_constants.dart';
+import '../utils/app_theme.dart';
 import 'add_expense_screen.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -23,6 +27,7 @@ class _SettingScreenState extends State<SettingScreen> {
   bool allowNotification = false;
   bool allowExtract = true;
   bool improveAccuracy = false;
+  String currency = 'MYR';
   bool _loading = true;
 
   @override
@@ -38,12 +43,15 @@ class _SettingScreenState extends State<SettingScreen> {
         .collection('users')
         .doc(user.uid)
         .get();
-    final data = doc.data()?['settings'] ?? {};
+    final data = doc.data() ?? {};
+    final settings = data['settings'] ?? {};
+
     setState(() {
-      autoBudget = data['autoBudget'] ?? false;
-      allowNotification = data['allowNotification'] ?? false;
-      allowExtract = data['allowExtract'] ?? false;
-      improveAccuracy = data['improveAccuracy'] ?? false;
+      autoBudget = settings['autoBudget'] ?? false;
+      allowNotification = settings['allowNotification'] ?? false;
+      allowExtract = settings['allowExtract'] ?? false;
+      improveAccuracy = settings['improveAccuracy'] ?? false;
+      currency = data['currency'] ?? 'MYR';
       _loading = false;
     });
   }
@@ -56,30 +64,67 @@ class _SettingScreenState extends State<SettingScreen> {
     }, SetOptions(merge: true));
   }
 
+  Future<void> _updateCurrency(String value) async {
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    await authViewModel.updateUserSettings(currency: value);
+    setState(() {
+      currency = value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeViewModel = Provider.of<ThemeViewModel>(context);
+
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FCFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text('Setting', style: TextStyle(color: Colors.black)),
+        title: Text(
+          'Setting',
+          style:
+              TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
-            color: Colors.black12,
+            color: Theme.of(context).dividerColor,
             height: 0.5,
           ),
         ),
       ),
       body: ListView(
         children: [
+          // 货币选择
+          DropdownTile<String>(
+            title: 'Currency',
+            value: currency,
+            items: AppConstants.currencies,
+            onChanged: (value) {
+              if (value != null) {
+                _updateCurrency(value);
+              }
+            },
+            itemLabelBuilder: (item) => item,
+          ),
+
+          // 暗色主题切换
+          SwitchTile(
+            title: 'Dark Theme',
+            value: themeViewModel.isDarkMode,
+            onChanged: (v) {
+              themeViewModel.toggleTheme();
+            },
+          ),
+
+          // 开关选项
           SwitchTile(
             title: 'Auto budget rebalance',
             value: autoBudget,
@@ -126,11 +171,11 @@ class _SettingScreenState extends State<SettingScreen> {
             ),
           );
         },
-        backgroundColor: const Color(0xFFF57C00),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         shape: const CircleBorder(),
         enableFeedback: true,
         reactToRouteChange: true,
-        child: const Icon(Icons.add, color: Color(0xFFFBFCF8)),
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomNavBar(
