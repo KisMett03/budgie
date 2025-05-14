@@ -129,7 +129,7 @@ class CustomCard extends StatelessWidget {
               ],
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: AppTheme.fontFamily,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,

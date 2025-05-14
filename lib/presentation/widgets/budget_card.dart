@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/budget.dart';
-import '../../domain/entities/category.dart' as app_category;
 import '../utils/category_manager.dart';
 
 class BudgetCard extends StatelessWidget {
@@ -12,7 +11,7 @@ class BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFFF57C00);
+    const themeColor = Color(0xFFF57C00);
 
     return GestureDetector(
       onTap: onTap,
@@ -272,7 +271,7 @@ class BudgetCard extends StatelessWidget {
                           'MYR ${catBudget.left.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                             color: statusColor,
                           ),
                         ),
@@ -294,7 +293,7 @@ class BudgetCard extends StatelessWidget {
                             height: 6,
                             decoration: BoxDecoration(
                               color: statusColor,
-                              borderRadius: BorderRadius.circular(3),
+                              borderRadius: BorderRadius.circular(45),
                             ),
                           ),
                         ),

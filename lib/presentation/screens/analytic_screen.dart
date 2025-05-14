@@ -50,7 +50,6 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
       final budgetViewModel =
           Provider.of<BudgetViewModel>(context, listen: false);
 
-      // 设置支出视图模型的月份筛选（用于UI显示一致性）
       final expensesViewModel =
           Provider.of<ExpensesViewModel>(context, listen: false);
       expensesViewModel.setSelectedMonth(_selectedDate);
@@ -66,7 +65,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = '加载预算失败: ${e.toString()}';
+        _errorMessage = 'Failed to load budgets: ${e.toString()}';
       });
     } finally {
       if (mounted) {
@@ -105,7 +104,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            isAuthError ? '您需要登录才能查看预算' : _errorMessage ?? '出现错误',
+            isAuthError ? 'Login to view your Budgets' : _errorMessage ?? 'Error occurred',
             style: TextStyle(color: Colors.red[300]),
             textAlign: TextAlign.center,
           ),
@@ -116,7 +115,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF57C00),
               ),
-              child: const Text('去登录'),
+              child: const Text('Login'),
             ),
           if (!isAuthError)
             ElevatedButton(
@@ -124,7 +123,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF57C00),
               ),
-              child: const Text('重试'),
+              child: const Text('Retry again'),
             ),
         ],
       ),
@@ -133,13 +132,13 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFFF57C00);
+    const themeColor = Color(0xFFF57C00);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Analytic'),
         automaticallyImplyLeading: false,
-        backgroundColor: themeColor,
+        backgroundColor: const Color(0xfffafafa),
         elevation: 0,
       ),
       body: Column(
@@ -159,7 +158,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
           // 预算卡片
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: themeColor))
+                ? const Center(child: CircularProgressIndicator(color: themeColor))
                 : _errorMessage != null
                     ? _buildErrorWidget()
                     : Consumer<BudgetViewModel>(
@@ -172,11 +171,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
                                 BudgetCard(
                                   budget: vm.budget,
                                   onTap: () async {
-                                    // 直接进入预算编辑页面，不需要重新计算
-                                    // 预算的剩余金额已经在添加/更新/删除支出时自动更新到数据库
                                     if (!mounted) return;
-
-                                    // 使用自定义页面转换
                                     Navigator.push(
                                       context,
                                       PageTransition(
@@ -186,7 +181,6 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
                                         type: TransitionType.slideRight,
                                       ),
                                     ).then((_) {
-                                      // 编辑完成后重新加载预算数据
                                       _loadBudgetData();
                                     });
                                   },
@@ -205,7 +199,6 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
       extendBody: true,
       floatingActionButton: AnimatedFloatButton(
         onPressed: () {
-          // 使用自定义动画导航到添加支出页面
           Navigator.push(
             context,
             PageTransition(

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import '../../domain/entities/budget.dart';
-import '../../domain/entities/category.dart';
 import '../viewmodels/budget_viewmodel.dart';
 import '../viewmodels/expenses_viewmodel.dart';
 import '../utils/app_theme.dart';

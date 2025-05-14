@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/category.dart';
 import '../viewmodels/expenses_viewmodel.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_constants.dart';
-import '../utils/category_manager.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/date_time_picker_field.dart';
-import '../widgets/submit_button.dart';
 import '../../core/errors/app_error.dart';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -96,10 +93,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(AppConstants.expenseAddedMessage),
+            const SnackBar(
+              content: Text(AppConstants.expenseAddedMessage),
               backgroundColor: AppTheme.primaryColor,
-              duration: const Duration(seconds: 2),
+              duration: Duration(seconds: 2),
             ),
           );
           Navigator.of(context).pop();
@@ -292,7 +289,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                   ),
                   child: _isSubmitting
-                      ? Row(
+                      ? const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const SizedBox(
@@ -315,16 +312,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             ),
                           ],
                         )
-                      : Row(
+                      : const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.add, size: 20),
-                            const SizedBox(width: 8),
+                          children: <Widget>[
+                            Icon(Icons.add, size: 20, color: Colors.white),
+                            SizedBox(width: 8),
                             Text(
                               AppConstants.addButtonText +
                                   " " +
                                   AppConstants.newExpenseTitle,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: AppTheme.fontFamily,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
