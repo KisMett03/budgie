@@ -9,17 +9,20 @@ import '../../domain/repositories/budget_repository.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/utils/performance_monitor.dart';
 import '../../core/services/budget_calculation_service.dart';
+import '../../core/network/connectivity_service.dart';
 import 'dart:async';
 import 'dart:ui';
 
 class ExpensesViewModel extends ChangeNotifier {
   final ExpensesRepository _expensesRepository;
   final BudgetRepository _budgetRepository;
+  final ConnectivityService _connectivityService;
   List<Expense> _expenses = [];
   List<Expense> _filteredExpenses = [];
   bool _isLoading = true;
   String? _error;
   StreamSubscription? _expensesSubscription;
+  bool _isOffline = false;
 
   // 缓存机制
   final Map<String, List<Expense>> _cache = {};
@@ -31,15 +34,72 @@ class ExpensesViewModel extends ChangeNotifier {
   ExpensesViewModel({
     required ExpensesRepository expensesRepository,
     required BudgetRepository budgetRepository,
+    required ConnectivityService connectivityService,
   })  : _expensesRepository = expensesRepository,
-        _budgetRepository = budgetRepository {
-    _startExpensesStream();
+        _budgetRepository = budgetRepository,
+        _connectivityService = connectivityService {
+    _init();
+  }
+
+  Future<void> _init() async {
+    // 检查网络连接状态
+    _isOffline = !await _connectivityService.isConnected;
+
+    // 监听网络状态变化
+    _connectivityService.connectionStatusStream.listen((isConnected) {
+      final wasOffline = _isOffline;
+      _isOffline = !isConnected;
+
+      // 从离线模式转为在线模式时，重新加载数据
+      if (wasOffline && isConnected) {
+        _startExpensesStream();
+      } else if (!wasOffline && !isConnected) {
+        // 从在线模式转为离线模式时，加载本地数据
+        _loadExpensesFromLocalDatabase();
+      }
+    });
+
+    // 初始加载数据
+    if (_isOffline) {
+      _loadExpensesFromLocalDatabase();
+    } else {
+      _startExpensesStream();
+    }
+  }
+
+  // 从本地数据库加载支出数据
+  Future<void> _loadExpensesFromLocalDatabase() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      PerformanceMonitor.startTimer('load_local_expenses');
+      final localExpenses = await _expensesRepository.getExpenses();
+
+      _expenses = localExpenses;
+
+      // 清除缓存
+      _cache.clear();
+
+      // 如果正在过滤，应用过滤条件
+      if (_isFiltering) {
+        _filterExpensesByMonth();
+      }
+
+      _isLoading = false;
+      PerformanceMonitor.stopTimer('load_local_expenses');
+      notifyListeners();
+    } catch (e, stackTrace) {
+      _handleError(e, stackTrace);
+    }
   }
 
   List<Expense> get expenses => _isFiltering ? _filteredExpenses : _expenses;
   bool get isLoading => _isLoading;
   String? get error => _error;
   DateTime get selectedMonth => _selectedMonth;
+  bool get isOffline => _isOffline;
 
   void setSelectedMonth(DateTime month) {
     // Set to the first day of the month to standardize
@@ -131,7 +191,9 @@ class ExpensesViewModel extends ChangeNotifier {
         _processExpensesSnapshot(snapshot, userId, pageSize);
       },
       onError: (e, stackTrace) {
-        _handleError(e, stackTrace);
+        // 处理异常时，尝试从本地加载数据
+        debugPrint('Firestore stream error: $e, loading from local database');
+        _loadExpensesFromLocalDatabase();
         PerformanceMonitor.stopTimer('load_expenses');
       },
     );
@@ -285,6 +347,11 @@ class ExpensesViewModel extends ChangeNotifier {
       // 清除缓存以确保数据一致性
       _cache.clear();
 
+      // 离线模式下，手动刷新数据
+      if (_isOffline) {
+        await _loadExpensesFromLocalDatabase();
+      }
+
       // 更新相关月份的预算
       await _updateBudgetAfterExpenseChange(expense);
     } catch (e, stackTrace) {
@@ -295,12 +362,6 @@ class ExpensesViewModel extends ChangeNotifier {
 
   Future<void> updateExpense(Expense expense) async {
     try {
-      // 获取原始支出数据（用于处理日期变更的情况）
-      final originalExpense = _expenses.firstWhere((e) => e.id == expense.id);
-      final originalMonth = _getMonthIdFromDate(originalExpense.date);
-      final newMonth = _getMonthIdFromDate(expense.date);
-      final monthChanged = originalMonth != newMonth;
-
       // 更新支出数据
       await PerformanceMonitor.measureAsync('update_expense', () async {
         return await _expensesRepository.updateExpense(expense);
@@ -309,19 +370,9 @@ class ExpensesViewModel extends ChangeNotifier {
       // 清除缓存以确保数据一致性
       _cache.clear();
 
-      // 如果月份改变，则需要更新两个月份的预算
-      if (monthChanged) {
-        // 更新原始月份的预算
-        final originalMonthExpenses = getExpensesForMonth(
-            originalExpense.date.year, originalExpense.date.month);
-        final originalBudget = await _budgetRepository.getBudget(originalMonth);
-        if (originalBudget != null) {
-          final updatedOriginalBudget =
-              await BudgetCalculationService.calculateBudget(
-                  originalBudget, originalMonthExpenses);
-          await _budgetRepository.setBudget(
-              originalMonth, updatedOriginalBudget);
-        }
+      // 离线模式下，手动刷新数据
+      if (_isOffline) {
+        await _loadExpensesFromLocalDatabase();
       }
 
       // 更新当前月份的预算
@@ -345,6 +396,11 @@ class ExpensesViewModel extends ChangeNotifier {
       // 清除缓存以确保数据一致性
       _cache.clear();
 
+      // 离线模式下，手动刷新数据
+      if (_isOffline) {
+        await _loadExpensesFromLocalDatabase();
+      }
+
       // 更新相关月份的预算
       await _updateBudgetAfterExpenseChange(expenseToDelete);
     } catch (e, stackTrace) {
@@ -360,6 +416,15 @@ class ExpensesViewModel extends ChangeNotifier {
         return expense.date.year == year && expense.date.month == month;
       }).toList();
     });
+  }
+
+  // 手动刷新数据（可从UI调用）
+  Future<void> refreshData() async {
+    if (_isOffline) {
+      await _loadExpensesFromLocalDatabase();
+    } else {
+      _startExpensesStream();
+    }
   }
 
   @override

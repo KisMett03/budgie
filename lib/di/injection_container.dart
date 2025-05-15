@@ -11,6 +11,11 @@ import '../domain/repositories/budget_repository.dart';
 import '../presentation/viewmodels/auth_viewmodel.dart';
 import '../presentation/viewmodels/expenses_viewmodel.dart';
 import '../presentation/viewmodels/budget_viewmodel.dart';
+import '../data/local/database/app_database.dart';
+import '../data/datasources/local_data_source.dart';
+import '../data/datasources/local_data_source_impl.dart';
+import '../core/network/connectivity_service.dart';
+import '../core/services/sync_service.dart';
 
 final sl = GetIt.instance;
 
@@ -20,21 +25,52 @@ Future<void> init() async {
   sl.registerLazySingleton(() => FirebaseFirestore.instance);
   sl.registerLazySingleton(() => GoogleSignIn());
 
+  // 本地数据库
+  sl.registerLazySingleton(() => AppDatabase());
+
+  // 数据源
+  sl.registerLazySingleton<LocalDataSource>(
+    () => LocalDataSourceImpl(
+      sl(),
+      auth: sl<FirebaseAuth>(),
+    ),
+  );
+
+  // 网络连接服务
+  sl.registerLazySingleton<ConnectivityService>(
+    () => ConnectivityServiceImpl(),
+  );
+
+  // 同步服务
+  sl.registerLazySingleton(
+    () => SyncService(
+      localDataSource: sl(),
+      expensesRepository: sl(),
+      budgetRepository: sl(),
+      connectivityService: sl(),
+      auth: sl(),
+    ),
+  );
+
   // ViewModels
   sl.registerFactory(
-    () => AuthViewModel(authRepository: sl()),
+    () => AuthViewModel(
+      authRepository: sl(),
+      syncService: sl(),
+    ),
   );
   sl.registerFactory(
     () => ExpensesViewModel(
       expensesRepository: sl(),
       budgetRepository: sl(),
+      connectivityService: sl(),
     ),
   );
   sl.registerFactory(
     () => BudgetViewModel(budgetRepository: sl()),
   );
 
-  // Repositories - 使用注入的Firebase服务
+  // Repositories - 使用注入的服务
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       auth: sl<FirebaseAuth>(),
@@ -45,12 +81,16 @@ Future<void> init() async {
     () => ExpensesRepositoryImpl(
       firestore: sl<FirebaseFirestore>(),
       auth: sl<FirebaseAuth>(),
+      localDataSource: sl(),
+      connectivityService: sl(),
     ),
   );
   sl.registerLazySingleton<BudgetRepository>(
     () => BudgetRepositoryImpl(
       firestore: sl<FirebaseFirestore>(),
       auth: sl<FirebaseAuth>(),
+      localDataSource: sl(),
+      connectivityService: sl(),
     ),
   );
 

@@ -70,105 +70,113 @@ class _HomeScreenState extends State<HomeScreen> {
           ? Center(
               child: CircularProgressIndicator(
                   color: Theme.of(context).colorScheme.primary))
-          : CustomScrollView(
-              slivers: [
-                const SliverPadding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
-                ),
-                // Month selector
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: DatePickerButton(
-                      date: _selectedDate,
-                      themeColor: Theme.of(context).colorScheme.primary,
-                      prefix: 'Expenses for',
-                      onDateChanged: _onDateChanged,
+          : RefreshIndicator(
+              color: Theme.of(context).colorScheme.primary,
+              onRefresh: () async {
+                // 调用ViewModel的刷新方法
+                await Provider.of<ExpensesViewModel>(context, listen: false)
+                    .refreshData();
+              },
+              child: CustomScrollView(
+                slivers: [
+                  const SliverPadding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                  ),
+                  // Month selector
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: DatePickerButton(
+                        date: _selectedDate,
+                        themeColor: Theme.of(context).colorScheme.primary,
+                        prefix: 'Expenses for',
+                        onDateChanged: _onDateChanged,
+                      ),
                     ),
                   ),
-                ),
 
-                // Summary info
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Total: MYR ${totalAmount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
+                  // Summary info
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Total: MYR ${totalAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // 1) Pie chart in a fixed box
-                SliverToBoxAdapter(
-                  child: expenses.isEmpty
-                      ? SizedBox(
-                          height: height * 0.25,
-                          child: const Center(
-                            child: Text(
-                              'No expenses for this month',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
+                  // 1) Pie chart in a fixed box
+                  SliverToBoxAdapter(
+                    child: expenses.isEmpty
+                        ? SizedBox(
+                            height: height * 0.25,
+                            child: const Center(
+                              child: Text(
+                                'No expenses for this month',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          )
+                        : SizedBox(
+                            height: height * 0.25,
+                            child: ExpensePieChart(data: categoryTotals),
+                          ),
+                  ),
+
+                  // 2) Some breathing room
+                  const SliverToBoxAdapter(child: SizedBox(height: 15)),
+
+                  // 3) Legend card, auto-height 2×3 grid
+                  if (expenses.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: LegendCard(
+                          categories:
+                              categoryTotals.keys.map((e) => e.id).toList()),
+                    ),
+
+                  // 4) More breathing room
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+                  // 5) All your expense cards
+                  expenses.isEmpty
+                      ? const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: Center(
+                              child: Text(
+                                'Add your first expense by tapping the + button below',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
                               ),
                             ),
                           ),
                         )
-                      : SizedBox(
-                          height: height * 0.25,
-                          child: ExpensePieChart(data: categoryTotals),
-                        ),
-                ),
-
-                // 2) Some breathing room
-                const SliverToBoxAdapter(child: SizedBox(height: 15)),
-
-                // 3) Legend card, auto-height 2×3 grid
-                if (expenses.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: LegendCard(
-                        categories:
-                            categoryTotals.keys.map((e) => e.id).toList()),
-                  ),
-
-                // 4) More breathing room
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-                // 5) All your expense cards
-                expenses.isEmpty
-                    ? const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(
-                            child: Text(
-                              'Add your first expense by tapping the + button below',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey),
-                            ),
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) =>
+                                ExpenseCard(expense: expenses[index]),
+                            childCount: expenses.length,
                           ),
                         ),
-                      )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) =>
-                              ExpenseCard(expense: expenses[index]),
-                          childCount: expenses.length,
-                        ),
-                      ),
 
-                // 6) Padding at bottom so FAB + NavBar don't cover last card
-                const SliverToBoxAdapter(child: SizedBox(height: 90)),
-              ],
+                  // 6) Padding at bottom so FAB + NavBar don't cover last card
+                  const SliverToBoxAdapter(child: SizedBox(height: 90)),
+                ],
+              ),
             ),
 
       // 3) Floating "+" button

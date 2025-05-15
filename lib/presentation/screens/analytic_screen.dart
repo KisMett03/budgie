@@ -147,64 +147,74 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
             )
           : _errorMessage != null
               ? _buildErrorWidget()
-              : CustomScrollView(
-                  slivers: [
-                    // 顶部间距
-                    const SliverPadding(
-                      padding: EdgeInsets.only(top: 16.0),
-                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
-                    ),
+              : RefreshIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                  onRefresh: () async {
+                    // 刷新预算数据
+                    await _loadBudgetData();
+                    // 同时刷新支出数据
+                    await Provider.of<ExpensesViewModel>(context, listen: false)
+                        .refreshData();
+                  },
+                  child: CustomScrollView(
+                    slivers: [
+                      // 顶部间距
+                      const SliverPadding(
+                        padding: EdgeInsets.only(top: 16.0),
+                        sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                      ),
 
-                    // 日期选择器
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      sliver: SliverToBoxAdapter(
-                        child: DatePickerButton(
-                          date: _selectedDate,
-                          themeColor: Theme.of(context).colorScheme.primary,
-                          prefix: 'Budget for',
-                          onDateChanged: _onDateChanged,
+                      // 日期选择器
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        sliver: SliverToBoxAdapter(
+                          child: DatePickerButton(
+                            date: _selectedDate,
+                            themeColor: Theme.of(context).colorScheme.primary,
+                            prefix: 'Budget for',
+                            onDateChanged: _onDateChanged,
+                          ),
                         ),
                       ),
-                    ),
 
-                    // 预算卡片
-                    SliverPadding(
-                      padding: const EdgeInsets.all(16.0),
-                      sliver: SliverToBoxAdapter(
-                        child: Consumer<BudgetViewModel>(
-                          builder: (context, vm, _) {
-                            return BudgetCard(
-                              budget: vm.budget,
-                              onTap: () async {
-                                if (!mounted) return;
-                                Navigator.push(
-                                  context,
-                                  PageTransition(
-                                    child: AddBudgetScreen(
-                                      monthId: _currentMonthId,
+                      // 预算卡片
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16.0),
+                        sliver: SliverToBoxAdapter(
+                          child: Consumer<BudgetViewModel>(
+                            builder: (context, vm, _) {
+                              return BudgetCard(
+                                budget: vm.budget,
+                                onTap: () async {
+                                  if (!mounted) return;
+                                  Navigator.push(
+                                    context,
+                                    PageTransition(
+                                      child: AddBudgetScreen(
+                                        monthId: _currentMonthId,
+                                      ),
+                                      type: TransitionType.slideRight,
                                     ),
-                                    type: TransitionType.slideRight,
-                                  ),
-                                ).then((_) {
-                                  _loadBudgetData();
-                                });
-                              },
-                            );
-                          },
+                                  ).then((_) {
+                                    _loadBudgetData();
+                                  });
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
 
-                    // 这里可以添加其他分析内容
-                    // ...
+                      // 这里可以添加其他分析内容
+                      // ...
 
-                    // 底部填充
-                    const SliverPadding(
-                      padding: EdgeInsets.only(bottom: 80.0),
-                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
-                    ),
-                  ],
+                      // 底部填充
+                      const SliverPadding(
+                        padding: EdgeInsets.only(bottom: 80.0),
+                        sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                      ),
+                    ],
+                  ),
                 ),
       extendBody: true,
       floatingActionButton: AnimatedFloatButton(

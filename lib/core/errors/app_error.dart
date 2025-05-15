@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-class AppError implements Exception {
+abstract class AppError implements Exception {
   final String message;
   final String? code;
   final dynamic originalError;
@@ -23,16 +23,16 @@ class AppError implements Exception {
       return error;
     }
 
-    // 针对不同类型的错误进行具体处理
     if (error is Exception) {
-      return AppError(
+      return DataError(
         error.toString(),
         originalError: error,
         stackTrace: stackTrace,
       );
     }
 
-    return AppError(
+    // 对于其他未知错误，也返回DataError
+    return DataError(
       error?.toString() ?? 'Unknown error',
       originalError: error,
       stackTrace: stackTrace,
@@ -69,6 +69,10 @@ class NetworkError extends AppError {
   static NetworkError serverError() {
     return NetworkError('Server error', code: 'SERVER_ERROR');
   }
+
+  factory NetworkError.noConnection() =>
+      NetworkError('No internet connection available');
+  factory NetworkError.timeout() => NetworkError('Connection timed out');
 }
 
 /// 认证错误

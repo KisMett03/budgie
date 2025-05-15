@@ -5,16 +5,21 @@ import '../../domain/entities/user.dart' as domain;
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/utils/performance_monitor.dart';
 import '../../core/errors/app_error.dart';
+import '../../core/services/sync_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
+  final SyncService _syncService;
   domain.User? _currentUser;
   bool _isLoading = false;
   String? _error;
   StreamSubscription<domain.User?>? _authSubscription;
 
-  AuthViewModel({required AuthRepository authRepository})
-      : _authRepository = authRepository {
+  AuthViewModel({
+    required AuthRepository authRepository,
+    required SyncService syncService,
+  })  : _authRepository = authRepository,
+        _syncService = syncService {
     _initAuth();
   }
 
@@ -32,10 +37,21 @@ class AuthViewModel extends ChangeNotifier {
       // Get current user
       _currentUser = await _authRepository.getCurrentUser();
 
+      // 如果用户已登录，初始化本地数据
+      if (_currentUser != null) {
+        await _syncService.initializeLocalDataOnLogin(_currentUser!.id);
+      }
+
       // Listen for auth state changes
       _authSubscription = _authRepository.authStateChanges.listen((user) {
         debugPrint('Auth state changed: ${user?.id ?? 'Not logged in'}');
         _currentUser = user;
+
+        // 当用户登录时，初始化本地数据
+        if (user != null) {
+          _syncService.initializeLocalDataOnLogin(user.id);
+        }
+
         notifyListeners();
       }, onError: (error) {
         debugPrint('Auth state stream error: $error');
@@ -104,6 +120,9 @@ class AuthViewModel extends ChangeNotifier {
           await _authRepository.signInWithEmailAndPassword(email, password);
       _currentUser = user;
       debugPrint('Successfully signed in: ${user.id}');
+
+      // 登录成功后，初始化本地数据
+      await _syncService.initializeLocalDataOnLogin(user.id);
     } catch (e) {
       debugPrint('Sign in error: $e');
       _error = 'Failed to sign in: ${e.toString()}';
@@ -161,6 +180,9 @@ class AuthViewModel extends ChangeNotifier {
 
       debugPrint(
           'AuthViewModel: Sign-in successful - User ID: ${_currentUser!.id}');
+
+      // 登录成功后，初始化本地数据
+      await _syncService.initializeLocalDataOnLogin(_currentUser!.id);
     } catch (e) {
       debugPrint('AuthViewModel: Google sign-in error: $e');
 
@@ -226,6 +248,25 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  // 手动触发数据同步
+  Future<void> syncData() async {
+    if (_currentUser == null) return;
+
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      await _syncService.syncData();
+    } catch (e) {
+      debugPrint('Sync error: $e');
+      _error = 'Failed to sync data: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> updateProfile({String? displayName, String? photoUrl}) async {
     try {
       _isLoading = true;
@@ -250,6 +291,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  // 用于更新用户设置
   Future<void> updateUserSettings({String? currency, String? theme}) async {
     try {
       _isLoading = true;
@@ -262,7 +304,7 @@ class AuthViewModel extends ChangeNotifier {
         theme: theme,
       );
 
-      // Refresh user data after update
+      // 刷新用户数据
       _currentUser = await _authRepository.getCurrentUser();
       debugPrint('User settings updated successfully');
     } catch (e) {
