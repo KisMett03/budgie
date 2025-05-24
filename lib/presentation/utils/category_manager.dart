@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/category.dart';
 
-/// 统一的类别管理工具类
+/// Unified category management utility class
 class CategoryManager {
-  /// 类别颜色映射
+  /// Category color mapping
   static const Map<Category, Color> categoryColors = {
-    Category.food: Color(0xFFF57C00), // 橙色
-    Category.transportation: Color(0xFF3F51B5), // 靛蓝色
-    Category.rental: Color(0xFF795548), // 棕色
-    Category.utilities: Color(0xFF2196F3), // 蓝色
-    Category.shopping: Color(0xFFE91E63), // 粉红色
-    Category.entertainment: Color(0xFF9C27B0), // 紫色
-    Category.education: Color(0xFF009688), // 青色
-    Category.travel: Color(0xFF4CAF50), // 绿色
-    Category.medical: Color(0xFFE91E63), // 粉红色
-    Category.others: Color(0xFF607D8B), // 蓝灰色
+    Category.food: Color(0xFFF57C00), // Orange
+    Category.transportation: Color(0xFF3F51B5), // Indigo
+    Category.rental: Color(0xFF795548), // Brown
+    Category.utilities: Color(0xFF2196F3), // Blue
+    Category.shopping: Color(0xFFE91E63), // Pink
+    Category.entertainment: Color(0xFF9C27B0), // Purple
+    Category.education: Color(0xFF009688), // Teal
+    Category.travel: Color(0xFF4CAF50), // Green
+    Category.medical: Color(0xFFE91E63), // Pink
+    Category.others: Color(0xFF607D8B), // Blue Grey
   };
 
-  /// 类别图标映射
+  /// Category icon mapping
   static const Map<Category, IconData> categoryIcons = {
     Category.food: Icons.restaurant,
     Category.transportation: Icons.directions_car,
@@ -31,7 +31,7 @@ class CategoryManager {
     Category.others: Icons.more_horiz,
   };
 
-  /// 类别名称映射
+  /// Category name mapping
   static const Map<Category, String> categoryNames = {
     Category.food: 'Food',
     Category.transportation: 'Transportation',
@@ -45,22 +45,22 @@ class CategoryManager {
     Category.others: 'Others',
   };
 
-  /// 获取所有可用的类别
+  /// Get all available categories
   static List<Category> get allCategories => Category.values;
 
-  /// 获取指定类别的颜色
+  /// Get the color for a specified category
   static Color getColor(Category category) =>
       categoryColors[category] ?? const Color(0xFF607D8B);
 
-  /// 获取指定类别的图标
+  /// Get the icon for a specified category
   static IconData getIcon(Category category) =>
       categoryIcons[category] ?? Icons.more_horiz;
 
-  /// 获取指定类别的名称
+  /// Get the name for a specified category
   static String getName(Category category) =>
       categoryNames[category] ?? 'Unknown';
 
-  /// 获取所有类别的详细信息
+  /// Get detailed information for all categories
   static List<Map<String, dynamic>> getAllCategoriesDetails() {
     return allCategories.map((category) {
       return {
@@ -72,24 +72,24 @@ class CategoryManager {
     }).toList();
   }
 
-  /// 根据字符串ID获取类别
+  /// Get category from string ID
   static Category? getCategoryFromId(String id) {
     return CategoryExtension.fromId(id);
   }
 
-  /// 根据字符串ID获取类别颜色
+  /// Get category color from string ID
   static Color getColorFromId(String id) {
     final category = getCategoryFromId(id);
     return category != null ? getColor(category) : const Color(0xFF607D8B);
   }
 
-  /// 根据字符串ID获取类别图标
+  /// Get category icon from string ID
   static IconData getIconFromId(String id) {
     final category = getCategoryFromId(id);
     return category != null ? getIcon(category) : Icons.more_horiz;
   }
 
-  /// 根据字符串ID获取类别名称
+  /// Get category name from string ID
   static String getNameFromId(String id) {
     final category = getCategoryFromId(id);
     return category != null
@@ -97,9 +97,9 @@ class CategoryManager {
         : id[0].toUpperCase() + id.substring(1);
   }
 
-  /// 获取预算使用的类别ID列表
+  /// Get category IDs used for budgets
   static List<String> getBudgetCategoryIds() {
-    // 可以根据需要过滤或调整类别列表
+    // Can filter or adjust category list as needed
     return allCategories.map((category) => category.id).toList();
   }
 }

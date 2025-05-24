@@ -2,17 +2,18 @@ import '../../domain/entities/budget.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/user.dart';
 
+/// Abstract interface for local data source operations
 abstract class LocalDataSource {
-  // User 操作
+  // User operations
   Future<User?> getUser(String userId);
   Future<void> saveUser(User user);
 
-  // User Settings 操作
+  // User Settings operations
   Future<Map<String, dynamic>?> getUserSettings(String userId);
   Future<void> saveUserSettings(String userId, Map<String, dynamic> settings);
   Future<void> markUserSettingsAsSynced(String userId);
 
-  // Expenses 操作
+  // Expenses operations
   Future<List<Expense>> getExpenses();
   Future<void> saveExpense(Expense expense);
   Future<void> updateExpense(Expense expense);
@@ -20,13 +21,13 @@ abstract class LocalDataSource {
   Future<List<Expense>> getUnsyncedExpenses();
   Future<void> markExpenseAsSynced(String id);
 
-  // Budget 操作
+  // Budget operations
   Future<Budget?> getBudget(String monthId, String userId);
   Future<void> saveBudget(String monthId, Budget budget, String userId);
   Future<List<String>> getUnsyncedBudgetIds(String userId);
   Future<void> markBudgetAsSynced(String monthId, String userId);
 
-  // 同步操作
+  // Synchronization operations
   Future<void> addToSyncQueue(
       String entityType, String entityId, String userId, String operation);
   Future<List<Map<String, dynamic>>> getPendingSyncOperations();

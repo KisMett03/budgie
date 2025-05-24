@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_router.dart';
+
 import 'page_transition.dart';
 import '../constants/routes.dart';
 
@@ -170,20 +170,21 @@ class NavigationHelper {
   }
 
   /// Helper method to get screen widget by route name
+  /// Note: This is a placeholder implementation. In production,
+  /// you should use the actual screen widgets or route generation logic.
   static Widget _getScreenWidget(String routeName) {
-    // This is a simplified version - in a real app you might want to
-    // use the same logic as in AppRouter.generateRoute
     switch (routeName) {
       case Routes.home:
-        return Container(); // Replace with actual HomeScreen
       case Routes.settings:
-        return Container(); // Replace with actual SettingScreen
       case Routes.profile:
-        return Container(); // Replace with actual ProfileScreen
       case Routes.analytic:
-        return Container(); // Replace with actual AnalyticScreen
       case Routes.expenses:
-        return Container(); // Replace with actual AddExpenseScreen
+        // Return placeholder - actual implementation should use proper screens
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
       default:
         return const Scaffold(
           body: Center(

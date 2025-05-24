@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../../domain/entities/user.dart' as domain;
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/utils/performance_monitor.dart';
-import '../../core/errors/app_error.dart';
 import '../../core/services/sync_service.dart';
 import '../../core/services/settings_service.dart';
 import '../viewmodels/theme_viewmodel.dart';
@@ -356,7 +356,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // 手动触发数据同步
+  /// Manually trigger data synchronization
   Future<void> syncData() async {
     if (_currentUser == null) return;
 
@@ -399,7 +399,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // 用于更新用户设置
+  /// Update user settings
   Future<void> updateUserSettings({String? currency, String? theme}) async {
     try {
       _isLoading = true;
@@ -412,7 +412,7 @@ class AuthViewModel extends ChangeNotifier {
         theme: theme,
       );
 
-      // 刷新用户数据
+      // Refresh user data
       _currentUser = await _authRepository.getCurrentUser();
       debugPrint('User settings updated successfully');
     } catch (e) {

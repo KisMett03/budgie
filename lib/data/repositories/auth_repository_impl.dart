@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/user.dart' as domain;
 import '../../domain/repositories/auth_repository.dart';
 
+/// Implementation of AuthRepository using Firebase Authentication
 class AuthRepositoryImpl implements AuthRepository {
   final firebase_auth.FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
@@ -21,7 +22,7 @@ class AuthRepositoryImpl implements AuthRepository {
             ),
         _firestore = firestore ?? FirebaseFirestore.instance;
 
-  // Initialize Firebase Auth with persistence settings
+  /// Initialize Firebase Auth with persistence settings
   static firebase_auth.FirebaseAuth _initFirebaseAuth() {
     final auth = firebase_auth.FirebaseAuth.instance;
 
@@ -40,13 +41,13 @@ class AuthRepositoryImpl implements AuthRepository {
     });
   }
 
-  // Map Firebase user to domain User - handle potential null values
+  /// Map Firebase user to domain User - handle potential null values
   Future<domain.User> _mapFirebaseUserToDomain(firebase_auth.User user) async {
     final displayName = user.displayName?.isNotEmpty == true
         ? user.displayName
         : 'User ${user.uid.substring(0, 5)}';
 
-    // 获取用户设置
+    // Get user settings from Firestore
     String currency = 'MYR';
     String theme = 'light';
 

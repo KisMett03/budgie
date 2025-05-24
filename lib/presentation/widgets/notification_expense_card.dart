@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/app_theme.dart';
+
+import '../utils/category_manager.dart';
 
 class NotificationExpenseCard extends StatelessWidget {
   final Map<String, dynamic> expenseData;
@@ -8,11 +9,11 @@ class NotificationExpenseCard extends StatelessWidget {
   final VoidCallback? onReject;
 
   const NotificationExpenseCard({
-    Key? key,
+    super.key,
     required this.expenseData,
     this.onApprove,
     this.onReject,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,6 @@ class NotificationExpenseCard extends StatelessWidget {
     final merchant = expenseData['merchant']?.toString() ?? 'Unknown';
     final source = expenseData['source']?.toString() ?? 'Unknown App';
     final currency = expenseData['currency']?.toString() ?? 'MYR';
-    final category = expenseData['category']?.toString() ?? 'Auto-detected';
 
     // Parse timestamp
     final timestamp = expenseData['createdAt'] as Timestamp?;

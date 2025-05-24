@@ -20,18 +20,20 @@ import '../core/services/sync_service.dart';
 import '../core/services/notification_service.dart';
 import '../core/services/settings_service.dart';
 
+/// Service locator instance
 final sl = GetIt.instance;
 
+/// Initialize all dependencies for the application
 Future<void> init() async {
-  // 注册Firebase服务，确保全局单一实例
+  // Register Firebase services as global singletons
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() => FirebaseFirestore.instance);
   sl.registerLazySingleton(() => GoogleSignIn());
 
-  // 本地数据库
+  // Local database
   sl.registerLazySingleton(() => AppDatabase());
 
-  // 数据源
+  // Data sources
   sl.registerLazySingleton<LocalDataSource>(
     () => LocalDataSourceImpl(
       sl(),
@@ -39,15 +41,15 @@ Future<void> init() async {
     ),
   );
 
-  // 网络连接服务
+  // Network connectivity service
   sl.registerLazySingleton<ConnectivityService>(
     () => ConnectivityServiceImpl(),
   );
 
-  // 通知服务
+  // Notification service
   sl.registerLazySingleton(() => NotificationService());
 
-  // 设置服务
+  // Settings service
   sl.registerLazySingleton(() => SettingsService(
         localDataSource: sl(),
         connectivityService: sl(),
@@ -79,7 +81,7 @@ Future<void> init() async {
     () => BudgetViewModel(budgetRepository: sl()),
   );
 
-  // Repositories - 使用注入的服务
+  // Repositories - using injected services
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       auth: sl<FirebaseAuth>(),
@@ -105,7 +107,7 @@ Future<void> init() async {
     ),
   );
 
-  // 同步服务
+  // Synchronization service
   sl.registerLazySingleton(
     () => SyncService(
       localDataSource: sl(),

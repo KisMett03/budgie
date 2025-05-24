@@ -1,6 +1,0 @@
----
-description: For modifying project structures
-globs: 
-alwaysApply: false
----
-Check necessary package import, library used. Always code in full english. 

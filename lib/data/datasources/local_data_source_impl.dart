@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../domain/entities/budget.dart' as domain;
 import '../../domain/entities/expense.dart' as domain;
 import '../../domain/entities/user.dart' as domain;
 import '../../domain/entities/category.dart';
 import '../local/database/app_database.dart';
 import 'local_data_source.dart';
-import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
 
+/// Implementation of LocalDataSource using Drift database
 class LocalDataSourceImpl implements LocalDataSource {
   final AppDatabase _database;
   final Uuid _uuid = const Uuid();
@@ -17,7 +19,7 @@ class LocalDataSourceImpl implements LocalDataSource {
   LocalDataSourceImpl(this._database, {firebase_auth.FirebaseAuth? auth})
       : _auth = auth ?? firebase_auth.FirebaseAuth.instance;
 
-  // User 操作
+  // User operations
   @override
   Future<domain.User?> getUser(String userId) async {
     final userRow = await (_database.select(_database.users)
@@ -56,7 +58,7 @@ class LocalDataSourceImpl implements LocalDataSource {
     await addToSyncQueue('user', user.id, user.id, 'update');
   }
 
-  // User Settings 操作
+  // User Settings operations
   @override
   Future<Map<String, dynamic>?> getUserSettings(String userId) async {
     final userRow = await (_database.select(_database.users)
@@ -108,7 +110,7 @@ class LocalDataSourceImpl implements LocalDataSource {
         .write(const UsersCompanion(isSynced: Value(true)));
   }
 
-  // Expenses 操作
+  // Expenses operations
   @override
   Future<List<domain.Expense>> getExpenses() async {
     final expenses = await (_database.select(_database.expenses)
@@ -230,7 +232,7 @@ class LocalDataSourceImpl implements LocalDataSource {
         .write(const ExpensesCompanion(isSynced: Value(true)));
   }
 
-  // Budget 操作
+  // Budget operations
   @override
   Future<domain.Budget?> getBudget(String monthId, String userId) async {
     final budgetRow = await (_database.select(_database.budgets)
@@ -296,7 +298,7 @@ class LocalDataSourceImpl implements LocalDataSource {
         .write(const BudgetsCompanion(isSynced: Value(true)));
   }
 
-  // 同步操作
+  // Sync operations
   @override
   Future<void> addToSyncQueue(String entityType, String entityId, String userId,
       String operation) async {
@@ -336,35 +338,35 @@ class LocalDataSourceImpl implements LocalDataSource {
         .go();
   }
 
-  // 辅助方法
+  /// Helper method to get current user ID
   Future<String> _getCurrentUserId() async {
-    // 首先尝试从本地数据库获取用户
+    // First try to get user from local database
     final users = await _database.select(_database.users).get();
     if (users.isNotEmpty) {
       return users.first.id;
     }
 
-    // 如果本地数据库没有用户，尝试从Firebase获取
+    // If no user in local database, try Firebase
     final firebaseUser = _auth.currentUser;
     if (firebaseUser != null) {
-      // 获取到Firebase用户，将其保存到本地数据库
+      // Save Firebase user to local database
       final user = domain.User(
         id: firebaseUser.uid,
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
         photoUrl: firebaseUser.photoURL,
-        // 使用默认值
+        // Use default values
         currency: 'MYR',
         theme: 'light',
       );
 
-      // 保存用户到本地数据库（不需要等待完成）
+      // Save user to local database (don't wait for completion)
       saveUser(user);
 
       return firebaseUser.uid;
     }
 
-    // 如果Firebase也没有用户，则抛出异常
+    // If no user found in either location, throw exception
     throw Exception('No user found in local database or Firebase');
   }
 }

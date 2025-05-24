@@ -6,6 +6,7 @@ import '../../core/errors/app_error.dart';
 import '../datasources/local_data_source.dart';
 import '../../core/network/connectivity_service.dart';
 
+/// Implementation of BudgetRepository with offline support
 class BudgetRepositoryImpl implements BudgetRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -22,17 +23,20 @@ class BudgetRepositoryImpl implements BudgetRepository {
         _localDataSource = localDataSource,
         _connectivityService = connectivityService;
 
+  /// Gets the current user ID
   String? get _userId {
     final user = _auth.currentUser;
     return user?.uid;
   }
 
+  /// Checks if user is authenticated
   void _checkAuthentication() {
     if (_userId == null) {
       throw AuthError.unauthenticated();
     }
   }
 
+  /// Gets the Firestore document reference for a budget
   DocumentReference<Map<String, dynamic>> _budgetDoc(String monthId) {
     final userId = _userId;
     if (userId == null) {
@@ -51,20 +55,20 @@ class BudgetRepositoryImpl implements BudgetRepository {
       _checkAuthentication();
       final userId = _userId!;
 
-      // 检查网络连接
+      // Check network connectivity
       final isConnected = await _connectivityService.isConnected;
       if (!isConnected) {
-        // 离线模式：从本地数据库获取预算
+        // Offline mode: get budget from local database
         return _localDataSource.getBudget(monthId, userId);
       }
 
-      // 在线模式：从Firebase获取数据
+      // Online mode: get data from Firebase
       final doc = await _budgetDoc(monthId).get();
       if (!doc.exists) return null;
 
       final budget = Budget.fromMap(doc.data()!);
 
-      // 更新本地数据库
+      // Update local database
       await _localDataSource.saveBudget(monthId, budget, userId);
       await _localDataSource.markBudgetAsSynced(monthId, userId);
 
@@ -75,7 +79,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
       }
 
       if (e is NetworkError) {
-        // 如果是网络错误，尝试从本地获取数据
+        // If network error, try to get data from local storage
         final userId = _userId!;
         return _localDataSource.getBudget(monthId, userId);
       }
@@ -91,21 +95,21 @@ class BudgetRepositoryImpl implements BudgetRepository {
       _checkAuthentication();
       final userId = _userId!;
 
-      // 检查网络连接
+      // Check network connectivity
       final isConnected = await _connectivityService.isConnected;
 
-      // 先保存到本地数据库
+      // Save to local database first
       await _localDataSource.saveBudget(monthId, budget, userId);
 
       if (!isConnected) {
-        // 离线模式：仅保存在本地，等待后续同步
+        // Offline mode: save locally only, sync later
         return;
       }
 
-      // 在线模式：保存到Firebase
+      // Online mode: save to Firebase
       await _budgetDoc(monthId).set(budget.toMap());
 
-      // 标记为已同步
+      // Mark as synced
       await _localDataSource.markBudgetAsSynced(monthId, userId);
     } catch (e, stackTrace) {
       if (e is AuthError) {
@@ -113,7 +117,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
       }
 
       if (e is NetworkError) {
-        // 网络错误时已保存到本地，不需要其他处理
+        // Network error but already saved locally, no additional handling needed
         return;
       }
 

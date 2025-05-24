@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../data/datasources/local_data_source.dart';
 import '../../domain/repositories/expenses_repository.dart';
 import '../../domain/repositories/budget_repository.dart';
-import '../../domain/entities/expense.dart';
-import '../../domain/entities/budget.dart';
 import '../network/connectivity_service.dart';
-import '../../core/errors/app_error.dart';
-import 'package:flutter/foundation.dart';
+import '../errors/app_error.dart';
 
+/// Service responsible for synchronizing local data with Firebase
 class SyncService {
   final LocalDataSource _localDataSource;
   final ExpensesRepository _expensesRepository;
@@ -29,17 +29,18 @@ class SyncService {
         _budgetRepository = budgetRepository,
         _connectivityService = connectivityService,
         _auth = auth ?? firebase_auth.FirebaseAuth.instance {
-    // 监听连接状态变化，当连接恢复时自动同步
+    // Listen for connectivity changes and auto-sync when connection is restored
     _connectivityService.connectionStatusStream.listen((isConnected) {
       if (isConnected) {
         syncData();
       }
     });
 
-    // 定期尝试同步（每15分钟）
+    // Start periodic sync (every 15 minutes)
     _startPeriodicSync();
   }
 
+  /// Start periodic synchronization timer
   void _startPeriodicSync() {
     _syncTimer?.cancel();
     _syncTimer = Timer.periodic(const Duration(minutes: 15), (_) async {
@@ -50,25 +51,25 @@ class SyncService {
     });
   }
 
-  // 手动触发同步
+  /// Manually trigger data synchronization
   Future<void> syncData() async {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
-        return; // 用户未登录，不执行同步
+        return; // User not logged in, skip sync
       }
 
       final userId = currentUser.uid;
       final isConnected = await _connectivityService.isConnected;
       if (!isConnected) {
-        return; // 无网络连接，不执行同步
+        return; // No network connection, skip sync
       }
 
-      // 获取队列中的所有操作
+      // Get all pending operations from queue
       final pendingOperations =
           await _localDataSource.getPendingSyncOperations();
 
-      // 按照操作时间顺序处理
+      // Process operations in chronological order
       for (final operation in pendingOperations) {
         final entityType = operation['entityType'] as String;
         final entityId = operation['entityId'] as String;
@@ -76,40 +77,44 @@ class SyncService {
         final operationType = operation['operation'] as String;
         final syncId = operation['id'] as int;
 
-        // 验证操作是否属于当前用户
+        // Verify operation belongs to current user
         if (opUserId != userId) {
           await _localDataSource.clearSyncOperation(syncId);
           continue;
         }
 
         try {
-          // 根据实体类型和操作类型处理同步
-          if (entityType == 'expense') {
-            await _syncExpense(entityId, operationType);
-          } else if (entityType == 'budget') {
-            await _syncBudget(entityId, userId, operationType);
-          } else if (entityType == 'user_settings') {
-            await _syncUserSettings(userId, operationType);
+          // Handle sync based on entity type and operation type
+          switch (entityType) {
+            case 'expense':
+              await _syncExpense(entityId, operationType);
+              break;
+            case 'budget':
+              await _syncBudget(entityId, userId, operationType);
+              break;
+            case 'user_settings':
+              await _syncUserSettings(userId, operationType);
+              break;
           }
 
-          // 标记此操作已完成
+          // Mark operation as completed
           await _localDataSource.clearSyncOperation(syncId);
         } catch (e) {
-          // 如果是网络错误，终止同步过程
+          // If network error, stop sync process
           if (e is NetworkError) {
             break;
           }
-          // 其他错误继续处理下一个操作
+          // For other errors, continue with next operation
           continue;
         }
       }
     } catch (e) {
-      // 处理同步过程中的错误
-      debugPrint('同步出错: $e');
+      // Handle sync process errors
+      debugPrint('Sync error: $e');
     }
   }
 
-  // 同步单个支出记录
+  /// Sync individual expense record
   Future<void> _syncExpense(String expenseId, String operation) async {
     try {
       switch (operation) {
@@ -135,12 +140,12 @@ class SyncService {
       if (e is NetworkError) {
         rethrow;
       }
-      // 其他错误，记录但继续处理
-      debugPrint('同步支出记录错误: $e');
+      // Log other errors but continue processing
+      debugPrint('Expense sync error: $e');
     }
   }
 
-  // 同步单个预算
+  /// Sync individual budget
   Future<void> _syncBudget(
       String monthId, String userId, String operation) async {
     try {
@@ -155,11 +160,11 @@ class SyncService {
       if (e is NetworkError) {
         rethrow;
       }
-      debugPrint('同步预算错误: $e');
+      debugPrint('Budget sync error: $e');
     }
   }
 
-  // 同步用户设置
+  /// Sync user settings
   Future<void> _syncUserSettings(String userId, String operation) async {
     try {
       if (operation == 'update') {
@@ -183,26 +188,26 @@ class SyncService {
       if (e is NetworkError) {
         rethrow;
       }
-      debugPrint('同步用户设置错误: $e');
+      debugPrint('User settings sync error: $e');
     }
   }
 
-  // 当用户登录时初始化本地数据
+  /// Initialize local data when user logs in
   Future<void> initializeLocalDataOnLogin(String userId) async {
     try {
       final isConnected = await _connectivityService.isConnected;
       if (!isConnected) {
-        return; // 无网络连接时不初始化
+        return; // Don't initialize when offline
       }
 
-      // 获取远程支出数据并存入本地
+      // Get remote expense data and store locally
       final expenses = await _expensesRepository.getExpenses();
       for (final expense in expenses) {
         await _localDataSource.saveExpense(expense);
         await _localDataSource.markExpenseAsSynced(expense.id);
       }
 
-      // 获取当前月份预算
+      // Get current month budget
       final currentMonthId = _getCurrentMonthId();
       final budget = await _budgetRepository.getBudget(currentMonthId);
       if (budget != null) {
@@ -210,16 +215,17 @@ class SyncService {
         await _localDataSource.markBudgetAsSynced(currentMonthId, userId);
       }
     } catch (e) {
-      debugPrint('初始化本地数据错误: $e');
+      debugPrint('Local data initialization error: $e');
     }
   }
 
-  // 辅助方法：获取当前月份ID（格式：YYYY-MM）
+  /// Helper method: Get current month ID (format: YYYY-MM)
   String _getCurrentMonthId() {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
 
+  /// Dispose resources
   void dispose() {
     _syncTimer?.cancel();
   }

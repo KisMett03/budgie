@@ -1,21 +1,39 @@
 import 'category.dart';
 
+/// Available payment methods for expenses
 enum PaymentMethod {
   creditCard,
   cash,
   eWallet,
 }
 
+/// Expense entity representing a financial expense record
 class Expense {
+  /// Unique identifier for the expense
   final String id;
+
+  /// Brief description or title of the expense
   final String remark;
+
+  /// Amount spent
   final double amount;
+
+  /// Date when the expense occurred
   final DateTime date;
+
+  /// Category of the expense
   final Category category;
+
+  /// Payment method used
   final PaymentMethod method;
+
+  /// Optional detailed description
   final String? description;
+
+  /// Currency code (default: MYR)
   final String currency;
 
+  /// Creates a new Expense instance
   Expense({
     required this.id,
     required this.remark,
@@ -27,6 +45,7 @@ class Expense {
     this.currency = 'MYR',
   });
 
+  /// Creates a copy of this Expense with the given fields replaced with new values
   Expense copyWith({
     String? id,
     String? remark,

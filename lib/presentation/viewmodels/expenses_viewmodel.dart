@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,7 +13,7 @@ import '../../core/services/budget_calculation_service.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/services/settings_service.dart';
 import 'dart:async';
-import 'dart:ui';
+import '../utils/category_manager.dart';
 
 class ExpensesViewModel extends ChangeNotifier {
   final ExpensesRepository _expensesRepository;

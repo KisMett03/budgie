@@ -115,16 +115,10 @@ class BudgieApp extends StatelessWidget {
       title: 'Budgie',
       theme: themeViewModel.theme,
       debugShowCheckedModeBanner: false,
-
-      // 添加导航键
       navigatorKey: navigatorKey,
-
-      // 注册路由观察者
       navigatorObservers: [
         fabRouteObserver,
       ],
-
-      // 定义主要路由
       routes: {
         Routes.home: (context) => ChangeNotifierProvider(
               create: (_) => di.sl<ExpensesViewModel>(),
@@ -134,11 +128,7 @@ class BudgieApp extends StatelessWidget {
         Routes.settings: (context) => const SettingScreen(),
         Routes.profile: (context) => const ProfileScreen(),
       },
-
-      // 使用自定义路由生成器处理其他路由
       onGenerateRoute: AppRouter.generateRoute,
-
-      // 初始路由
       initialRoute: Routes.splash,
     );
   }

@@ -4,10 +4,10 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-// 导入数据库表
+// Import database tables
 part 'app_database.g.dart';
 
-// 定义 Expenses 表
+/// Expenses table definition
 class Expenses extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();
@@ -25,7 +25,7 @@ class Expenses extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-// 定义 Budgets 表
+/// Budgets table definition
 class Budgets extends Table {
   TextColumn get monthId => text()();
   TextColumn get userId => text()();
@@ -39,17 +39,18 @@ class Budgets extends Table {
   Set<Column> get primaryKey => {monthId, userId};
 }
 
-// 定义 SyncQueue 表，用于跟踪需要同步的操作
+/// Sync queue table for tracking operations that need to be synchronized
 class SyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get entityType => text()(); // 'expense' 或 'budget'
+  TextColumn get entityType =>
+      text()(); // 'expense', 'budget', or 'user_settings'
   TextColumn get entityId => text()();
   TextColumn get userId => text()();
   TextColumn get operation => text()(); // 'add', 'update', 'delete'
   DateTimeColumn get timestamp => dateTime()();
 }
 
-// 定义 Users 表，用于存储用户信息
+/// Users table for storing user information and settings
 class Users extends Table {
   TextColumn get id => text()();
   TextColumn get email => text().nullable()();
@@ -69,6 +70,7 @@ class Users extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Create database connection
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
@@ -77,6 +79,7 @@ LazyDatabase _openConnection() {
   });
 }
 
+/// Main application database
 @DriftDatabase(tables: [Expenses, Budgets, SyncQueue, Users])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());

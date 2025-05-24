@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 
 /// 性能监控工具类
 ///

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/category.dart';
 import 'category_manager.dart';
 
-/// 应用主题管理类
+/// Application theme management class
 class AppTheme {
-  /// 亮色主题颜色
+  /// Light theme colors
   static const Color primaryColor = Color(0xFFF57C00);
   static const Color secondaryColor = Color(0xFF2196F3);
   static const Color errorColor = Color(0xFFE91E63);
@@ -21,7 +21,7 @@ class AppTheme {
   static const Color appBarBackgroundLight = Color(0xFFF5F5F5);
   static const Color appBarForegroundLight = Color(0xFF333333);
 
-  /// 暗色主题颜色
+  /// Dark theme colors
   static const Color primaryColorDark = Color(0xFFF57C00);
   static const Color secondaryColorDark = Color(0xFF64B5F6);
   static const Color errorColorDark = Color(0xFFF06292);
@@ -37,20 +37,20 @@ class AppTheme {
   static const Color appBarBackgroundDark = Color(0xFF1D1D1D);
   static const Color appBarForegroundDark = Color(0xFFFFFFFF);
 
-  /// 字体
+  /// Font family
   static const String fontFamily = 'Lexend';
 
-  /// 圆角半径
+  /// Border radius values
   static const double borderRadius = 15.0;
   static const double smallBorderRadius = 8.0;
   static const double largeBorderRadius = 25.0;
 
-  /// 获取类别颜色
+  /// Get category color
   static Color getCategoryColor(Category category) {
     return CategoryManager.getColor(category);
   }
 
-  /// 获取应用的亮色主题
+  /// Get the application's light theme
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
@@ -143,7 +143,7 @@ class AppTheme {
     );
   }
 
-  /// 获取应用的暗色主题
+  /// Get the application's dark theme
   static ThemeData get darkTheme {
     return ThemeData.dark().copyWith(
       brightness: Brightness.dark,

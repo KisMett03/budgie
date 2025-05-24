@@ -1,17 +1,17 @@
-# Budgie App - 组件库
+# Budgie App - Component Library
 
-本文档总结了Budgie应用中的可重用组件和工具类，以帮助开发者更好地理解和使用这些组件。
+This document summarizes the reusable components and utility classes in the Budgie application to help developers better understand and use these components.
 
-## 工具类
+## Utility Classes
 
 ### AppTheme
 
 `lib/presentation/utils/app_theme.dart`
 
-集中管理应用的主题样式，包括颜色、字体、圆角半径等。提供了亮色和暗色两种主题。
+Centrally manages the application's theme styles, including colors, fonts, border radius, etc. Provides both light and dark themes.
 
 ```dart
-// 使用示例
+// Usage example
 final primaryColor = AppTheme.primaryColor;
 final themeData = AppTheme.lightTheme;
 ```
@@ -20,10 +20,10 @@ final themeData = AppTheme.lightTheme;
 
 `lib/presentation/utils/app_constants.dart`
 
-集中管理应用中的常量，包括货币列表、支付方式、日期格式、消息文本等。
+Centrally manages constants in the application, including currency lists, payment methods, date formats, message texts, etc.
 
 ```dart
-// 使用示例
+// Usage example
 final currencies = AppConstants.currencies;
 final dateFormat = AppConstants.dateFormat;
 ```
@@ -32,24 +32,24 @@ final dateFormat = AppConstants.dateFormat;
 
 `lib/presentation/utils/category_manager.dart`
 
-统一的类别管理工具类，提供类别相关的颜色、图标、名称等属性和方法。
+Unified category management utility class that provides category-related colors, icons, names, and other properties and methods.
 
 ```dart
-// 使用示例
+// Usage example
 final color = CategoryManager.getColor(Category.food);
 final icon = CategoryManager.getIcon(Category.food);
 final name = CategoryManager.getName(Category.food);
 
-// 从ID获取类别
+// Get category from ID
 final category = CategoryManager.getCategoryFromId('food');
 
-// 获取所有类别
+// Get all categories
 final allCategories = CategoryManager.allCategories;
 ```
 
-## 类别系统
+## Category System
 
-应用使用统一的类别系统，定义在 `lib/domain/entities/category.dart` 文件中：
+The application uses a unified category system, defined in the `lib/domain/entities/category.dart` file:
 
 ```dart
 enum Category {
@@ -66,40 +66,40 @@ enum Category {
 }
 ```
 
-类别系统的主要优点：
-- 统一管理所有类别的颜色、图标和名称
-- 易于添加、移除或修改类别
-- 支持在不同场景下过滤类别
-- 通过字符串ID支持在预算和其他需要字符串键的地方使用
+Main advantages of the category system:
+- Unified management of all category colors, icons, and names
+- Easy to add, remove, or modify categories
+- Supports filtering categories in different scenarios
+- Supports use in budgets and other places that require string keys through string IDs
 
-详细说明请参考 `lib/domain/entities/README.md`。
+For detailed information, please refer to `lib/domain/entities/README.md`.
 
-## 可重用组件
+## Reusable Components
 
 ### CustomTextField
 
 `lib/presentation/widgets/custom_text_field.dart`
 
-通用的文本输入字段组件，支持多种类型的输入，如普通文本、数字、货币等。
+Universal text input field component that supports multiple types of input, such as plain text, numbers, currency, etc.
 
 ```dart
-// 基本使用
+// Basic usage
 CustomTextField(
-  labelText: '标签',
+  labelText: 'Label',
   prefixIcon: Icons.person,
   isRequired: true,
 )
 
-// 数字输入
+// Number input
 CustomTextField.number(
-  labelText: '金额',
+  labelText: 'Amount',
   allowDecimal: true,
   isRequired: true,
 )
 
-// 货币输入
+// Currency input
 CustomTextField.currency(
-  labelText: '预算',
+  labelText: 'Budget',
   currencySymbol: 'MYR',
   isRequired: true,
 )
@@ -109,13 +109,13 @@ CustomTextField.currency(
 
 `lib/presentation/widgets/custom_dropdown_field.dart`
 
-通用的下拉选择器组件，可用于选择货币、支付方式等。
+Universal dropdown selector component that can be used to select currency, payment methods, etc.
 
 ```dart
 CustomDropdownField<String>(
   value: selectedValue,
   items: itemsList,
-  labelText: '标签',
+  labelText: 'Label',
   onChanged: (value) => setState(() => selectedValue = value!),
   itemLabelBuilder: (item) => item,
   prefixIcon: Icons.payment,
@@ -126,7 +126,7 @@ CustomDropdownField<String>(
 
 `lib/presentation/widgets/date_time_picker_field.dart`
 
-日期和时间选择器组件，提供日期和时间的选择功能，以及"当前时间"按钮。
+Date and time picker component that provides date and time selection functionality, as well as a "Current Time" button.
 
 ```dart
 DateTimePickerField(
@@ -141,13 +141,13 @@ DateTimePickerField(
 
 `lib/presentation/widgets/category_selector.dart`
 
-类别选择器组件，用于选择类别，显示类别图标和名称。
+Category selector component used to select categories, displaying category icons and names.
 
 ```dart
 CategorySelector(
   selectedCategory: selectedCategory,
   onCategorySelected: (category) => setState(() => selectedCategory = category),
-  // 可选：过滤类别
+  // Optional: filter categories
   categories: [Category.food, Category.entertainment, Category.others],
 )
 ```
@@ -156,12 +156,12 @@ CategorySelector(
 
 `lib/presentation/widgets/submit_button.dart`
 
-提交按钮组件，支持加载状态和图标。
+Submit button component that supports loading states and icons.
 
 ```dart
 SubmitButton(
-  text: '保存',
-  loadingText: '保存中...',
+  text: 'Save',
+  loadingText: 'Saving...',
   isLoading: isSubmitting,
   onPressed: submit,
   icon: Icons.save,
@@ -172,48 +172,48 @@ SubmitButton(
 
 `lib/presentation/widgets/custom_card.dart`
 
-自定义卡片组件，提供一致的卡片样式，支持点击事件、标题和操作按钮。
+Custom card component that provides consistent card styling, supports click events, titles, and action buttons.
 
 ```dart
-// 基本卡片
+// Basic card
 CustomCard(
-  child: Text('内容'),
-  onTap: () => print('点击了卡片'),
+  child: Text('Content'),
+  onTap: () => print('Card clicked'),
 )
 
-// 带标题的卡片
+// Card with title
 CustomCard.withTitle(
-  title: '标题',
+  title: 'Title',
   icon: Icons.info,
-  child: Text('内容'),
+  child: Text('Content'),
 )
 
-// 带操作按钮的卡片
+// Card with action button
 CustomCard.withAction(
-  child: Text('内容'),
-  actionText: '查看更多',
-  onActionPressed: () => print('点击了操作按钮'),
+  child: Text('Content'),
+  actionText: 'View More',
+  onActionPressed: () => print('Action button clicked'),
 )
 ```
 
-## 示例页面
+## Example Pages
 
 ### AddExpenseScreen
 
 `lib/presentation/screens/add_expense_screen.dart`
 
-添加支出页面，展示了如何使用各种可重用组件构建表单页面。
+Add expense page that demonstrates how to use various reusable components to build form pages.
 
 ### AddBudgetScreen
 
 `lib/presentation/screens/add_budget_screen.dart`
 
-添加预算页面，展示了如何使用各种可重用组件构建表单页面，以及如何使用ValueNotifier管理状态。
+Add budget page that demonstrates how to use various reusable components to build form pages, and how to use ValueNotifier to manage state.
 
-## 使用建议
+## Usage Guidelines
 
-1. 优先使用可重用组件，而不是重新创建类似功能的组件
-2. 遵循应用的主题和样式指南，使用AppTheme中定义的颜色和样式
-3. 使用AppConstants中定义的常量，而不是硬编码字符串
-4. 使用CategoryManager管理所有类别相关的操作
-5. 如果需要创建新的可重用组件，请遵循现有组件的设计模式和命名规范 
+1. Prioritize using reusable components instead of recreating similar functionality
+2. Follow the application's theme and style guidelines, using colors and styles defined in AppTheme
+3. Use constants defined in AppConstants instead of hardcoding strings
+4. Use CategoryManager to manage all category-related operations
+5. If you need to create new reusable components, please follow the design patterns and naming conventions of existing components 

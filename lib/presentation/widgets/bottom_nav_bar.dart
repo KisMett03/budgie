@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/routes.dart';
-import '../../core/router/app_router.dart';
-import '../../core/router/page_transition.dart';
-import '../../core/router/navigation_helper.dart';
+import '../utils/app_theme.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -144,53 +143,12 @@ class BottomNavBar extends StatelessWidget {
 
   void _navigateWithSmoothTransition(
       BuildContext context, int targetIndex, String route) {
-    // Determine transition type based on navigation pattern
-    TransitionType transitionType;
-    Duration duration;
-    Curve curve;
-
-    // Calculate navigation direction
+    // Calculate navigation direction for potential future use
     final isMovingRight = targetIndex > currentIndex;
     final distance = (targetIndex - currentIndex).abs();
 
-    // Choose transition based on target screen and direction
-    switch (targetIndex) {
-      case 0: // Home
-        transitionType = TransitionType.smoothSlideRight;
-        duration = const Duration(milliseconds: 350);
-        curve = Curves.easeInOutCubic;
-        break;
-      case 1: // Analytics
-        transitionType = TransitionType.smoothFadeSlide;
-        duration = const Duration(milliseconds: 400);
-        curve = Curves.easeOutQuart;
-        break;
-      case 2: // Settings
-        transitionType = TransitionType.materialPageRoute;
-        duration = const Duration(milliseconds: 350);
-        curve = Curves.fastOutSlowIn;
-        break;
-      case 3: // Profile
-        transitionType = TransitionType.smoothScale;
-        duration = const Duration(milliseconds: 450);
-        curve = Curves.easeInOutBack;
-        break;
-      default:
-        // Fallback based on direction
-        transitionType = isMovingRight
-            ? TransitionType.smoothSlideRight
-            : TransitionType.smoothSlideLeft;
-        duration = const Duration(milliseconds: 350);
-        curve = Curves.easeInOutCubic;
-    }
-
-    // Adjust duration based on distance for larger jumps
-    if (distance > 1) {
-      duration =
-          Duration(milliseconds: duration.inMilliseconds + (distance * 50));
-    }
-
-    // Navigate using the chosen transition
+    // Navigate using standard route replacement
+    // Note: Custom transitions are handled by the app router
     Navigator.pushReplacementNamed(
       context,
       route,

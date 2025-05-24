@@ -1,4 +1,4 @@
-/// 定义应用中所有可用的类别
+/// Defines all available categories in the application
 enum Category {
   food,
   transportation,
@@ -12,14 +12,14 @@ enum Category {
   others,
 }
 
-/// 类别相关扩展方法
+/// Category-related extension methods
 extension CategoryExtension on Category {
-  /// 获取类别的字符串标识符
+  /// Gets the string identifier for the category
   String get id {
     return toString().split('.').last;
   }
 
-  /// 从字符串ID创建类别
+  /// Creates a category from a string ID
   static Category? fromId(String id) {
     try {
       return Category.values.firstWhere(
