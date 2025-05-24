@@ -56,6 +56,58 @@ class LocalDataSourceImpl implements LocalDataSource {
     await addToSyncQueue('user', user.id, user.id, 'update');
   }
 
+  // User Settings 操作
+  @override
+  Future<Map<String, dynamic>?> getUserSettings(String userId) async {
+    final userRow = await (_database.select(_database.users)
+          ..where((tbl) => tbl.id.equals(userId)))
+        .getSingleOrNull();
+
+    if (userRow == null) {
+      return null;
+    }
+
+    return {
+      'currency': userRow.currency,
+      'theme': userRow.theme,
+      'settings': {
+        'allowNotification': userRow.allowNotification,
+        'autoBudget': userRow.autoBudget,
+        'improveAccuracy': userRow.improveAccuracy,
+      },
+    };
+  }
+
+  @override
+  Future<void> saveUserSettings(
+      String userId, Map<String, dynamic> settings) async {
+    final settingsMap = settings['settings'] as Map<String, dynamic>? ?? {};
+
+    await _database.into(_database.users).insertOnConflictUpdate(
+          UsersCompanion.insert(
+            id: userId,
+            currency: Value(settings['currency'] as String? ?? 'MYR'),
+            theme: Value(settings['theme'] as String? ?? 'dark'),
+            allowNotification:
+                Value(settingsMap['allowNotification'] as bool? ?? true),
+            autoBudget: Value(settingsMap['autoBudget'] as bool? ?? false),
+            improveAccuracy:
+                Value(settingsMap['improveAccuracy'] as bool? ?? false),
+            lastModified: DateTime.now(),
+            isSynced: const Value(false),
+          ),
+        );
+
+    await addToSyncQueue('user_settings', userId, userId, 'update');
+  }
+
+  @override
+  Future<void> markUserSettingsAsSynced(String userId) async {
+    await (_database.update(_database.users)
+          ..where((tbl) => tbl.id.equals(userId)))
+        .write(const UsersCompanion(isSynced: Value(true)));
+  }
+
   // Expenses 操作
   @override
   Future<List<domain.Expense>> getExpenses() async {

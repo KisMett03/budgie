@@ -56,7 +56,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => di.sl<AuthViewModel>()),
           ChangeNotifierProvider(create: (_) => di.sl<ExpensesViewModel>()),
           ChangeNotifierProvider(create: (_) => di.sl<BudgetViewModel>()),
-          ChangeNotifierProvider(create: (_) => ThemeViewModel()),
+          ChangeNotifierProvider.value(value: di.sl<ThemeViewModel>()),
           // TODO: add more providers here as you build out other features
         ],
         child: const BudgieApp(),

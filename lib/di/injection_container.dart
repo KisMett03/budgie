@@ -11,11 +11,14 @@ import '../domain/repositories/budget_repository.dart';
 import '../presentation/viewmodels/auth_viewmodel.dart';
 import '../presentation/viewmodels/expenses_viewmodel.dart';
 import '../presentation/viewmodels/budget_viewmodel.dart';
+import '../presentation/viewmodels/theme_viewmodel.dart';
 import '../data/local/database/app_database.dart';
 import '../data/datasources/local_data_source.dart';
 import '../data/datasources/local_data_source_impl.dart';
 import '../core/network/connectivity_service.dart';
 import '../core/services/sync_service.dart';
+import '../core/services/notification_service.dart';
+import '../core/services/settings_service.dart';
 
 final sl = GetIt.instance;
 
@@ -41,31 +44,37 @@ Future<void> init() async {
     () => ConnectivityServiceImpl(),
   );
 
-  // 同步服务
-  sl.registerLazySingleton(
-    () => SyncService(
-      localDataSource: sl(),
-      expensesRepository: sl(),
-      budgetRepository: sl(),
-      connectivityService: sl(),
-      auth: sl(),
-    ),
-  );
+  // 通知服务
+  sl.registerLazySingleton(() => NotificationService());
 
-  // ViewModels
+  // 设置服务
+  sl.registerLazySingleton(() => SettingsService(
+        localDataSource: sl(),
+        connectivityService: sl(),
+      ));
+
+  // ViewModels - Register ThemeViewModel as singleton first
+  sl.registerLazySingleton(() => ThemeViewModel());
+
+  // Register AuthViewModel as factory with proper dependencies
   sl.registerFactory(
     () => AuthViewModel(
       authRepository: sl(),
       syncService: sl(),
+      themeViewModel: sl(),
+      settingsService: sl(),
     ),
   );
+
   sl.registerFactory(
     () => ExpensesViewModel(
       expensesRepository: sl(),
       budgetRepository: sl(),
       connectivityService: sl(),
+      settingsService: sl(),
     ),
   );
+
   sl.registerFactory(
     () => BudgetViewModel(budgetRepository: sl()),
   );
@@ -77,6 +86,7 @@ Future<void> init() async {
       googleSignIn: sl<GoogleSignIn>(),
     ),
   );
+
   sl.registerLazySingleton<ExpensesRepository>(
     () => ExpensesRepositoryImpl(
       firestore: sl<FirebaseFirestore>(),
@@ -85,12 +95,24 @@ Future<void> init() async {
       connectivityService: sl(),
     ),
   );
+
   sl.registerLazySingleton<BudgetRepository>(
     () => BudgetRepositoryImpl(
       firestore: sl<FirebaseFirestore>(),
       auth: sl<FirebaseAuth>(),
       localDataSource: sl(),
       connectivityService: sl(),
+    ),
+  );
+
+  // 同步服务
+  sl.registerLazySingleton(
+    () => SyncService(
+      localDataSource: sl(),
+      expensesRepository: sl(),
+      budgetRepository: sl(),
+      connectivityService: sl(),
+      auth: sl(),
     ),
   );
 

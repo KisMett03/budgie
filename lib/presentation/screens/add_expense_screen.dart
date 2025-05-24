@@ -10,6 +10,8 @@ import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/date_time_picker_field.dart';
 import '../../core/errors/app_error.dart';
+import '../../core/services/settings_service.dart';
+import '../../di/injection_container.dart' as di;
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({Key? key}) : super(key: key);
@@ -23,45 +25,51 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   bool _isSubmitting = false;
 
   // 使用懒加载和缓存优化
-  final ValueNotifier<String> _currency = ValueNotifier<String>('MYR');
+  final _currency = ValueNotifier<String>('MYR');
   final _amountController = TextEditingController();
   final _remarkController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final ValueNotifier<DateTime> _selectedDateTime =
       ValueNotifier<DateTime>(DateTime.now());
   final ValueNotifier<Category> _selectedCategory =
       ValueNotifier<Category>(Category.food);
-  final ValueNotifier<String> _paymentMethod =
-      ValueNotifier<String>('Credit Card');
+  final ValueNotifier<String> _selectedPaymentMethod =
+      ValueNotifier<String>('Cash');
   final ValueNotifier<String> _recurring = ValueNotifier<String>('One-time');
+
+  // Get services
+  final _settingsService = di.sl<SettingsService>();
+
+  // Payment method mapping
+  final Map<String, PaymentMethod> _paymentMethodMap = {
+    'Credit Card': PaymentMethod.creditCard,
+    'Cash': PaymentMethod.cash,
+    'e-Wallet': PaymentMethod.eWallet,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize currency from settings service
+    _currency.value = _settingsService.currency;
+  }
 
   @override
   void dispose() {
     // 释放所有controller和notifier
     _amountController.dispose();
     _remarkController.dispose();
+    _descriptionController.dispose();
     _currency.dispose();
     _selectedDateTime.dispose();
     _selectedCategory.dispose();
-    _paymentMethod.dispose();
+    _selectedPaymentMethod.dispose();
     _recurring.dispose();
     super.dispose();
   }
 
   void _setCurrentDateTime() {
     _selectedDateTime.value = DateTime.now();
-  }
-
-  // 优化支付方式转换
-  PaymentMethod _getPaymentMethodEnum(String method) {
-    switch (method) {
-      case 'Credit Card':
-        return PaymentMethod.creditCard;
-      case 'e-Wallet':
-        return PaymentMethod.eWallet;
-      case 'Cash':
-      default:
-        return PaymentMethod.cash;
-    }
   }
 
   // 专门用作VoidCallback的方法
@@ -84,7 +92,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           amount: double.parse(_amountController.text),
           date: _selectedDateTime.value,
           category: _selectedCategory.value,
-          method: _getPaymentMethodEnum(_paymentMethod.value),
+          method: _getPaymentMethodEnum(_selectedPaymentMethod.value),
           description: _recurring.value,
           currency: _currency.value,
         );
@@ -236,15 +244,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                 // 支付方式选择
                 ValueListenableBuilder<String>(
-                  valueListenable: _paymentMethod,
-                  builder: (context, paymentMethod, _) {
+                  valueListenable: _selectedPaymentMethod,
+                  builder: (context, selectedPaymentMethod, _) {
                     return CustomDropdownField<String>(
-                      value: paymentMethod,
+                      value: selectedPaymentMethod,
                       items: AppConstants.paymentMethods,
                       labelText: 'Payment Method',
                       onChanged: (value) {
                         if (value != null) {
-                          _paymentMethod.value = value;
+                          _selectedPaymentMethod.value = value;
                         }
                       },
                       itemLabelBuilder: (item) => item,
@@ -333,5 +341,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ),
       ),
     );
+  }
+
+  PaymentMethod _getPaymentMethodEnum(String methodString) {
+    return _paymentMethodMap[methodString] ?? PaymentMethod.cash;
   }
 }

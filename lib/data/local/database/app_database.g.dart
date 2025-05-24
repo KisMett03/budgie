@@ -1319,7 +1319,37 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       'theme', aliasedName, false,
       type: DriftSqlType.string,
       requiredDuringInsert: false,
-      defaultValue: const Constant('light'));
+      defaultValue: const Constant('dark'));
+  static const VerificationMeta _allowNotificationMeta =
+      const VerificationMeta('allowNotification');
+  @override
+  late final GeneratedColumn<bool> allowNotification = GeneratedColumn<bool>(
+      'allow_notification', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("allow_notification" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _autoBudgetMeta =
+      const VerificationMeta('autoBudget');
+  @override
+  late final GeneratedColumn<bool> autoBudget = GeneratedColumn<bool>(
+      'auto_budget', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("auto_budget" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _improveAccuracyMeta =
+      const VerificationMeta('improveAccuracy');
+  @override
+  late final GeneratedColumn<bool> improveAccuracy = GeneratedColumn<bool>(
+      'improve_accuracy', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("improve_accuracy" IN (0, 1))'),
+      defaultValue: const Constant(false));
   static const VerificationMeta _lastModifiedMeta =
       const VerificationMeta('lastModified');
   @override
@@ -1344,6 +1374,9 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         photoUrl,
         currency,
         theme,
+        allowNotification,
+        autoBudget,
+        improveAccuracy,
         lastModified,
         isSynced
       ];
@@ -1384,6 +1417,24 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       context.handle(
           _themeMeta, theme.isAcceptableOrUnknown(data['theme']!, _themeMeta));
     }
+    if (data.containsKey('allow_notification')) {
+      context.handle(
+          _allowNotificationMeta,
+          allowNotification.isAcceptableOrUnknown(
+              data['allow_notification']!, _allowNotificationMeta));
+    }
+    if (data.containsKey('auto_budget')) {
+      context.handle(
+          _autoBudgetMeta,
+          autoBudget.isAcceptableOrUnknown(
+              data['auto_budget']!, _autoBudgetMeta));
+    }
+    if (data.containsKey('improve_accuracy')) {
+      context.handle(
+          _improveAccuracyMeta,
+          improveAccuracy.isAcceptableOrUnknown(
+              data['improve_accuracy']!, _improveAccuracyMeta));
+    }
     if (data.containsKey('last_modified')) {
       context.handle(
           _lastModifiedMeta,
@@ -1417,6 +1468,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}currency'])!,
       theme: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}theme'])!,
+      allowNotification: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}allow_notification'])!,
+      autoBudget: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}auto_budget'])!,
+      improveAccuracy: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}improve_accuracy'])!,
       lastModified: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}last_modified'])!,
       isSynced: attachedDatabase.typeMapping
@@ -1437,6 +1494,9 @@ class User extends DataClass implements Insertable<User> {
   final String? photoUrl;
   final String currency;
   final String theme;
+  final bool allowNotification;
+  final bool autoBudget;
+  final bool improveAccuracy;
   final DateTime lastModified;
   final bool isSynced;
   const User(
@@ -1446,6 +1506,9 @@ class User extends DataClass implements Insertable<User> {
       this.photoUrl,
       required this.currency,
       required this.theme,
+      required this.allowNotification,
+      required this.autoBudget,
+      required this.improveAccuracy,
       required this.lastModified,
       required this.isSynced});
   @override
@@ -1463,6 +1526,9 @@ class User extends DataClass implements Insertable<User> {
     }
     map['currency'] = Variable<String>(currency);
     map['theme'] = Variable<String>(theme);
+    map['allow_notification'] = Variable<bool>(allowNotification);
+    map['auto_budget'] = Variable<bool>(autoBudget);
+    map['improve_accuracy'] = Variable<bool>(improveAccuracy);
     map['last_modified'] = Variable<DateTime>(lastModified);
     map['is_synced'] = Variable<bool>(isSynced);
     return map;
@@ -1481,6 +1547,9 @@ class User extends DataClass implements Insertable<User> {
           : Value(photoUrl),
       currency: Value(currency),
       theme: Value(theme),
+      allowNotification: Value(allowNotification),
+      autoBudget: Value(autoBudget),
+      improveAccuracy: Value(improveAccuracy),
       lastModified: Value(lastModified),
       isSynced: Value(isSynced),
     );
@@ -1496,6 +1565,9 @@ class User extends DataClass implements Insertable<User> {
       photoUrl: serializer.fromJson<String?>(json['photoUrl']),
       currency: serializer.fromJson<String>(json['currency']),
       theme: serializer.fromJson<String>(json['theme']),
+      allowNotification: serializer.fromJson<bool>(json['allowNotification']),
+      autoBudget: serializer.fromJson<bool>(json['autoBudget']),
+      improveAccuracy: serializer.fromJson<bool>(json['improveAccuracy']),
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
     );
@@ -1510,6 +1582,9 @@ class User extends DataClass implements Insertable<User> {
       'photoUrl': serializer.toJson<String?>(photoUrl),
       'currency': serializer.toJson<String>(currency),
       'theme': serializer.toJson<String>(theme),
+      'allowNotification': serializer.toJson<bool>(allowNotification),
+      'autoBudget': serializer.toJson<bool>(autoBudget),
+      'improveAccuracy': serializer.toJson<bool>(improveAccuracy),
       'lastModified': serializer.toJson<DateTime>(lastModified),
       'isSynced': serializer.toJson<bool>(isSynced),
     };
@@ -1522,6 +1597,9 @@ class User extends DataClass implements Insertable<User> {
           Value<String?> photoUrl = const Value.absent(),
           String? currency,
           String? theme,
+          bool? allowNotification,
+          bool? autoBudget,
+          bool? improveAccuracy,
           DateTime? lastModified,
           bool? isSynced}) =>
       User(
@@ -1531,6 +1609,9 @@ class User extends DataClass implements Insertable<User> {
         photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
         currency: currency ?? this.currency,
         theme: theme ?? this.theme,
+        allowNotification: allowNotification ?? this.allowNotification,
+        autoBudget: autoBudget ?? this.autoBudget,
+        improveAccuracy: improveAccuracy ?? this.improveAccuracy,
         lastModified: lastModified ?? this.lastModified,
         isSynced: isSynced ?? this.isSynced,
       );
@@ -1543,6 +1624,14 @@ class User extends DataClass implements Insertable<User> {
       photoUrl: data.photoUrl.present ? data.photoUrl.value : this.photoUrl,
       currency: data.currency.present ? data.currency.value : this.currency,
       theme: data.theme.present ? data.theme.value : this.theme,
+      allowNotification: data.allowNotification.present
+          ? data.allowNotification.value
+          : this.allowNotification,
+      autoBudget:
+          data.autoBudget.present ? data.autoBudget.value : this.autoBudget,
+      improveAccuracy: data.improveAccuracy.present
+          ? data.improveAccuracy.value
+          : this.improveAccuracy,
       lastModified: data.lastModified.present
           ? data.lastModified.value
           : this.lastModified,
@@ -1559,6 +1648,9 @@ class User extends DataClass implements Insertable<User> {
           ..write('photoUrl: $photoUrl, ')
           ..write('currency: $currency, ')
           ..write('theme: $theme, ')
+          ..write('allowNotification: $allowNotification, ')
+          ..write('autoBudget: $autoBudget, ')
+          ..write('improveAccuracy: $improveAccuracy, ')
           ..write('lastModified: $lastModified, ')
           ..write('isSynced: $isSynced')
           ..write(')'))
@@ -1566,8 +1658,18 @@ class User extends DataClass implements Insertable<User> {
   }
 
   @override
-  int get hashCode => Object.hash(id, email, displayName, photoUrl, currency,
-      theme, lastModified, isSynced);
+  int get hashCode => Object.hash(
+      id,
+      email,
+      displayName,
+      photoUrl,
+      currency,
+      theme,
+      allowNotification,
+      autoBudget,
+      improveAccuracy,
+      lastModified,
+      isSynced);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1578,6 +1680,9 @@ class User extends DataClass implements Insertable<User> {
           other.photoUrl == this.photoUrl &&
           other.currency == this.currency &&
           other.theme == this.theme &&
+          other.allowNotification == this.allowNotification &&
+          other.autoBudget == this.autoBudget &&
+          other.improveAccuracy == this.improveAccuracy &&
           other.lastModified == this.lastModified &&
           other.isSynced == this.isSynced);
 }
@@ -1589,6 +1694,9 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String?> photoUrl;
   final Value<String> currency;
   final Value<String> theme;
+  final Value<bool> allowNotification;
+  final Value<bool> autoBudget;
+  final Value<bool> improveAccuracy;
   final Value<DateTime> lastModified;
   final Value<bool> isSynced;
   final Value<int> rowid;
@@ -1599,6 +1707,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.photoUrl = const Value.absent(),
     this.currency = const Value.absent(),
     this.theme = const Value.absent(),
+    this.allowNotification = const Value.absent(),
+    this.autoBudget = const Value.absent(),
+    this.improveAccuracy = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1610,6 +1721,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.photoUrl = const Value.absent(),
     this.currency = const Value.absent(),
     this.theme = const Value.absent(),
+    this.allowNotification = const Value.absent(),
+    this.autoBudget = const Value.absent(),
+    this.improveAccuracy = const Value.absent(),
     required DateTime lastModified,
     this.isSynced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1622,6 +1736,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? photoUrl,
     Expression<String>? currency,
     Expression<String>? theme,
+    Expression<bool>? allowNotification,
+    Expression<bool>? autoBudget,
+    Expression<bool>? improveAccuracy,
     Expression<DateTime>? lastModified,
     Expression<bool>? isSynced,
     Expression<int>? rowid,
@@ -1633,6 +1750,9 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (photoUrl != null) 'photo_url': photoUrl,
       if (currency != null) 'currency': currency,
       if (theme != null) 'theme': theme,
+      if (allowNotification != null) 'allow_notification': allowNotification,
+      if (autoBudget != null) 'auto_budget': autoBudget,
+      if (improveAccuracy != null) 'improve_accuracy': improveAccuracy,
       if (lastModified != null) 'last_modified': lastModified,
       if (isSynced != null) 'is_synced': isSynced,
       if (rowid != null) 'rowid': rowid,
@@ -1646,6 +1766,9 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String?>? photoUrl,
       Value<String>? currency,
       Value<String>? theme,
+      Value<bool>? allowNotification,
+      Value<bool>? autoBudget,
+      Value<bool>? improveAccuracy,
       Value<DateTime>? lastModified,
       Value<bool>? isSynced,
       Value<int>? rowid}) {
@@ -1656,6 +1779,9 @@ class UsersCompanion extends UpdateCompanion<User> {
       photoUrl: photoUrl ?? this.photoUrl,
       currency: currency ?? this.currency,
       theme: theme ?? this.theme,
+      allowNotification: allowNotification ?? this.allowNotification,
+      autoBudget: autoBudget ?? this.autoBudget,
+      improveAccuracy: improveAccuracy ?? this.improveAccuracy,
       lastModified: lastModified ?? this.lastModified,
       isSynced: isSynced ?? this.isSynced,
       rowid: rowid ?? this.rowid,
@@ -1683,6 +1809,15 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (theme.present) {
       map['theme'] = Variable<String>(theme.value);
     }
+    if (allowNotification.present) {
+      map['allow_notification'] = Variable<bool>(allowNotification.value);
+    }
+    if (autoBudget.present) {
+      map['auto_budget'] = Variable<bool>(autoBudget.value);
+    }
+    if (improveAccuracy.present) {
+      map['improve_accuracy'] = Variable<bool>(improveAccuracy.value);
+    }
     if (lastModified.present) {
       map['last_modified'] = Variable<DateTime>(lastModified.value);
     }
@@ -1704,6 +1839,9 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('photoUrl: $photoUrl, ')
           ..write('currency: $currency, ')
           ..write('theme: $theme, ')
+          ..write('allowNotification: $allowNotification, ')
+          ..write('autoBudget: $autoBudget, ')
+          ..write('improveAccuracy: $improveAccuracy, ')
           ..write('lastModified: $lastModified, ')
           ..write('isSynced: $isSynced, ')
           ..write('rowid: $rowid')
@@ -2250,6 +2388,9 @@ typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   Value<String?> photoUrl,
   Value<String> currency,
   Value<String> theme,
+  Value<bool> allowNotification,
+  Value<bool> autoBudget,
+  Value<bool> improveAccuracy,
   required DateTime lastModified,
   Value<bool> isSynced,
   Value<int> rowid,
@@ -2261,6 +2402,9 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String?> photoUrl,
   Value<String> currency,
   Value<String> theme,
+  Value<bool> allowNotification,
+  Value<bool> autoBudget,
+  Value<bool> improveAccuracy,
   Value<DateTime> lastModified,
   Value<bool> isSynced,
   Value<int> rowid,
@@ -2289,6 +2433,9 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String?> photoUrl = const Value.absent(),
             Value<String> currency = const Value.absent(),
             Value<String> theme = const Value.absent(),
+            Value<bool> allowNotification = const Value.absent(),
+            Value<bool> autoBudget = const Value.absent(),
+            Value<bool> improveAccuracy = const Value.absent(),
             Value<DateTime> lastModified = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -2300,6 +2447,9 @@ class $$UsersTableTableManager extends RootTableManager<
             photoUrl: photoUrl,
             currency: currency,
             theme: theme,
+            allowNotification: allowNotification,
+            autoBudget: autoBudget,
+            improveAccuracy: improveAccuracy,
             lastModified: lastModified,
             isSynced: isSynced,
             rowid: rowid,
@@ -2311,6 +2461,9 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String?> photoUrl = const Value.absent(),
             Value<String> currency = const Value.absent(),
             Value<String> theme = const Value.absent(),
+            Value<bool> allowNotification = const Value.absent(),
+            Value<bool> autoBudget = const Value.absent(),
+            Value<bool> improveAccuracy = const Value.absent(),
             required DateTime lastModified,
             Value<bool> isSynced = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -2322,6 +2475,9 @@ class $$UsersTableTableManager extends RootTableManager<
             photoUrl: photoUrl,
             currency: currency,
             theme: theme,
+            allowNotification: allowNotification,
+            autoBudget: autoBudget,
+            improveAccuracy: improveAccuracy,
             lastModified: lastModified,
             isSynced: isSynced,
             rowid: rowid,
@@ -2359,6 +2515,21 @@ class $$UsersTableFilterComposer
 
   ColumnFilters<String> get theme => $state.composableBuilder(
       column: $state.table.theme,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<bool> get allowNotification => $state.composableBuilder(
+      column: $state.table.allowNotification,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<bool> get autoBudget => $state.composableBuilder(
+      column: $state.table.autoBudget,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<bool> get improveAccuracy => $state.composableBuilder(
+      column: $state.table.improveAccuracy,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -2403,6 +2574,21 @@ class $$UsersTableOrderingComposer
 
   ColumnOrderings<String> get theme => $state.composableBuilder(
       column: $state.table.theme,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<bool> get allowNotification => $state.composableBuilder(
+      column: $state.table.allowNotification,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<bool> get autoBudget => $state.composableBuilder(
+      column: $state.table.autoBudget,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<bool> get improveAccuracy => $state.composableBuilder(
+      column: $state.table.improveAccuracy,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

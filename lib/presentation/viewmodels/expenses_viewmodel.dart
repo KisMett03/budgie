@@ -10,6 +10,7 @@ import '../../core/errors/app_error.dart';
 import '../../core/utils/performance_monitor.dart';
 import '../../core/services/budget_calculation_service.dart';
 import '../../core/network/connectivity_service.dart';
+import '../../core/services/settings_service.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -17,6 +18,7 @@ class ExpensesViewModel extends ChangeNotifier {
   final ExpensesRepository _expensesRepository;
   final BudgetRepository _budgetRepository;
   final ConnectivityService _connectivityService;
+  final SettingsService _settingsService;
   List<Expense> _expenses = [];
   List<Expense> _filteredExpenses = [];
   bool _isLoading = true;
@@ -35,9 +37,11 @@ class ExpensesViewModel extends ChangeNotifier {
     required ExpensesRepository expensesRepository,
     required BudgetRepository budgetRepository,
     required ConnectivityService connectivityService,
+    required SettingsService settingsService,
   })  : _expensesRepository = expensesRepository,
         _budgetRepository = budgetRepository,
-        _connectivityService = connectivityService {
+        _connectivityService = connectivityService,
+        _settingsService = settingsService {
     _init();
   }
 
@@ -95,11 +99,17 @@ class ExpensesViewModel extends ChangeNotifier {
     }
   }
 
-  List<Expense> get expenses => _isFiltering ? _filteredExpenses : _expenses;
+  List<Expense> get expenses => _expenses;
+  List<Expense> get filteredExpenses => _filteredExpenses;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  DateTime get selectedMonth => _selectedMonth;
   bool get isOffline => _isOffline;
+  DateTime get selectedMonth => _selectedMonth;
+
+  // Access current user settings
+  String get currentCurrency => _settingsService.currency;
+  bool get allowNotification => _settingsService.allowNotification;
+  bool get autoBudget => _settingsService.autoBudget;
 
   void setSelectedMonth(DateTime month) {
     // Set to the first day of the month to standardize

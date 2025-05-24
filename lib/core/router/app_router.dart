@@ -13,111 +13,187 @@ import '../../di/injection_container.dart' as di;
 import 'page_transition.dart';
 
 class AppRouter {
-  /// 确定页面之间的导航方向
+  /// Enhanced navigation direction detection with smoother transitions
   static NavDirection _getNavigationDirection(
       String? fromRoute, String toRoute) {
-    // 定义页面的逻辑顺序和位置 - 数字越小表示越靠左
+    // Enhanced page hierarchy for better transition logic
     final pagePositions = {
-      Routes.home: 0,
-      Routes.analytic: 1,
-      Routes.settings: 2,
-      Routes.profile: 3,
-      Routes.expenses: 4,
-      Routes.splash: -1,
-      Routes.login: -1,
+      Routes.home: 0, // Main hub
+      Routes.analytic: 1, // Right of home
+      Routes.settings: 2, // Further right
+      Routes.profile: 3, // Rightmost main screen
+      Routes.expenses: 10, // Modal-style (special handling)
+      Routes.splash: -10, // Initial screen
+      Routes.login: -5, // Auth screen
     };
 
-    // 如果起始页或目标页不在定义的位置中，默认使用前进动画
+    // Handle special cases first
+    if (toRoute == Routes.expenses) {
+      return NavDirection.forward; // Always slide up for modal
+    }
+
+    // Default to forward for unknown routes
     if (fromRoute == null ||
         !pagePositions.containsKey(fromRoute) ||
         !pagePositions.containsKey(toRoute)) {
       return NavDirection.forward;
     }
 
-    // 计算位置差来决定方向
     final fromPosition = pagePositions[fromRoute]!;
     final toPosition = pagePositions[toRoute]!;
 
-    // 如果目标位置更靠右，则前进（从右侧滑入）
-    // 如果目标位置更靠左，则后退（从左侧滑入）
+    // Enhanced logic for smoother transitions
     if (toPosition > fromPosition) {
-      return NavDirection.forward; // 向右
+      return NavDirection.forward;
     } else {
-      return NavDirection.backward; // 向左
+      return NavDirection.backward;
+    }
+  }
+
+  /// Get appropriate transition type based on screen context
+  static TransitionType _getTransitionForScreen(
+      String? routeName, NavDirection direction) {
+    switch (routeName) {
+      case Routes.splash:
+        return TransitionType.smoothFadeSlide;
+      case Routes.login:
+        return TransitionType.materialPageRoute;
+      case Routes.expenses:
+        return TransitionType.slideAndFadeVertical;
+      case Routes.home:
+        // Use different transitions based on direction
+        return direction == NavDirection.forward
+            ? TransitionType.smoothSlideRight
+            : TransitionType.smoothSlideLeft;
+      case Routes.analytic:
+        return TransitionType.smoothFadeSlide;
+      case Routes.profile:
+        return TransitionType.smoothScale;
+      case Routes.settings:
+        return TransitionType.materialPageRoute;
+      default:
+        return direction == NavDirection.forward
+            ? TransitionType.smoothSlideRight
+            : TransitionType.smoothSlideLeft;
     }
   }
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    // 获取当前路由
-    final fromRoute =
-        ModalRoute.of(navigatorKey.currentContext!)?.settings.name;
+    // Get current route for direction calculation
+    final fromRoute = navigatorKey.currentContext != null
+        ? ModalRoute.of(navigatorKey.currentContext!)?.settings.name
+        : null;
+
     final direction = _getNavigationDirection(fromRoute, settings.name ?? '');
+    final transitionType = _getTransitionForScreen(settings.name, direction);
 
-    // 使用淡入淡出+滑动的组合动画效果
-    const forwardTransition = TransitionType.fadeAndSlideRight;
-    const backwardTransition = TransitionType.fadeAndSlideLeft;
-
-    // 特殊情况：添加支出页面使用从底部滑入的动画
+    // Special handling for expense screen (modal behavior)
     if (settings.name == Routes.expenses) {
       return PageTransition(
         child: const AddExpenseScreen(),
-        type: TransitionType.fadeAndSlideUp, // 从底部淡入并滑入
+        type: TransitionType.slideAndFadeVertical,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
         settings: settings,
       );
     }
 
     switch (settings.name) {
       case Routes.splash:
-        return createRoute(
-          const SplashScreen(),
+        return PageTransition(
+          child: const SplashScreen(),
+          type: TransitionType.smoothFadeSlide,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
           settings: settings,
-          forwardTransition: TransitionType.fade,
         );
+
       case Routes.login:
-        return createRoute(const LoginScreen(),
-            settings: settings,
-            direction: direction,
-            forwardTransition: forwardTransition,
-            backwardTransition: backwardTransition);
+        return PageTransition(
+          child: const LoginScreen(),
+          type: TransitionType.materialPageRoute,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.fastOutSlowIn,
+          settings: settings,
+        );
+
       case Routes.home:
         return createRoute(
-            ChangeNotifierProvider(
-              create: (_) => di.sl<ExpensesViewModel>(),
-              child: const HomeScreen(),
-            ),
-            settings: settings,
-            direction: direction,
-            forwardTransition: forwardTransition,
-            backwardTransition: backwardTransition);
+          ChangeNotifierProvider(
+            create: (_) => di.sl<ExpensesViewModel>(),
+            child: const HomeScreen(),
+          ),
+          settings: settings,
+          direction: direction,
+          forwardTransition: TransitionType.smoothSlideRight,
+          backwardTransition: TransitionType.smoothSlideLeft,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOutCubic,
+        );
+
       case Routes.analytic:
-        return createRoute(const AnalyticScreen(),
-            settings: settings,
-            direction: direction,
-            forwardTransition: forwardTransition,
-            backwardTransition: backwardTransition);
+        return PageTransition(
+          child: const AnalyticScreen(),
+          type: TransitionType.smoothFadeSlide,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutQuart,
+          settings: settings,
+        );
+
       case Routes.profile:
-        return createRoute(const ProfileScreen(),
-            settings: settings,
-            direction: direction,
-            forwardTransition: forwardTransition,
-            backwardTransition: backwardTransition);
+        return PageTransition(
+          child: const ProfileScreen(),
+          type: TransitionType.smoothScale,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeInOutBack,
+          settings: settings,
+        );
+
       case Routes.settings:
-        return createRoute(const SettingScreen(),
-            settings: settings,
-            direction: direction,
-            forwardTransition: forwardTransition,
-            backwardTransition: backwardTransition);
+        return PageTransition(
+          child: const SettingScreen(),
+          type: TransitionType.materialPageRoute,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.fastOutSlowIn,
+          settings: settings,
+        );
+
       default:
-        return createRoute(
-            Scaffold(
-              body: Center(
-                child: Text('No route defined for ${settings.name}'),
+        return PageTransition(
+          child: Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Page Not Found',
+                    style: Theme.of(navigatorKey.currentContext!)
+                        .textTheme
+                        .headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No route defined for ${settings.name}',
+                    style: Theme.of(navigatorKey.currentContext!)
+                        .textTheme
+                        .bodyMedium,
+                  ),
+                ],
               ),
             ),
-            settings: settings);
+          ),
+          type: TransitionType.smoothFadeSlide,
+          settings: settings,
+        );
     }
   }
 }
 
-/// 全局导航键，用于在没有上下文的情况下访问Navigator
+/// Global navigation key for accessing Navigator without context
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

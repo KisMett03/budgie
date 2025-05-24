@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/datasources/local_data_source.dart';
 import '../../domain/repositories/expenses_repository.dart';
 import '../../domain/repositories/budget_repository.dart';
@@ -7,6 +8,7 @@ import '../../domain/entities/expense.dart';
 import '../../domain/entities/budget.dart';
 import '../network/connectivity_service.dart';
 import '../../core/errors/app_error.dart';
+import 'package:flutter/foundation.dart';
 
 class SyncService {
   final LocalDataSource _localDataSource;
@@ -86,6 +88,8 @@ class SyncService {
             await _syncExpense(entityId, operationType);
           } else if (entityType == 'budget') {
             await _syncBudget(entityId, userId, operationType);
+          } else if (entityType == 'user_settings') {
+            await _syncUserSettings(userId, operationType);
           }
 
           // 标记此操作已完成
@@ -101,7 +105,7 @@ class SyncService {
       }
     } catch (e) {
       // 处理同步过程中的错误
-      print('同步出错: $e');
+      debugPrint('同步出错: $e');
     }
   }
 
@@ -132,7 +136,7 @@ class SyncService {
         rethrow;
       }
       // 其他错误，记录但继续处理
-      print('同步支出记录错误: $e');
+      debugPrint('同步支出记录错误: $e');
     }
   }
 
@@ -151,7 +155,35 @@ class SyncService {
       if (e is NetworkError) {
         rethrow;
       }
-      print('同步预算错误: $e');
+      debugPrint('同步预算错误: $e');
+    }
+  }
+
+  // 同步用户设置
+  Future<void> _syncUserSettings(String userId, String operation) async {
+    try {
+      if (operation == 'update') {
+        final settings = await _localDataSource.getUserSettings(userId);
+        if (settings != null) {
+          // Sync to Firebase
+          await FirebaseFirestore.instance.collection('users').doc(userId).set(
+            {
+              'currency': settings['currency'],
+              'theme': settings['theme'],
+              'settings': settings['settings'],
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true),
+          );
+
+          await _localDataSource.markUserSettingsAsSynced(userId);
+        }
+      }
+    } catch (e) {
+      if (e is NetworkError) {
+        rethrow;
+      }
+      debugPrint('同步用户设置错误: $e');
     }
   }
 
@@ -178,7 +210,7 @@ class SyncService {
         await _localDataSource.markBudgetAsSynced(currentMonthId, userId);
       }
     } catch (e) {
-      print('初始化本地数据错误: $e');
+      debugPrint('初始化本地数据错误: $e');
     }
   }
 

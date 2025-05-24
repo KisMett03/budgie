@@ -56,7 +56,12 @@ class Users extends Table {
   TextColumn get displayName => text().nullable()();
   TextColumn get photoUrl => text().nullable()();
   TextColumn get currency => text().withDefault(const Constant('MYR'))();
-  TextColumn get theme => text().withDefault(const Constant('light'))();
+  TextColumn get theme => text().withDefault(const Constant('dark'))();
+  BoolColumn get allowNotification =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get autoBudget => boolean().withDefault(const Constant(false))();
+  BoolColumn get improveAccuracy =>
+      boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastModified => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
@@ -77,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -86,7 +91,14 @@ class AppDatabase extends _$AppDatabase {
         return m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // 未来版本升级时添加迁移脚本
+        if (from == 1 && to == 2) {
+          // Add new settings columns to Users table
+          await m.addColumn(
+              users, users.allowNotification as GeneratedColumn<Object>);
+          await m.addColumn(users, users.autoBudget as GeneratedColumn<Object>);
+          await m.addColumn(
+              users, users.improveAccuracy as GeneratedColumn<Object>);
+        }
       },
     );
   }

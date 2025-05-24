@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/routes.dart';
 import '../../core/router/app_router.dart';
 import '../../core/router/page_transition.dart';
+import '../../core/router/navigation_helper.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -28,7 +29,7 @@ class BottomNavBar extends StatelessWidget {
       'Profile',
     ];
 
-    // 页面映射
+    // Page routes mapping
     final routes = [
       Routes.home,
       Routes.analytic,
@@ -51,103 +52,148 @@ class BottomNavBar extends StatelessWidget {
               painter: _NavBarPainter(backgroundColor),
             ),
           ),
-          // Nav bar icons
+          // Enhanced nav bar icons with smooth animations
           Positioned.fill(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: List.generate(4, (idx) {
                 final isSelected = currentIndex == idx;
-                return GestureDetector(
-                  onTap: () {
-                    onTap(idx);
-                    // 如果点击的是当前已选中的标签，不执行导航操作
-                    if (currentIndex == idx) {
-                      return;
-                    }
-
-                    // 决定动画方向
-                    final Widget targetPage;
-
-                    switch (idx) {
-                      case 0:
-                        targetPage = navigatorKey.currentContext!
-                            .findAncestorWidgetOfExactType<MaterialApp>()!
-                            .routes![Routes.home]!(context);
-                        break;
-                      case 1:
-                        targetPage = navigatorKey.currentContext!
-                            .findAncestorWidgetOfExactType<MaterialApp>()!
-                            .routes![Routes.analytic]!(context);
-                        break;
-                      case 2:
-                        targetPage = navigatorKey.currentContext!
-                            .findAncestorWidgetOfExactType<MaterialApp>()!
-                            .routes![Routes.settings]!(context);
-                        break;
-                      case 3:
-                        targetPage = navigatorKey.currentContext!
-                            .findAncestorWidgetOfExactType<MaterialApp>()!
-                            .routes![Routes.profile]!(context);
-                        break;
-                      default:
-                        return;
-                    }
-
-                    // 直接确定动画方向
-                    TransitionType transitionType;
-
-                    // 从左边前往右边 - 从右滑入
-                    if (currentIndex < idx) {
-                      transitionType = TransitionType.fadeAndSlideRight;
-                    }
-                    // 从右边前往左边 - 从左滑入
-                    else {
-                      transitionType = TransitionType.fadeAndSlideLeft;
-                    }
-
-                    // 使用自定义页面转换
-                    Navigator.pushReplacement(
-                      context,
-                      PageTransition(
-                        child: targetPage,
-                        type: transitionType,
-                        settings: RouteSettings(name: routes[idx]),
-                      ),
-                    );
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const SizedBox(height: 18),
-                      Icon(
-                        icons[idx],
-                        color: isSelected
-                            ? primaryColor
-                            : textColor.withOpacity(0.6),
-                        size: 24,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        labels[idx],
-                        style: TextStyle(
-                          color: isSelected
-                              ? primaryColor
-                              : textColor.withOpacity(0.6),
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
+                return _buildNavItem(
+                  context,
+                  idx,
+                  isSelected,
+                  icons[idx],
+                  labels[idx],
+                  routes[idx],
+                  primaryColor,
+                  textColor,
                 );
               }),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNavItem(
+    BuildContext context,
+    int index,
+    bool isSelected,
+    IconData icon,
+    String label,
+    String route,
+    Color primaryColor,
+    Color textColor,
+  ) {
+    return GestureDetector(
+      onTap: () => _handleNavigation(context, index, route),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color:
+              isSelected ? primaryColor.withOpacity(0.1) : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            const SizedBox(height: 18),
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: Icon(
+                icon,
+                color: isSelected ? primaryColor : textColor.withOpacity(0.6),
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                color: isSelected ? primaryColor : textColor.withOpacity(0.6),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12,
+              ),
+              child: Text(label),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleNavigation(BuildContext context, int targetIndex, String route) {
+    // Don't navigate if already on the target tab
+    if (currentIndex == targetIndex) {
+      return;
+    }
+
+    // Update the tab index first for immediate visual feedback
+    onTap(targetIndex);
+
+    // Choose appropriate transition based on navigation direction and target
+    _navigateWithSmoothTransition(context, targetIndex, route);
+  }
+
+  void _navigateWithSmoothTransition(
+      BuildContext context, int targetIndex, String route) {
+    // Determine transition type based on navigation pattern
+    TransitionType transitionType;
+    Duration duration;
+    Curve curve;
+
+    // Calculate navigation direction
+    final isMovingRight = targetIndex > currentIndex;
+    final distance = (targetIndex - currentIndex).abs();
+
+    // Choose transition based on target screen and direction
+    switch (targetIndex) {
+      case 0: // Home
+        transitionType = TransitionType.smoothSlideRight;
+        duration = const Duration(milliseconds: 350);
+        curve = Curves.easeInOutCubic;
+        break;
+      case 1: // Analytics
+        transitionType = TransitionType.smoothFadeSlide;
+        duration = const Duration(milliseconds: 400);
+        curve = Curves.easeOutQuart;
+        break;
+      case 2: // Settings
+        transitionType = TransitionType.materialPageRoute;
+        duration = const Duration(milliseconds: 350);
+        curve = Curves.fastOutSlowIn;
+        break;
+      case 3: // Profile
+        transitionType = TransitionType.smoothScale;
+        duration = const Duration(milliseconds: 450);
+        curve = Curves.easeInOutBack;
+        break;
+      default:
+        // Fallback based on direction
+        transitionType = isMovingRight
+            ? TransitionType.smoothSlideRight
+            : TransitionType.smoothSlideLeft;
+        duration = const Duration(milliseconds: 350);
+        curve = Curves.easeInOutCubic;
+    }
+
+    // Adjust duration based on distance for larger jumps
+    if (distance > 1) {
+      duration =
+          Duration(milliseconds: duration.inMilliseconds + (distance * 50));
+    }
+
+    // Navigate using the chosen transition
+    Navigator.pushReplacementNamed(
+      context,
+      route,
     );
   }
 }

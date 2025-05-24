@@ -7,6 +7,11 @@ abstract class LocalDataSource {
   Future<User?> getUser(String userId);
   Future<void> saveUser(User user);
 
+  // User Settings 操作
+  Future<Map<String, dynamic>?> getUserSettings(String userId);
+  Future<void> saveUserSettings(String userId, Map<String, dynamic> settings);
+  Future<void> markUserSettingsAsSynced(String userId);
+
   // Expenses 操作
   Future<List<Expense>> getExpenses();
   Future<void> saveExpense(Expense expense);

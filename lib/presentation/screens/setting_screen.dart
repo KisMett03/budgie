@@ -6,6 +6,9 @@ import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/theme_viewmodel.dart';
 import '../../core/constants/routes.dart';
 import '../../core/router/page_transition.dart';
+import '../../core/services/notification_service.dart';
+import '../../core/services/settings_service.dart';
+import '../../di/injection_container.dart' as di;
 import '../widgets/switch_tile.dart';
 import '../widgets/dropdown_tile.dart';
 import '../widgets/auth_button.dart';
@@ -23,53 +26,136 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
-  bool autoBudget = false;
-  bool allowNotification = false;
-  bool allowExtract = true;
-  bool improveAccuracy = false;
-  String currency = 'MYR';
   bool _loading = true;
+
+  // Get services
+  final _notificationService = di.sl<NotificationService>();
+  final _settingsService = di.sl<SettingsService>();
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    // Listen to settings changes
+    _settingsService.addListener(_onSettingsChanged);
+  }
+
+  @override
+  void dispose() {
+    _settingsService.removeListener(_onSettingsChanged);
+    super.dispose();
+  }
+
+  void _onSettingsChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadSettings() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-    final data = doc.data() ?? {};
-    final settings = data['settings'] ?? {};
 
-    setState(() {
-      autoBudget = settings['autoBudget'] ?? false;
-      allowNotification = settings['allowNotification'] ?? false;
-      allowExtract = settings['allowExtract'] ?? false;
-      improveAccuracy = settings['improveAccuracy'] ?? false;
-      currency = data['currency'] ?? 'MYR';
-      _loading = false;
-    });
+    try {
+      // Settings are already loaded by AuthViewModel, just update the UI
+      setState(() {
+        _loading = false;
+      });
+
+      // Check if permissions match settings
+      await _checkNotificationPermissionStatus();
+    } catch (e) {
+      debugPrint('Error loading settings: $e');
+      setState(() {
+        _loading = false;
+      });
+    }
   }
 
-  Future<void> _updateSetting(String key, bool value) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-      'settings': {key: value}
-    }, SetOptions(merge: true));
+  Future<void> _checkNotificationPermissionStatus() async {
+    final hasNotificationPermission =
+        await _notificationService.checkNotificationPermission();
+
+    if (hasNotificationPermission != _settingsService.allowNotification) {
+      await _settingsService
+          .updateNotificationSetting(hasNotificationPermission);
+    }
   }
 
   Future<void> _updateCurrency(String value) async {
-    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
-    await authViewModel.updateUserSettings(currency: value);
-    setState(() {
-      currency = value;
-    });
+    try {
+      await _settingsService.updateCurrency(value);
+      debugPrint('Currency updated to: $value');
+    } catch (e) {
+      debugPrint('Error updating currency: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update currency: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleNotificationPermission(bool value) async {
+    try {
+      if (value) {
+        // Request notification permission
+        final granted =
+            await _notificationService.requestNotificationPermission();
+
+        await _settingsService.updateNotificationSetting(granted);
+
+        // Start or stop notification listener based on permission
+        if (granted) {
+          await _notificationService.startNotificationListener();
+          if (mounted) {
+            _notificationService.showSnackBarNotification(context,
+                'Notification permission granted and listener started');
+          }
+        }
+      } else {
+        // User wants to disable notifications
+        await _settingsService.updateNotificationSetting(false);
+
+        // Stop notification listener
+        await _notificationService.stopNotificationListener();
+      }
+    } catch (e) {
+      debugPrint('Error handling notification permission: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update notification setting: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateAutoBudget(bool value) async {
+    try {
+      await _settingsService.updateAutoBudgetSetting(value);
+      debugPrint('Auto budget updated to: $value');
+    } catch (e) {
+      debugPrint('Error updating auto budget: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update auto budget: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateImproveAccuracy(bool value) async {
+    try {
+      await _settingsService.updateImproveAccuracySetting(value);
+      debugPrint('Improve accuracy updated to: $value');
+    } catch (e) {
+      debugPrint('Error updating improve accuracy: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update improve accuracy: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -102,10 +188,10 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
       body: ListView(
         children: [
-          // 货币选择
+          // Currency selection
           DropdownTile<String>(
             title: 'Currency',
-            value: currency,
+            value: _settingsService.currency,
             items: AppConstants.currencies,
             onChanged: (value) {
               if (value != null) {
@@ -115,7 +201,7 @@ class _SettingScreenState extends State<SettingScreen> {
             itemLabelBuilder: (item) => item,
           ),
 
-          // 暗色主题切换
+          // Dark theme toggle
           SwitchTile(
             title: 'Dark Theme',
             value: themeViewModel.isDarkMode,
@@ -124,38 +210,23 @@ class _SettingScreenState extends State<SettingScreen> {
             },
           ),
 
-          // 开关选项
+          // Switch options
           SwitchTile(
             title: 'Auto budget rebalance',
-            value: autoBudget,
-            onChanged: (v) {
-              setState(() => autoBudget = v);
-              _updateSetting('autoBudget', v);
-            },
+            value: _settingsService.autoBudget,
+            onChanged: _updateAutoBudget,
           ),
           SwitchTile(
             title: 'Allow notification',
-            value: allowNotification,
-            onChanged: (v) {
-              setState(() => allowNotification = v);
-              _updateSetting('allowNotification', v);
-            },
-          ),
-          SwitchTile(
-            title: 'Allow extract info from notification',
-            value: allowExtract,
-            onChanged: (v) {
-              setState(() => allowExtract = v);
-              _updateSetting('allowExtract', v);
-            },
+            value: _settingsService.allowNotification,
+            onChanged: _handleNotificationPermission,
+            subtitle:
+                'Enable notification monitoring for automatic expense detection',
           ),
           SwitchTile(
             title: 'Improve model accuracy',
-            value: improveAccuracy,
-            onChanged: (v) {
-              setState(() => improveAccuracy = v);
-              _updateSetting('improveAccuracy', v);
-            },
+            value: _settingsService.improveAccuracy,
+            onChanged: _updateImproveAccuracy,
           ),
         ],
       ),
