@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'package:flutter_background/flutter_background.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/theme_viewmodel.dart';
 import '../../core/constants/routes.dart';
@@ -14,9 +16,14 @@ import '../widgets/dropdown_tile.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/animated_float_button.dart';
+import '../widgets/notification_permission_guide.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_theme.dart';
+import '../utils/currency_formatter.dart';
 import 'add_expense_screen.dart';
+import 'notification_test_screen.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({Key? key}) : super(key: key);
@@ -76,10 +83,19 @@ class _SettingScreenState extends State<SettingScreen> {
     final hasNotificationPermission =
         await _notificationService.checkNotificationPermission();
 
-    if (hasNotificationPermission != _settingsService.allowNotification) {
-      await _settingsService
-          .updateNotificationSetting(hasNotificationPermission);
+    // Only show a warning if app setting is ON but OS permission is OFF
+    if (_settingsService.allowNotification && !hasNotificationPermission) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Notification permission is disabled in system settings. Please enable it for full functionality.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
+    // Do NOT update the app setting here!
   }
 
   Future<void> _updateCurrency(String value) async {
@@ -99,19 +115,180 @@ class _SettingScreenState extends State<SettingScreen> {
   Future<void> _handleNotificationPermission(bool value) async {
     try {
       if (value) {
-        // Request notification permission
+        // First check if we already have notification listener permission on Android
+        bool hasListenerPermission = true;
+        if (Platform.isAndroid) {
+          hasListenerPermission =
+              await _notificationService.checkNotificationListenerPermission();
+        }
+
+        // Request basic notification permissions first
         final granted =
-            await _notificationService.requestNotificationPermission();
+            await _notificationService.requestLocalNotificationPermissions();
 
-        await _settingsService.updateNotificationSetting(granted);
-
-        // Start or stop notification listener based on permission
-        if (granted) {
-          await _notificationService.startNotificationListener();
+        if (!granted) {
           if (mounted) {
-            _notificationService.showSnackBarNotification(context,
-                'Notification permission granted and listener started');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Notification permission denied. Please enable in system settings.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
+          return;
+        }
+
+        // Now handle notification listener permission for Android
+        if (Platform.isAndroid && !hasListenerPermission) {
+          // Initialize flutter_background configuration
+          const androidConfig = FlutterBackgroundAndroidConfig(
+            notificationTitle: "Budgie Expense Detector",
+            notificationText: "Monitoring notifications for expenses",
+            notificationImportance: AndroidNotificationImportance.normal,
+            notificationIcon: AndroidResource(
+              name: 'ic_launcher',
+              defType: 'mipmap',
+            ),
+          );
+
+          // Show explanation dialog first
+          if (mounted) {
+            final shouldProceed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Special Permission Required'),
+                    content: const Text(
+                        'To detect expenses from notifications, Budgie needs access to read your notifications. '
+                        'You will be redirected to system settings where you need to enable "Notification Access" '
+                        'for Budgie.\n\n'
+                        'Look for "Budgie Notification Listener" in the list and toggle it ON.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('CANCEL'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('CONTINUE'),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+
+            if (!shouldProceed) {
+              // User canceled, don't update the setting
+              return;
+            }
+
+            // Initialize flutter_background
+            final hasBackgroundPermission = await FlutterBackground.initialize(
+              androidConfig: androidConfig,
+            );
+
+            if (!hasBackgroundPermission) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Background permission denied. Some features will be limited.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+
+            // Open system settings for notification listener permission
+            await _notificationService.requestNotificationAccessPermission();
+
+            // Show follow-up guidance
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Please enable "Budgie Notification Listener" in the list and come back to the app.',
+                  ),
+                  duration: Duration(seconds: 8),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        }
+
+        // Update the setting value
+        await _settingsService.updateNotificationSetting(true);
+
+        // Try to start the notification listener with multiple attempts
+        if (Platform.isAndroid) {
+          // Check if permission was granted
+          final hasPermissionNow =
+              await _notificationService.checkNotificationListenerPermission();
+
+          if (hasPermissionNow) {
+            // Make multiple attempts to start the listener
+            bool listenerStarted = false;
+            for (int i = 0; i < 3; i++) {
+              await _notificationService.startNotificationListener();
+
+              // Verify if listener is active
+              await Future.delayed(const Duration(milliseconds: 500));
+              if (_notificationService.isListening) {
+                listenerStarted = true;
+                break;
+              }
+            }
+
+            if (listenerStarted) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('Notification monitoring enabled successfully!'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+
+              // Enable background execution as well if needed
+              if (await FlutterBackground.hasPermissions &&
+                  !await FlutterBackground.isBackgroundExecutionEnabled) {
+                await FlutterBackground.enableBackgroundExecution();
+              }
+
+              // Test the listener with a simple notification
+              await Future.delayed(const Duration(seconds: 1));
+              await _notificationService
+                  .testNotificationListenerWithBackground();
+            } else {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Failed to start notification listener. Please try again.'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Notification access not granted. Some features will be limited.',
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        } else {
+          // Non-Android platforms
+          await _notificationService.startNotificationListener();
         }
       } else {
         // User wants to disable notifications
@@ -119,12 +296,57 @@ class _SettingScreenState extends State<SettingScreen> {
 
         // Stop notification listener
         await _notificationService.stopNotificationListener();
+
+        // For Android, prompt user to also revoke notification access permission
+        if (Platform.isAndroid) {
+          final hasListenerAccess =
+              await _notificationService.checkNotificationListenerPermission();
+
+          if (hasListenerAccess && mounted) {
+            // Prompt the user to also revoke the notification access in system settings
+            final shouldRevokeAccess = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Revoke Notification Access?'),
+                    content: const Text(
+                        'For complete privacy, you should also revoke notification access permission in system settings.\n\n'
+                        'Would you like to open system settings to revoke notification access?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('SKIP'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('OPEN SETTINGS'),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+
+            if (shouldRevokeAccess) {
+              await _notificationService.requestNotificationAccessPermission();
+              // Show guidance
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Please DISABLE "Budgie Notification Listener" in the list to completely revoke access.',
+                    ),
+                    duration: Duration(seconds: 8),
+                  ),
+                );
+              }
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint('Error handling notification permission: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update notification setting: $e')),
+          SnackBar(content: Text('Error updating notification settings: $e')),
         );
       }
     }
@@ -178,6 +400,7 @@ class _SettingScreenState extends State<SettingScreen> {
           style:
               TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
         ),
+        centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -198,7 +421,8 @@ class _SettingScreenState extends State<SettingScreen> {
                 _updateCurrency(value);
               }
             },
-            itemLabelBuilder: (item) => item,
+            itemLabelBuilder: (item) =>
+                '$item - ${CurrencyFormatter.getCurrencyName(item)}',
           ),
 
           // Dark theme toggle
@@ -228,6 +452,103 @@ class _SettingScreenState extends State<SettingScreen> {
             value: _settingsService.improveAccuracy,
             onChanged: _updateImproveAccuracy,
           ),
+
+          // Divider for testing section
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Divider(
+              color: Theme.of(context).dividerColor,
+              thickness: 0.5,
+            ),
+          ),
+
+          // Notification API Test Button
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(
+                Icons.bug_report,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+            ),
+            title: const Text('Notification API Test'),
+            subtitle: const Text('Test notification detection API connection'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                PageTransition(
+                  child: const NotificationTestScreen(),
+                  type: TransitionType.smoothSlideRight,
+                  settings: const RouteSettings(name: '/notification_test'),
+                ),
+              );
+            },
+          ),
+
+          // Debug: Force refresh settings button (only in debug mode)
+          if (kDebugMode)
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: const Icon(
+                  Icons.refresh,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Debug: Refresh Settings'),
+              subtitle: const Text('Force reload settings from Firebase'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () async {
+                try {
+                  // Show loading indicator
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Refreshing settings from Firebase...'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+
+                  // Force refresh settings
+                  await _settingsService.forceReloadFromFirebase();
+
+                  // Show success message
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            'Settings refreshed! Currency: ${_settingsService.currency}, Theme: ${_settingsService.theme}, Notifications: ${_settingsService.allowNotification}'),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to refresh settings: $e'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
         ],
       ),
       extendBody: true,

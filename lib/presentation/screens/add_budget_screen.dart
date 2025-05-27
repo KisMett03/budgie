@@ -47,12 +47,17 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
 
   @override
   void dispose() {
+    // Dispose all controllers
     for (var c in _categoryControllers.values) {
       c.dispose();
     }
+    _categoryControllers.clear();
+
+    // Dispose all notifiers
     _totalBudgetNotifier.dispose();
     _totalAllocatedNotifier.dispose();
     _savingsNotifier.dispose();
+
     super.dispose();
   }
 
@@ -77,8 +82,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     }
 
     _setupListeners();
+
+    // Use post-frame callback to load budget data after the build is complete
     if (widget.monthId != null) {
-      _loadBudgetData(_currentMonthId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadBudgetData(_currentMonthId);
+        }
+      });
     }
   }
 
@@ -93,8 +104,20 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
 
     // Create controllers for each category
     for (final catId in _budgetCategoryIds) {
-      _categoryControllers[catId] = TextEditingController();
-      _categoryControllers[catId]?.addListener(_calculateTotalAllocated);
+      if (!_categoryControllers.containsKey(catId)) {
+        final controller = TextEditingController();
+        _categoryControllers[catId] = controller;
+
+        // Use a debounced listener to avoid excessive calculations
+        controller.addListener(() {
+          // Debounce rapid text changes
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              _calculateTotalAllocated();
+            }
+          });
+        });
+      }
     }
   }
 
@@ -103,10 +126,17 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     final totalAllocated = _totalAllocatedNotifier.value;
     final savings = totalBudget - totalAllocated;
 
-    _savingsNotifier.value = savings > 0 ? savings : 0;
+    final newSavings = savings > 0 ? savings : 0.0;
+
+    // Only update if the value actually changed
+    if (_savingsNotifier.value != newSavings) {
+      _savingsNotifier.value = newSavings;
+    }
   }
 
   void _loadBudgetData(String monthId) async {
+    if (!mounted) return;
+
     final budgetVM = Provider.of<BudgetViewModel>(context, listen: false);
 
     // 直接从数据库加载预算数据
@@ -117,30 +147,59 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
 
     final budget = budgetVM.budget;
     if (budget != null) {
-      _totalBudgetNotifier.value = budget.total;
+      // Use a local variable first to avoid multiple notifier updates
+      final newTotalBudget = budget.total;
 
+      // Update category controllers without triggering listeners
       for (final catId in _budgetCategoryIds) {
-        _categoryControllers[catId]?.text =
-            budget.categories[catId]?.budget.toString() ?? '';
+        if (_categoryControllers.containsKey(catId)) {
+          final controller = _categoryControllers[catId]!;
+          final budgetValue = budget.categories[catId]?.budget.toString() ?? '';
+
+          // Only update if different to avoid unnecessary rebuilds
+          if (controller.text != budgetValue) {
+            controller.text = budgetValue;
+          }
+        }
       }
+
+      // Update total budget last to minimize rebuilds
+      _totalBudgetNotifier.value = newTotalBudget;
     } else {
       _totalBudgetNotifier.value = null;
+
+      // Clear category controllers
       for (final catId in _budgetCategoryIds) {
-        _categoryControllers[catId]?.text = '';
+        if (_categoryControllers.containsKey(catId) &&
+            _categoryControllers[catId]!.text.isNotEmpty) {
+          _categoryControllers[catId]!.text = '';
+        }
       }
     }
 
-    // Calculate allocated budget
+    // Calculate allocated budget after all controllers are updated
     _calculateTotalAllocated();
   }
 
   void _calculateTotalAllocated() {
     double total = 0;
     for (final catId in _budgetCategoryIds) {
-      final val = double.tryParse(_categoryControllers[catId]?.text ?? '') ?? 0;
-      total += val;
+      final controller = _categoryControllers[catId];
+      if (controller != null) {
+        final text = controller.text.trim();
+        if (text.isNotEmpty) {
+          final val = double.tryParse(text);
+          if (val != null) {
+            total += val;
+          }
+        }
+      }
     }
-    _totalAllocatedNotifier.value = total;
+
+    // Only update if the value actually changed
+    if (_totalAllocatedNotifier.value != total) {
+      _totalAllocatedNotifier.value = total;
+    }
   }
 
   void _onDateChanged(DateTime newDate) {
@@ -148,7 +207,13 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       _selectedDate = newDate;
       _currentMonthId = _getMonthIdFromDate(newDate);
     });
-    _loadBudgetData(_currentMonthId);
+
+    // Use post-frame callback to ensure setState is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadBudgetData(_currentMonthId);
+      }
+    });
   }
 
   void _saveBudget() async {
@@ -159,47 +224,55 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         _isSubmitting = true;
       });
 
-      final total = _totalBudgetNotifier.value ?? 0;
+      final totalBudget = _totalBudgetNotifier.value;
+      if (totalBudget == null || totalBudget <= 0) {
+        throw Exception('Please enter a valid total budget amount');
+      }
+
       final Map<String, CategoryBudget> cats = {};
 
       for (final catId in _budgetCategoryIds) {
-        final val =
-            double.tryParse(_categoryControllers[catId]?.text ?? '') ?? 0;
-        // 初始时设置预算 left = budget
-        cats[catId] = CategoryBudget(budget: val, left: val);
+        final controller = _categoryControllers[catId];
+        if (controller != null) {
+          final text = controller.text.trim();
+          final val = text.isNotEmpty ? (double.tryParse(text) ?? 0.0) : 0.0;
+          // Initially set budget left = budget
+          cats[catId] = CategoryBudget(budget: val, left: val);
+        }
       }
-
-      // 创建新预算对象
-      final newBudget = Budget(total: total, left: total, categories: cats);
 
       if (!mounted) return;
       final budgetVM = Provider.of<BudgetViewModel>(context, listen: false);
       final expensesVM = Provider.of<ExpensesViewModel>(context, listen: false);
 
-      // 保存预算数据
-      await budgetVM.saveBudget(_currentMonthId, newBudget);
-
-      if (!mounted) return;
-
-      // 从月份ID获取年月并计算剩余预算
+      // Get year and month from month ID and calculate remaining budget
       try {
         final parts = _currentMonthId.split('-');
         if (parts.length == 2) {
-          final year = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
+          final year = int.tryParse(parts[0]);
+          final month = int.tryParse(parts[1]);
 
-          // 获取当月支出并计算剩余预算
-          final expenses = expensesVM.getExpensesForMonth(year, month);
+          if (year != null && month != null) {
+            // Create new budget object
+            final newBudget =
+                Budget(total: totalBudget, left: totalBudget, categories: cats);
 
-          // 使用预算计算服务更新预算剩余金额
-          final updatedBudget = await BudgetCalculationService.calculateBudget(
-              newBudget, expenses);
+            // Get expenses for current month
+            final expenses = expensesVM.getExpensesForMonth(year, month);
 
-          // 将更新后的预算保存到数据库
-          await budgetVM.saveBudget(_currentMonthId, updatedBudget);
+            // Calculate the budget with expenses factored in
+            final updatedBudget =
+                await BudgetCalculationService.calculateBudget(
+                    newBudget, expenses);
+
+            // Save the final budget with correct remaining amounts - only one save operation
+            await budgetVM.saveBudget(_currentMonthId, updatedBudget);
+            debugPrint('Budget saved with expenses factored in');
+          }
         }
       } catch (e) {
-        debugPrint('Error calculating budget after save: $e');
+        debugPrint('Error calculating budget during save: $e');
+        throw e; // Re-throw to show error message
       }
 
       if (!mounted) return;
@@ -212,8 +285,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         ),
       );
 
-      // 使用Future.delayed确保预算更新后再返回上一页面
-      // 这样可以确保用户在返回分析页面时看到最新数据
+      // Use Future.delayed to ensure budget update before returning to previous page
+      // This ensures user sees latest data when returning to analytics page
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) {
           Navigator.pop(context);
@@ -257,7 +330,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               onDateChanged: _onDateChanged,
               themeColor: AppTheme.primaryColor,
             ),
-
+            const SizedBox(height: 16),
             // 总预算卡片
             CustomCard.withTitle(
               title: 'Total Budget',
@@ -308,7 +381,11 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                     style: TextStyle(
                                       fontFamily: AppTheme.fontFamily,
                                       fontSize: 14,
-                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withOpacity(0.7),
                                     ),
                                   ),
                                   Text(

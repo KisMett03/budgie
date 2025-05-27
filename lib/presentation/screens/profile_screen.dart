@@ -32,6 +32,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Profile'),
+        centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

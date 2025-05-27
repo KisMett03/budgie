@@ -119,10 +119,7 @@ class AppRouter {
 
       case Routes.home:
         return createRoute(
-          ChangeNotifierProvider(
-            create: (_) => di.sl<ExpensesViewModel>(),
-            child: const HomeScreen(),
-          ),
+          const HomeScreen(),
           settings: settings,
           direction: direction,
           forwardTransition: TransitionType.smoothSlideRight,

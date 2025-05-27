@@ -106,6 +106,8 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('🔥 AuthViewModel: Initializing settings for user');
       await _settingsService.initializeForUser(userId);
       debugPrint('🔥 AuthViewModel: Settings initialization completed');
+      debugPrint(
+          '🔥 AuthViewModel: Current settings - Currency: ${_settingsService.currency}, Theme: ${_settingsService.theme}, Notifications: ${_settingsService.allowNotification}');
 
       // Step 2: Initialize theme based on user settings (only after settings are loaded/created)
       debugPrint('🔥 AuthViewModel: Initializing theme for user');
@@ -421,6 +423,22 @@ class AuthViewModel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // Force refresh user settings (useful for debugging)
+  Future<void> forceRefreshUserSettings() async {
+    try {
+      if (_currentUser != null) {
+        debugPrint(
+            '🔥 AuthViewModel: Force refreshing user settings for: ${_currentUser!.id}');
+        await _settingsService.forceReloadFromFirebase();
+        debugPrint('🔥 AuthViewModel: Settings force refresh completed');
+      } else {
+        debugPrint('🔥 AuthViewModel: No current user for settings refresh');
+      }
+    } catch (e) {
+      debugPrint('🔥 AuthViewModel: Error refreshing user settings: $e');
     }
   }
 

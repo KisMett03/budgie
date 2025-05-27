@@ -10,7 +10,8 @@ import '../widgets/expense_card.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/date_picker_button.dart';
 import '../widgets/animated_float_button.dart';
-import '../widgets/notification_expense_card.dart';
+import '../utils/currency_formatter.dart';
+
 import '../../core/constants/routes.dart';
 import '../../core/router/page_transition.dart';
 import '../../domain/entities/category.dart';
@@ -23,19 +24,68 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late DateTime _selectedDate;
+  bool _filterByDay = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Initialize with current date as default
     _selectedDate = DateTime.now();
 
-    // Initialize with current month filter
+    // Get view model for expenses
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final vm = Provider.of<ExpensesViewModel>(context, listen: false);
-      vm.setSelectedMonth(_selectedDate);
+      if (mounted) {
+        _initializeFilters();
+      }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _initializeFilters();
+    }
+  }
+
+  void _initializeFilters() {
+    try {
+      final vm = Provider.of<ExpensesViewModel>(context, listen: false);
+
+      // Use the screen-specific filter settings
+      _selectedDate = vm.getScreenFilterDate('home');
+      _filterByDay = vm.isDayFilteringForScreen('home');
+
+      // Apply the filter
+      vm.setSelectedMonth(_selectedDate,
+          filterByDay: _filterByDay, screenKey: 'home');
+
+      setState(() {
+        _isInitialized = true;
+      });
+    } catch (e) {
+      debugPrint('Error initializing date filter: $e');
+      _selectedDate = DateTime.now();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When the app is resumed, refresh the data
+    if (state == AppLifecycleState.resumed && mounted) {
+      Provider.of<ExpensesViewModel>(context, listen: false).refreshData();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   void _onDateChanged(DateTime newDate) {
@@ -43,14 +93,34 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedDate = newDate;
     });
 
-    final vm = Provider.of<ExpensesViewModel>(context, listen: false);
-    vm.setSelectedMonth(_selectedDate);
+    try {
+      final vm = Provider.of<ExpensesViewModel>(context, listen: false);
+      vm.setSelectedMonth(_selectedDate,
+          filterByDay: _filterByDay, screenKey: 'home');
+    } catch (e) {
+      debugPrint('Error changing selected month: $e');
+    }
+  }
+
+  void _toggleFilterMode() {
+    setState(() {
+      _filterByDay = !_filterByDay;
+    });
+
+    try {
+      final vm = Provider.of<ExpensesViewModel>(context, listen: false);
+      vm.setSelectedMonth(_selectedDate,
+          filterByDay: _filterByDay, screenKey: 'home');
+    } catch (e) {
+      debugPrint('Error toggling filter mode: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ExpensesViewModel>();
-    final expenses = vm.expenses;
+    final expenses = vm
+        .expenses; // This will now return filtered expenses if filtering is active
     final height = MediaQuery.of(context).size.height;
     final isLoading = vm.isLoading;
 
@@ -74,7 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
           : RefreshIndicator(
               color: Theme.of(context).colorScheme.primary,
               onRefresh: () async {
-                // 调用ViewModel的刷新方法
                 await Provider.of<ExpensesViewModel>(context, listen: false)
                     .refreshData();
               },
@@ -85,20 +154,63 @@ class _HomeScreenState extends State<HomeScreen> {
                     sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
                   ),
 
-                  // Auto-detected expenses section
-                  SliverToBoxAdapter(
-                    child: _buildAutoDetectedExpensesSection(),
-                  ),
+                  // Auto-detected expenses are now handled via overlay
 
-                  // Month selector
+                  // Month/day selector row
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: DatePickerButton(
-                        date: _selectedDate,
-                        themeColor: Theme.of(context).colorScheme.primary,
-                        prefix: 'Expenses for',
-                        onDateChanged: _onDateChanged,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: DatePickerButton(
+                              date: _selectedDate,
+                              themeColor: Theme.of(context).colorScheme.primary,
+                              prefix: 'Expenses for',
+                              onDateChanged: _onDateChanged,
+                              showDaySelection: _filterByDay,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Filter toggle button
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _toggleFilterMode,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                constraints: const BoxConstraints(
+                                    minHeight: 45, minWidth: 45),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    _filterByDay
+                                        ? Icons.calendar_today
+                                        : Icons.calendar_month,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -107,18 +219,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Total: MYR ${totalAmount.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                      child: Center(
+                        child: Text(
+                          'Total: ${CurrencyFormatter.formatAmount(totalAmount, vm.currentCurrency)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -230,134 +339,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAutoDetectedExpensesSection() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const SizedBox.shrink();
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('auto_detected_expenses')
-          .where('userId', isEqualTo: user.uid)
-          .orderBy('createdAt', descending: true)
-          .limit(5)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final autoExpenses = snapshot.data!.docs;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Auto-detected Expenses',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            ...autoExpenses.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return NotificationExpenseCard(
-                expenseData: data,
-                onApprove: () => _approveExpense(doc.id, data),
-                onReject: () => _rejectExpense(doc.id),
-              );
-            }).toList(),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _approveExpense(String docId, Map<String, dynamic> data) async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      // Add to regular expenses collection
-      await FirebaseFirestore.instance.collection('expenses').add({
-        'userId': user.uid,
-        'amount': data['amount'],
-        'description': data['merchant'] ?? 'Auto-detected expense',
-        'category': 'Other', // Default category
-        'date': data['date'] ?? DateTime.now().toIso8601String(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'isAutoDetected': true,
-        'originalSource': data['source'],
-      });
-
-      // Remove from auto-detected collection
-      await FirebaseFirestore.instance
-          .collection('auto_detected_expenses')
-          .doc(docId)
-          .delete();
-
-      // Refresh expenses
-      if (mounted) {
-        final vm = Provider.of<ExpensesViewModel>(context, listen: false);
-        await vm.refreshData();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense added successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error adding expense: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _rejectExpense(String docId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('auto_detected_expenses')
-          .doc(docId)
-          .delete();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense dismissed'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error dismissing expense: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // Auto-detected expenses are now handled via overlay system
 }

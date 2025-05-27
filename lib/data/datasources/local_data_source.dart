@@ -16,6 +16,7 @@ abstract class LocalDataSource {
   // Expenses operations
   Future<List<Expense>> getExpenses();
   Future<void> saveExpense(Expense expense);
+  Future<void> saveSyncedExpense(Expense expense);
   Future<void> updateExpense(Expense expense);
   Future<void> deleteExpense(String id);
   Future<List<Expense>> getUnsyncedExpenses();
@@ -23,9 +24,11 @@ abstract class LocalDataSource {
 
   // Budget operations
   Future<Budget?> getBudget(String monthId, String userId);
-  Future<void> saveBudget(String monthId, Budget budget, String userId);
+  Future<void> saveBudget(String monthId, Budget budget, String userId,
+      {bool isSynced = false});
   Future<List<String>> getUnsyncedBudgetIds(String userId);
   Future<void> markBudgetAsSynced(String monthId, String userId);
+  Future<void> clearAllBudgetSyncOperations(String userId);
 
   // Synchronization operations
   Future<void> addToSyncQueue(

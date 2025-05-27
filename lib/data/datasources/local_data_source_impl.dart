@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../domain/entities/budget.dart' as domain;
 import '../../domain/entities/expense.dart' as domain;
@@ -83,23 +84,28 @@ class LocalDataSourceImpl implements LocalDataSource {
   @override
   Future<void> saveUserSettings(
       String userId, Map<String, dynamic> settings) async {
+    // Extract nested settings if present
     final settingsMap = settings['settings'] as Map<String, dynamic>? ?? {};
 
-    await _database.into(_database.users).insertOnConflictUpdate(
-          UsersCompanion.insert(
-            id: userId,
-            currency: Value(settings['currency'] as String? ?? 'MYR'),
-            theme: Value(settings['theme'] as String? ?? 'dark'),
-            allowNotification:
-                Value(settingsMap['allowNotification'] as bool? ?? true),
-            autoBudget: Value(settingsMap['autoBudget'] as bool? ?? false),
-            improveAccuracy:
-                Value(settingsMap['improveAccuracy'] as bool? ?? false),
-            lastModified: DateTime.now(),
-            isSynced: const Value(false),
-          ),
-        );
+    final companion = UsersCompanion(
+      id: Value(userId),
+      currency: Value(settings['currency'] as String? ?? 'MYR'),
+      theme: Value(settings['theme'] as String? ?? 'dark'),
+      // Handle both nested and root-level format
+      allowNotification: Value(settingsMap['allowNotification'] as bool? ??
+          settings['allowNotification'] as bool? ??
+          true),
+      autoBudget: Value(settingsMap['autoBudget'] as bool? ??
+          settings['autoBudget'] as bool? ??
+          false),
+      improveAccuracy: Value(settingsMap['improveAccuracy'] as bool? ??
+          settings['improveAccuracy'] as bool? ??
+          false),
+      lastModified: Value(DateTime.now()),
+      isSynced: const Value(false),
+    );
 
+    await _database.into(_database.users).insertOnConflictUpdate(companion);
     await addToSyncQueue('user_settings', userId, userId, 'update');
   }
 
@@ -144,6 +150,9 @@ class LocalDataSourceImpl implements LocalDataSource {
     final newId = expense.id.isEmpty ? _uuid.v4() : expense.id;
     final userId = await _getCurrentUserId();
 
+    // Check if this is an offline expense (needs syncing)
+    final needsSync = expense.id.isEmpty || expense.id.startsWith('offline_');
+
     await _database.into(_database.expenses).insertOnConflictUpdate(
           ExpensesCompanion.insert(
             id: newId,
@@ -155,12 +164,37 @@ class LocalDataSourceImpl implements LocalDataSource {
             method: expense.method.toString().split('.').last,
             description: Value(expense.description),
             currency: Value(expense.currency),
-            isSynced: const Value(false),
+            isSynced: Value(
+                !needsSync), // Mark as synced if it has a proper Firebase ID
             lastModified: DateTime.now(),
           ),
         );
 
-    await addToSyncQueue('expense', newId, userId, 'add');
+    // Only add to sync queue if it needs syncing
+    if (needsSync) {
+      await addToSyncQueue('expense', newId, userId, 'add');
+    }
+  }
+
+  /// Save expense that is already synced from Firebase
+  Future<void> saveSyncedExpense(domain.Expense expense) async {
+    final userId = await _getCurrentUserId();
+
+    await _database.into(_database.expenses).insertOnConflictUpdate(
+          ExpensesCompanion.insert(
+            id: expense.id,
+            userId: userId,
+            remark: expense.remark,
+            amount: expense.amount,
+            date: expense.date,
+            category: expense.category.id,
+            method: expense.method.toString().split('.').last,
+            description: Value(expense.description),
+            currency: Value(expense.currency),
+            isSynced: const Value(true), // Already synced from Firebase
+            lastModified: DateTime.now(),
+          ),
+        );
   }
 
   @override
@@ -261,8 +295,8 @@ class LocalDataSourceImpl implements LocalDataSource {
   }
 
   @override
-  Future<void> saveBudget(
-      String monthId, domain.Budget budget, String userId) async {
+  Future<void> saveBudget(String monthId, domain.Budget budget, String userId,
+      {bool isSynced = false}) async {
     final categoriesJson = jsonEncode(budget.toMap()['categories']);
 
     await _database.into(_database.budgets).insertOnConflictUpdate(
@@ -273,11 +307,28 @@ class LocalDataSourceImpl implements LocalDataSource {
             left: budget.left,
             categoriesJson: categoriesJson,
             lastModified: DateTime.now(),
-            isSynced: const Value(false),
+            isSynced: Value(isSynced),
           ),
         );
 
-    await addToSyncQueue('budget', monthId, userId, 'update');
+    // Only add to sync queue if not marked as synced
+    if (!isSynced) {
+      // Check if there's already a pending sync operation for this budget
+      final operations = await (_database.select(_database.syncQueue)
+            ..where((tbl) =>
+                tbl.entityType.equals('budget') &
+                tbl.entityId.equals(monthId) &
+                tbl.userId.equals(userId)))
+          .get();
+
+      // Only add to queue if no pending operation exists
+      if (operations.isEmpty) {
+        await addToSyncQueue('budget', monthId, userId, 'update');
+        debugPrint('Added budget to sync queue: $monthId');
+      } else {
+        debugPrint('Budget already in sync queue: $monthId');
+      }
+    }
   }
 
   @override
@@ -368,5 +419,33 @@ class LocalDataSourceImpl implements LocalDataSource {
 
     // If no user found in either location, throw exception
     throw Exception('No user found in local database or Firebase');
+  }
+
+  /// Clear all budget sync operations for a specific user
+  Future<void> clearAllBudgetSyncOperations(String userId) async {
+    try {
+      // Get all sync operations
+      final operations = await (_database.select(_database.syncQueue)).get();
+
+      // Filter for budget operations for this user
+      final budgetOps = operations
+          .where((op) => op.entityType == 'budget' && op.userId == userId);
+
+      // Delete each operation
+      for (final op in budgetOps) {
+        await (_database.delete(_database.syncQueue)
+              ..where((tbl) => tbl.id.equals(op.id)))
+            .go();
+      }
+
+      // Mark all budgets as synced
+      await (_database.update(_database.budgets)
+            ..where((tbl) => tbl.userId.equals(userId)))
+          .write(const BudgetsCompanion(isSynced: Value(true)));
+
+      debugPrint('Cleared all budget sync operations for user $userId');
+    } catch (e) {
+      debugPrint('Error clearing budget sync operations: $e');
+    }
   }
 }

@@ -5,6 +5,7 @@ import '../../domain/entities/category.dart';
 import '../viewmodels/expenses_viewmodel.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_constants.dart';
+import '../utils/currency_formatter.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
@@ -25,7 +26,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   bool _isSubmitting = false;
 
   // 使用懒加载和缓存优化
-  final _currency = ValueNotifier<String>('MYR');
+  late final ValueNotifier<String> _currency;
   final _amountController = TextEditingController();
   final _remarkController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -51,7 +52,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void initState() {
     super.initState();
     // Initialize currency from settings service
-    _currency.value = _settingsService.currency;
+    _currency = ValueNotifier<String>(_settingsService.currency);
   }
 
   @override
@@ -86,10 +87,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
         final viewModel =
             Provider.of<ExpensesViewModel>(context, listen: false);
+
+        // Safely parse amount with null check
+        final amountText = _amountController.text.trim();
+        if (amountText.isEmpty) {
+          throw Exception('Amount cannot be empty');
+        }
+
+        final amount = double.tryParse(amountText);
+        if (amount == null || amount <= 0) {
+          throw Exception('Please enter a valid amount greater than zero');
+        }
+
+        // Safely get remark with null check
+        final remarkText = _remarkController.text.trim();
+        if (remarkText.isEmpty) {
+          throw Exception('Remark cannot be empty');
+        }
+
         final expense = Expense(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          remark: _remarkController.text,
-          amount: double.parse(_amountController.text),
+          id: '', // Use empty ID to let repository handle Firebase/offline ID assignment
+          remark: remarkText,
+          amount: amount,
           date: _selectedDateTime.value,
           category: _selectedCategory.value,
           method: _getPaymentMethodEnum(_selectedPaymentMethod.value),
@@ -204,11 +223,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                     // 金额输入框
                     Expanded(
-                      child: CustomTextField.number(
-                        controller: _amountController,
-                        labelText: 'Amount',
-                        suffixText: _currency.value,
-                        isRequired: true,
+                      child: ValueListenableBuilder<String>(
+                        valueListenable: _currency,
+                        builder: (context, currency, _) {
+                          final currencySymbol =
+                              CurrencyFormatter.getCurrencySymbol(currency);
+                          return CustomTextField.number(
+                            controller: _amountController,
+                            labelText: 'Amount',
+                            prefixText: currencySymbol,
+                            isRequired: true,
+                          );
+                        },
                       ),
                     ),
                   ],

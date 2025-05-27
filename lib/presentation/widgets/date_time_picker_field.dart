@@ -102,8 +102,8 @@ class DateTimePickerField extends StatelessWidget {
                 onTap: () => _pickTime(context, effectiveThemeColor),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
+                    horizontal: 16,
+                    vertical: 16,
                   ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,

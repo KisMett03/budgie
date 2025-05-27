@@ -12,6 +12,8 @@ import '../../core/utils/performance_monitor.dart';
 import '../../core/services/budget_calculation_service.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/services/settings_service.dart';
+import '../../core/services/sync_service.dart';
+import '../../di/injection_container.dart' as di;
 import 'dart:async';
 import '../utils/category_manager.dart';
 
@@ -27,12 +29,29 @@ class ExpensesViewModel extends ChangeNotifier {
   StreamSubscription? _expensesSubscription;
   bool _isOffline = false;
 
-  // 缓存机制
+  // Flag to prevent automatic budget updates on startup
+  bool _isInitialLoad = true;
+
+  // Flag to prevent auto-reset of month filter when navigating between screens
+  bool _persistFilter = true;
+
+  // Cache mechanism
   final Map<String, List<Expense>> _cache = {};
 
   // For date filtering
   DateTime _selectedMonth = DateTime.now();
   bool _isFiltering = false;
+  bool _isDayFiltering = false; // New flag for day-level filtering
+
+  // Screen-specific filters
+  final Map<String, DateTime> _screenFilters = {
+    'home': DateTime.now(),
+    'analytics': DateTime.now(),
+  };
+  final Map<String, bool> _screenDayFilters = {
+    'home': false,
+    'analytics': false,
+  };
 
   ExpensesViewModel({
     required ExpensesRepository expensesRepository,
@@ -47,24 +66,24 @@ class ExpensesViewModel extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    // 检查网络连接状态
+    // Check network connection status
     _isOffline = !await _connectivityService.isConnected;
 
-    // 监听网络状态变化
+    // Listen for network status changes
     _connectivityService.connectionStatusStream.listen((isConnected) {
       final wasOffline = _isOffline;
       _isOffline = !isConnected;
 
-      // 从离线模式转为在线模式时，重新加载数据
+      // Reload data when going from offline to online
       if (wasOffline && isConnected) {
         _startExpensesStream();
       } else if (!wasOffline && !isConnected) {
-        // 从在线模式转为离线模式时，加载本地数据
+        // Load local data when going from online to offline
         _loadExpensesFromLocalDatabase();
       }
     });
 
-    // 初始加载数据
+    // Initial data load
     if (_isOffline) {
       _loadExpensesFromLocalDatabase();
     } else {
@@ -72,7 +91,7 @@ class ExpensesViewModel extends ChangeNotifier {
     }
   }
 
-  // 从本地数据库加载支出数据
+  // Load expenses from local database
   Future<void> _loadExpensesFromLocalDatabase() async {
     _isLoading = true;
     _error = null;
@@ -84,13 +103,17 @@ class ExpensesViewModel extends ChangeNotifier {
 
       _expenses = localExpenses;
 
-      // 清除缓存
+      // Clear cache
       _cache.clear();
 
-      // 如果正在过滤，应用过滤条件
-      if (_isFiltering) {
-        _filterExpensesByMonth();
-      }
+      // Apply default filtering for current month
+      _isFiltering = true;
+      _selectedMonth = _screenFilters['home'] ?? DateTime.now();
+      _isDayFiltering = _screenDayFilters['home'] ?? false;
+      _filterExpensesByMonth();
+
+      // Set initial load flag to false after first load
+      _isInitialLoad = false;
 
       _isLoading = false;
       PerformanceMonitor.stopTimer('load_local_expenses');
@@ -100,32 +123,85 @@ class ExpensesViewModel extends ChangeNotifier {
     }
   }
 
-  List<Expense> get expenses => _expenses;
+  List<Expense> get expenses => _isFiltering ? _filteredExpenses : _expenses;
   List<Expense> get filteredExpenses => _filteredExpenses;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isOffline => _isOffline;
   DateTime get selectedMonth => _selectedMonth;
+  bool get isFiltering => _isFiltering;
 
   // Access current user settings
   String get currentCurrency => _settingsService.currency;
   bool get allowNotification => _settingsService.allowNotification;
   bool get autoBudget => _settingsService.autoBudget;
 
-  void setSelectedMonth(DateTime month) {
-    // Set to the first day of the month to standardize
-    final normalizedMonth = DateTime(month.year, month.month, 1);
+  /// Set selected month with screen context
+  void setSelectedMonth(DateTime month,
+      {bool persist = true,
+      bool filterByDay = false,
+      String screenKey = 'home'}) {
+    try {
+      // Store screen-specific filter
+      _screenFilters[screenKey] =
+          filterByDay ? month : DateTime(month.year, month.month, 1);
+      _screenDayFilters[screenKey] = filterByDay;
 
-    if (_selectedMonth.year == normalizedMonth.year &&
-        _selectedMonth.month == normalizedMonth.month) {
-      return; // No change needed
+      if (filterByDay) {
+        // For day filtering, keep the exact date
+        if (_selectedMonth == month && _isDayFiltering) {
+          return; // No change needed
+        }
+
+        _selectedMonth = month;
+        _isFiltering = true;
+        _isDayFiltering = true;
+        _persistFilter = persist;
+      } else {
+        // For month filtering, standardize to first day of month
+        final normalizedMonth = DateTime(month.year, month.month, 1);
+
+        if (_selectedMonth.year == normalizedMonth.year &&
+            _selectedMonth.month == normalizedMonth.month &&
+            !_isDayFiltering) {
+          return; // No change needed
+        }
+
+        _selectedMonth = normalizedMonth;
+        _isFiltering = true;
+        _isDayFiltering = false;
+        _persistFilter = persist;
+      }
+
+      // Initialize filtered expenses as empty to prevent null access
+      _filteredExpenses = [];
+
+      _filterExpensesByMonth();
+      // _filterExpensesByMonth already calls notifyListeners
+    } catch (e) {
+      debugPrint('Error setting selected month: $e');
+      _error = 'Failed to set selected month';
+      notifyListeners();
     }
-
-    _selectedMonth = normalizedMonth;
-    _isFiltering = true;
-    _filterExpensesByMonth();
-    notifyListeners();
   }
+
+  /// Get filter settings for a specific screen
+  DateTime getScreenFilterDate(String screenKey) {
+    return _screenFilters[screenKey] ?? DateTime.now();
+  }
+
+  /// Check if day filtering is enabled for a specific screen
+  bool isDayFilteringForScreen(String screenKey) {
+    return _screenDayFilters[screenKey] ?? false;
+  }
+
+  /// Manually set if the filter should be persisted between screen navigations
+  void setPersistFilter(bool persist) {
+    _persistFilter = persist;
+  }
+
+  /// Check if filter should be persisted
+  bool get shouldPersistFilter => _persistFilter;
 
   void clearMonthFilter() {
     _isFiltering = false;
@@ -137,32 +213,48 @@ class ExpensesViewModel extends ChangeNotifier {
 
     PerformanceMonitor.startTimer('filter_expenses');
 
-    final cacheKey = '${_selectedMonth.year}-${_selectedMonth.month}';
+    final cacheKey = _isDayFiltering
+        ? '${_selectedMonth.year}-${_selectedMonth.month}-${_selectedMonth.day}'
+        : '${_selectedMonth.year}-${_selectedMonth.month}';
 
-    // 使用缓存数据（如果有）
+    // Use cached data if available
     if (_cache.containsKey(cacheKey)) {
       _filteredExpenses = _cache[cacheKey]!;
       PerformanceMonitor.stopTimer('filter_expenses', logResult: true);
+      notifyListeners();
       return;
     }
 
-    // 使用compute函数将过滤操作移至隔离线程
-    compute<_FilterParams, List<Expense>>(
-            _filterExpenses,
-            _FilterParams(
-                expenses: _expenses,
-                year: _selectedMonth.year,
-                month: _selectedMonth.month))
-        .then((result) {
-      _filteredExpenses = result;
-      // 更新缓存
-      _cache[cacheKey] = result;
-      PerformanceMonitor.stopTimer('filter_expenses');
-      notifyListeners();
-    });
+    // Filter synchronously to avoid state inconsistency
+    try {
+      if (_isDayFiltering) {
+        // Filter by exact date (day level)
+        _filteredExpenses = _expenses.where((expense) {
+          return expense.date.year == _selectedMonth.year &&
+              expense.date.month == _selectedMonth.month &&
+              expense.date.day == _selectedMonth.day;
+        }).toList();
+      } else {
+        // Filter by month only
+        _filteredExpenses = _expenses.where((expense) {
+          return expense.date.year == _selectedMonth.year &&
+              expense.date.month == _selectedMonth.month;
+        }).toList();
+      }
+
+      // Update cache
+      _cache[cacheKey] = _filteredExpenses;
+    } catch (e) {
+      debugPrint('Error during expense filtering: $e');
+      // Ensure valid list even if filtering fails
+      _filteredExpenses = [];
+    }
+
+    PerformanceMonitor.stopTimer('filter_expenses');
+    notifyListeners();
   }
 
-  // 静态方法，用于隔离线程中执行过滤
+  // Static method for isolated thread filtering
   static List<Expense> _filterExpenses(_FilterParams params) {
     return params.expenses.where((expense) {
       return expense.date.year == params.year &&
@@ -175,25 +267,27 @@ class ExpensesViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
       _handleError(AuthError.unauthenticated());
       return;
     }
 
+    final userId = currentUser.uid;
+
     _expensesSubscription?.cancel(); // Cancel previous subscription if any
 
-    // 使用数据库层过滤当前月份的数据，添加分页加载
+    // Use database layer filtering for current month data, add pagination
     PerformanceMonitor.startTimer('load_expenses');
 
-    // 如果已经设置了月份过滤，则在数据库层过滤
+    // If month filter is already set, filter at database layer
     Query expensesQuery = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
         .collection('expenses')
         .orderBy('date', descending: true);
 
-    // 限制加载的最大数据量，优化性能
+    // Limit maximum data loading to optimize performance
     final int pageSize = 50;
     expensesQuery = expensesQuery.limit(pageSize);
 
@@ -202,7 +296,7 @@ class ExpensesViewModel extends ChangeNotifier {
         _processExpensesSnapshot(snapshot, userId, pageSize);
       },
       onError: (e, stackTrace) {
-        // 处理异常时，尝试从本地加载数据
+        // When handling exceptions, try to load data from local database
         debugPrint('Firestore stream error: $e, loading from local database');
         _loadExpensesFromLocalDatabase();
         PerformanceMonitor.stopTimer('load_expenses');
@@ -210,10 +304,10 @@ class ExpensesViewModel extends ChangeNotifier {
     );
   }
 
-  // 提取数据处理逻辑到独立方法，以便更好管理代码
+  // Extract data processing logic to independent method for better code management
   void _processExpensesSnapshot(
       QuerySnapshot snapshot, String userId, int pageSize) {
-    // 使用compute进行并行处理提升性能
+    // Use compute for parallel processing to improve performance
     compute<_ProcessParams, List<Expense>>(
         _processExpensesDocs,
         _ProcessParams(
@@ -221,13 +315,23 @@ class ExpensesViewModel extends ChangeNotifier {
         )).then((processedExpenses) {
       _expenses = processedExpenses;
 
-      // 清除过期缓存
+      // Clear expired cache
       _cache.clear();
 
-      // Apply filter if active
-      if (_isFiltering) {
+      // Apply default filtering for current month when loading for the first time
+      if (_isInitialLoad) {
+        _isFiltering = true;
+        _selectedMonth = _screenFilters['home'] ?? DateTime.now();
+        _isDayFiltering = _screenDayFilters['home'] ?? false;
         _filterExpensesByMonth();
       }
+      // Apply existing filter if active
+      else if (_isFiltering) {
+        _filterExpensesByMonth();
+      }
+
+      // Set initial load flag to false after first load
+      _isInitialLoad = false;
 
       PerformanceMonitor.stopTimer('load_expenses');
       _isLoading = false;
@@ -238,36 +342,46 @@ class ExpensesViewModel extends ChangeNotifier {
     });
   }
 
-  // 静态方法，用于并行处理文档
+  // Static method for parallel document processing with enhanced null safety
   static List<Expense> _processExpensesDocs(_ProcessParams params) {
-    return params.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      // Handle potential null or missing data safely
-      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-      final timestamp = data['date'] as Timestamp?;
-      final date = timestamp?.toDate() ?? DateTime.now();
-      final categoryString = data['category'] as String?;
-      final category = categoryString != null
-          ? app_category.CategoryExtension.fromId(categoryString) ??
-              app_category.Category.others
-          : app_category.Category.others;
-      final methodString = data['method'] as String?;
-      final method = PaymentMethod.values.firstWhere(
-        (e) => e.toString().split('.').last == methodString,
-        orElse: () => PaymentMethod.cash,
-      );
+    return params.docs
+        .map((doc) {
+          final data = doc.data();
+          if (data == null) {
+            // Skip null documents
+            return null;
+          }
 
-      return Expense(
-        id: doc.id,
-        remark: data['remark'] as String? ?? '',
-        amount: amount,
-        date: date,
-        category: category,
-        method: method,
-        description: data['description'] as String?,
-        currency: data['currency'] as String? ?? 'MYR',
-      );
-    }).toList();
+          final documentData = data as Map<String, dynamic>;
+
+          // Handle potential null or missing data safely
+          final amount = (documentData['amount'] as num?)?.toDouble() ?? 0.0;
+          final timestamp = documentData['date'] as Timestamp?;
+          final date = timestamp?.toDate() ?? DateTime.now();
+          final categoryString = documentData['category'] as String?;
+          final category = categoryString != null
+              ? app_category.CategoryExtension.fromId(categoryString) ??
+                  app_category.Category.others
+              : app_category.Category.others;
+          final methodString = documentData['method'] as String?;
+          final method = PaymentMethod.values.firstWhere(
+            (e) => e.toString().split('.').last == methodString,
+            orElse: () => PaymentMethod.cash,
+          );
+
+          return Expense(
+            id: doc.id,
+            remark: documentData['remark'] as String? ?? '',
+            amount: amount,
+            date: date,
+            category: category,
+            method: method,
+            description: documentData['description'] as String?,
+            currency: documentData['currency'] as String? ?? 'MYR',
+          );
+        })
+        .whereType<Expense>()
+        .toList(); // Filter out null expenses
   }
 
   // 统一错误处理
@@ -320,26 +434,53 @@ class ExpensesViewModel extends ChangeNotifier {
 
   // 在支出更改后更新预算数据
   Future<void> _updateBudgetAfterExpenseChange(Expense expense) async {
+    // Skip budget updates during initial load to prevent unnecessary syncing
+    if (_isInitialLoad) {
+      debugPrint(
+          'Skipping budget update during initial load for expense: ${expense.id}');
+      return;
+    }
+
+    // Skip updates if we're not on the expense's month
+    if (_isFiltering &&
+        (_selectedMonth.year != expense.date.year ||
+            _selectedMonth.month != expense.date.month)) {
+      debugPrint(
+          'Skipping budget update for expense: ${expense.id} - not in currently selected month');
+      return;
+    }
+
     try {
+      debugPrint(
+          'Expense change detected: ${expense.id}. Checking if budget update is needed...');
       // 获取该支出所属月份的ID
       final monthId = _getMonthIdFromDate(expense.date);
 
       // 获取该月的预算
-      final budget = await _budgetRepository.getBudget(monthId);
-      if (budget == null) return; // 如果没有预算数据，则不需要更新
+      final currentBudget = await _budgetRepository.getBudget(monthId);
+      if (currentBudget == null) {
+        debugPrint(
+            'No budget found for month $monthId. Cannot update after expense change.');
+        return; // 如果没有预算数据，则不需要更新
+      }
 
       // 获取该月的所有支出
       final monthExpenses =
           getExpensesForMonth(expense.date.year, expense.date.month);
 
       // 计算新的预算剩余金额
-      final updatedBudget =
-          await BudgetCalculationService.calculateBudget(budget, monthExpenses);
+      final updatedBudget = await BudgetCalculationService.calculateBudget(
+          currentBudget, monthExpenses);
 
-      // 将更新后的预算保存到数据库
-      await _budgetRepository.setBudget(monthId, updatedBudget);
-
-      debugPrint('Budget updated for month $monthId after expense change');
+      // 只有当预算真正发生变化时才保存
+      if (currentBudget != updatedBudget) {
+        await _budgetRepository.setBudget(monthId, updatedBudget);
+        debugPrint(
+            'Budget updated for month $monthId after expense change because it changed.');
+      } else {
+        debugPrint(
+            'Budget for month $monthId did not change after expense calculation. No update sent.');
+      }
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
       error.log();
@@ -404,8 +545,10 @@ class ExpensesViewModel extends ChangeNotifier {
         return await _expensesRepository.deleteExpense(id);
       });
 
-      // 清除缓存以确保数据一致性
-      _cache.clear();
+      // Only clear cache for the affected month to preserve performance
+      final monthKey =
+          '${expenseToDelete.date.year}-${expenseToDelete.date.month}';
+      _cache.remove(monthKey);
 
       // 离线模式下，手动刷新数据
       if (_isOffline) {
@@ -435,6 +578,62 @@ class ExpensesViewModel extends ChangeNotifier {
       await _loadExpensesFromLocalDatabase();
     } else {
       _startExpensesStream();
+    }
+  }
+
+  // Explicitly update budget for a specific month (for use in analytics screen)
+  Future<void> updateBudgetForMonth(int year, int month) async {
+    try {
+      final monthId = '${year}-${month.toString().padLeft(2, '0')}';
+      debugPrint('Explicitly updating budget for month: $monthId');
+
+      // Get the current user ID
+      final userId = await _getCurrentUserId();
+      if (userId == null) {
+        debugPrint('No user ID available, cannot update budget');
+        return;
+      }
+
+      // Get the budget for this month
+      final currentBudget = await _budgetRepository.getBudget(monthId);
+      if (currentBudget == null) {
+        debugPrint('No budget found for month $monthId. Nothing to update.');
+        return;
+      }
+
+      // Get expenses for this month
+      final monthExpenses = getExpensesForMonth(year, month);
+
+      // Calculate new budget
+      final updatedBudget = await BudgetCalculationService.calculateBudget(
+          currentBudget, monthExpenses);
+
+      // Only save if changed
+      if (currentBudget != updatedBudget) {
+        await _budgetRepository.setBudget(monthId, updatedBudget);
+        debugPrint('Budget for month $monthId updated explicitly.');
+      } else {
+        debugPrint('Budget for month $monthId already up to date.');
+
+        // Even if budget hasn't changed, clear any pending sync operations
+        // to prevent continuous updates
+        final syncService = di.sl<SyncService>();
+        await syncService.manualClearBudgetSyncForMonth(monthId);
+      }
+    } catch (e, stackTrace) {
+      final error = AppError.from(e, stackTrace);
+      error.log();
+      debugPrint('Error updating budget explicitly: ${error.message}');
+    }
+  }
+
+  // Helper method to get current user ID
+  Future<String?> _getCurrentUserId() async {
+    try {
+      return FirebaseAuth.instance.currentUser?.uid;
+    } catch (e) {
+      debugPrint('Error getting current user ID: $e');
+      return null;
     }
   }
 

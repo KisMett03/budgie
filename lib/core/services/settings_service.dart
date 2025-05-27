@@ -14,7 +14,7 @@ class SettingsService extends ChangeNotifier {
 
   String _currency = 'MYR';
   String _theme = 'dark';
-  bool _allowNotification = true;
+  bool _allowNotification = false;
   bool _autoBudget = false;
   bool _improveAccuracy = false;
 
@@ -56,6 +56,7 @@ class SettingsService extends ChangeNotifier {
 
       if (localSettings != null) {
         debugPrint('🔧 SettingsService: Loading settings from local storage');
+        debugPrint('🔧 SettingsService: Local settings data: $localSettings');
         await _loadUserSettings(localSettings);
         notifyListeners();
 
@@ -87,20 +88,71 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
+  // Force reload settings from Firebase (useful for debugging)
+  Future<void> forceReloadFromFirebase() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        debugPrint(
+            '🔧 SettingsService: Force reloading settings from Firebase for user: ${user.uid}');
+        await _loadFromFirebaseAndSave(user.uid);
+        notifyListeners();
+        debugPrint('🔧 SettingsService: Force reload completed');
+      } else {
+        debugPrint(
+            '🔧 SettingsService: No authenticated user for force reload');
+      }
+    } catch (e) {
+      debugPrint('🔧 SettingsService: Error in force reload: $e');
+    }
+  }
+
   // Load settings from Firebase and save to local storage
   Future<void> _loadFromFirebaseAndSave(String userId) async {
     try {
+      debugPrint(
+          '🔧 SettingsService: Fetching user document from Firebase for: $userId');
       final doc = await _firestore.collection('users').doc(userId).get();
+      debugPrint('🔧 SettingsService: Document exists: ${doc.exists}');
+
       final userData = doc.data();
+      debugPrint('🔧 SettingsService: Firebase data: $userData');
 
       if (userData != null) {
         debugPrint(
             '🔧 SettingsService: Found existing user settings in Firebase');
         await _loadUserSettings(userData);
 
-        // Save to local storage
-        await _localDataSource.saveUserSettings(userId, userData);
+        // Convert to the format expected by local storage
+        final settingsForLocal = {
+          'currency': userData['currency'] ?? 'MYR',
+          'theme': userData['theme'] ?? 'dark',
+          'settings': {
+            // Handle both nested and root-level format in Firebase
+            'allowNotification':
+                (userData['settings'] != null && userData['settings'] is Map)
+                    ? (userData['settings']
+                        as Map<String, dynamic>)['allowNotification']
+                    : userData['allowNotification'] ?? true,
+            'autoBudget': (userData['settings'] != null &&
+                    userData['settings'] is Map)
+                ? (userData['settings'] as Map<String, dynamic>)['autoBudget']
+                : userData['autoBudget'] ?? false,
+            'improveAccuracy':
+                (userData['settings'] != null && userData['settings'] is Map)
+                    ? (userData['settings']
+                        as Map<String, dynamic>)['improveAccuracy']
+                    : userData['improveAccuracy'] ?? false,
+          },
+        };
+
+        // Save to local storage with proper format
+        await _localDataSource.saveUserSettings(userId, settingsForLocal);
         await _localDataSource.markUserSettingsAsSynced(userId);
+        debugPrint(
+            '🔧 SettingsService: Settings saved to local storage and marked as synced');
+        debugPrint(
+            '🔧 SettingsService: Local storage format: $settingsForLocal');
       } else {
         debugPrint(
             '🔧 SettingsService: No Firebase settings found, creating defaults');
@@ -143,10 +195,22 @@ class SettingsService extends ChangeNotifier {
       _currency = userData['currency'] ?? 'MYR';
       _theme = userData['theme'] ?? 'dark';
 
-      final settings = userData['settings'] as Map<String, dynamic>? ?? {};
-      _allowNotification = settings['allowNotification'] ?? true;
-      _autoBudget = settings['autoBudget'] ?? false;
-      _improveAccuracy = settings['improveAccuracy'] ?? false;
+      // Handle both nested and root-level settings format for backward compatibility
+      Map<String, dynamic> settings = {};
+
+      // Check if there's a nested 'settings' object
+      if (userData.containsKey('settings') && userData['settings'] is Map) {
+        settings = userData['settings'] as Map<String, dynamic>;
+      }
+
+      // For backward compatibility, also check root level properties
+      // Priority: nested settings > root level > defaults
+      _allowNotification = settings['allowNotification'] ??
+          userData['allowNotification'] ??
+          true;
+      _autoBudget = settings['autoBudget'] ?? userData['autoBudget'] ?? false;
+      _improveAccuracy =
+          settings['improveAccuracy'] ?? userData['improveAccuracy'] ?? false;
 
       debugPrint(
           '🔧 SettingsService: Loaded settings - currency=$_currency, theme=$_theme, allowNotification=$_allowNotification, autoBudget=$_autoBudget, improveAccuracy=$_improveAccuracy');

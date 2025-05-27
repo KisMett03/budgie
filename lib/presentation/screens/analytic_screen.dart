@@ -24,17 +24,79 @@ class AnalyticScreen extends StatefulWidget {
   State<AnalyticScreen> createState() => _AnalyticScreenState();
 }
 
-class _AnalyticScreenState extends State<AnalyticScreen> {
+class _AnalyticScreenState extends State<AnalyticScreen>
+    with WidgetsBindingObserver {
   DateTime _selectedDate = DateTime.now();
   String _currentMonthId = '';
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Initialize with default values
+    _selectedDate = DateTime.now();
     _currentMonthId = formatMonthId(_selectedDate);
-    _loadBudgetData();
+
+    // Delay initialization to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _initializeFilters();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _initializeFilters();
+    }
+  }
+
+  void _initializeFilters() {
+    try {
+      final expensesViewModel =
+          Provider.of<ExpensesViewModel>(context, listen: false);
+
+      // Get the screen-specific filter
+      _selectedDate = expensesViewModel.getScreenFilterDate('analytics');
+      _currentMonthId = formatMonthId(_selectedDate);
+
+      // Apply the filter
+      expensesViewModel.setSelectedMonth(_selectedDate,
+          persist: true, screenKey: 'analytics');
+
+      setState(() {
+        _isInitialized = true;
+      });
+
+      // Load the budget data with the selected month
+      _loadBudgetData();
+    } catch (e) {
+      debugPrint('Error retrieving analytic screen filter: $e');
+      _selectedDate = DateTime.now();
+      _currentMonthId = formatMonthId(_selectedDate);
+      _loadBudgetData();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When the app is resumed, refresh the data
+    if (state == AppLifecycleState.resumed && mounted) {
+      _loadBudgetData();
+      Provider.of<ExpensesViewModel>(context, listen: false).refreshData();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _loadBudgetData() async {
@@ -46,18 +108,24 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
     });
 
     try {
-      // 获取预算视图模型
+      // Get view models
       final budgetViewModel =
           Provider.of<BudgetViewModel>(context, listen: false);
-
       final expensesViewModel =
           Provider.of<ExpensesViewModel>(context, listen: false);
-      expensesViewModel.setSelectedMonth(_selectedDate);
 
-      // 直接从数据库加载预算数据（预算的剩余金额已经在支出变更时更新到数据库）
+      // Set selected month for expenses, ensure we persist the filter
+      expensesViewModel.setSelectedMonth(_selectedDate,
+          persist: true, screenKey: 'analytics');
+
+      // Explicitly update budget for this month to ensure it's current
+      await expensesViewModel.updateBudgetForMonth(
+          _selectedDate.year, _selectedDate.month);
+
+      // Load budget data from database (now updated)
       await budgetViewModel.loadBudget(_currentMonthId);
 
-      // 检查ViewModel中是否有错误
+      // Check for errors
       if (budgetViewModel.errorMessage != null) {
         setState(() {
           _errorMessage = budgetViewModel.errorMessage;
@@ -82,6 +150,13 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
       _currentMonthId = formatMonthId(_selectedDate);
       _errorMessage = null;
     });
+
+    // Save to screen-specific filter
+    final expensesViewModel =
+        Provider.of<ExpensesViewModel>(context, listen: false);
+    expensesViewModel.setSelectedMonth(_selectedDate,
+        persist: true, screenKey: 'analytics');
+
     _loadBudgetData();
   }
 
@@ -137,6 +212,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Analytic'),
+        centerTitle: true,
         automaticallyImplyLeading: false,
       ),
       body: _isLoading
@@ -173,6 +249,7 @@ class _AnalyticScreenState extends State<AnalyticScreen> {
                             themeColor: Theme.of(context).colorScheme.primary,
                             prefix: 'Budget for',
                             onDateChanged: _onDateChanged,
+                            showDaySelection: false,
                           ),
                         ),
                       ),

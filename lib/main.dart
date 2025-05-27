@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_background/flutter_background.dart';
+import 'dart:io';
 
 import 'core/constants/firebase_options.dart';
 import 'core/constants/routes.dart';
 import 'core/router/app_router.dart';
+import 'core/services/settings_service.dart';
+import 'core/services/sync_service.dart';
 import 'presentation/viewmodels/expenses_viewmodel.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/budget_viewmodel.dart';
@@ -17,7 +20,6 @@ import 'presentation/screens/analytic_screen.dart';
 import 'presentation/screens/setting_screen.dart';
 import 'presentation/screens/profile_screen.dart';
 import 'presentation/widgets/animated_float_button.dart';
-import 'presentation/utils/app_theme.dart';
 
 Future<void> main() async {
   // Ensure we can call async code before runApp()
@@ -44,10 +46,60 @@ Future<void> main() async {
       debugPrint('Failed to set persistence: $e');
     }
 
+    // Initialize flutter_background for Android
+    if (Platform.isAndroid) {
+      try {
+        debugPrint('Initializing flutter_background for Android...');
+        const androidConfig = FlutterBackgroundAndroidConfig(
+          notificationTitle: "Budgie",
+          notificationText: "Running in background",
+          notificationImportance: AndroidNotificationImportance.normal,
+          notificationIcon: AndroidResource(
+            name: 'ic_launcher',
+            defType: 'mipmap',
+          ),
+        );
+
+        // First initialization - may trigger permission dialog
+        bool initialized =
+            await FlutterBackground.initialize(androidConfig: androidConfig);
+        debugPrint(
+            'First flutter_background initialization result: $initialized');
+
+        // Check if we have permissions but initialization still returned false
+        if (!initialized && await FlutterBackground.hasPermissions) {
+          // Try again - this should succeed now that permissions are granted
+          initialized =
+              await FlutterBackground.initialize(androidConfig: androidConfig);
+          debugPrint(
+              'Second flutter_background initialization result: $initialized');
+        }
+
+        if (initialized) {
+          debugPrint('flutter_background initialized successfully');
+        } else {
+          debugPrint(
+              'flutter_background initialization failed, will retry when needed');
+        }
+      } catch (e) {
+        debugPrint('Error initializing flutter_background: $e');
+      }
+    }
+
     // Initialize dependency injection
     debugPrint('Initializing dependency injection...');
     await di.init();
     debugPrint('Dependency injection initialized');
+
+    // Initialize SyncService only if a user is logged in
+    if (currentUser != null) {
+      debugPrint('Initializing SyncService for logged in user...');
+      await di.sl<SyncService>().initialize(startPeriodicSync: false);
+      debugPrint('SyncService initialized without automatic periodic sync');
+    }
+
+    // Disable Provider type checking in debug mode if needed
+    // Provider.debugCheckInvalidValueType = null;
 
     // Wrap your entire app in all the providers you'll need
     runApp(
@@ -56,7 +108,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => di.sl<AuthViewModel>()),
           ChangeNotifierProvider(create: (_) => di.sl<ExpensesViewModel>()),
           ChangeNotifierProvider(create: (_) => di.sl<BudgetViewModel>()),
-          ChangeNotifierProvider.value(value: di.sl<ThemeViewModel>()),
+          ChangeNotifierProvider(create: (_) => di.sl<ThemeViewModel>()),
           // TODO: add more providers here as you build out other features
         ],
         child: const BudgieApp(),
@@ -104,8 +156,34 @@ Future<void> main() async {
   }
 }
 
-class BudgieApp extends StatelessWidget {
+class BudgieApp extends StatefulWidget {
   const BudgieApp({Key? key}) : super(key: key);
+
+  @override
+  State<BudgieApp> createState() => _BudgieAppState();
+}
+
+class _BudgieAppState extends State<BudgieApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      // App is being killed, clean up resources
+      di.sl<SyncService>().dispose();
+      debugPrint('App detached: disposed SyncService');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,8 +198,10 @@ class BudgieApp extends StatelessWidget {
         fabRouteObserver,
       ],
       routes: {
-        Routes.home: (context) => ChangeNotifierProvider(
-              create: (_) => di.sl<ExpensesViewModel>(),
+        Routes.home: (context) => MultiProvider(
+              providers: [
+                ChangeNotifierProvider(create: (_) => di.sl<SettingsService>()),
+              ],
               child: const HomeScreen(),
             ),
         Routes.analytic: (context) => const AnalyticScreen(),

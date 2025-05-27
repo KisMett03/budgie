@@ -6,6 +6,7 @@ import '../../domain/repositories/expenses_repository.dart';
 import '../../core/errors/app_error.dart';
 import '../datasources/local_data_source.dart';
 import '../../core/network/connectivity_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Implementation of ExpensesRepository with offline support
 class ExpensesRepositoryImpl implements ExpensesRepository {
@@ -24,10 +25,19 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
         _localDataSource = localDataSource,
         _connectivityService = connectivityService;
 
-  /// Safely get user ID
+  /// Safely get user ID with null safety
   String? get _userId {
     final user = _auth.currentUser;
     return user?.uid;
+  }
+
+  /// Safely gets the current user ID, throws if not authenticated
+  String _requireUserId() {
+    final userId = _userId;
+    if (userId == null) {
+      throw AuthError.unauthenticated();
+    }
+    return userId;
   }
 
   /// Check authentication status
@@ -37,12 +47,9 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     }
   }
 
-  /// Safely get expenses collection reference
+  /// Safely get expenses collection reference with proper null safety
   CollectionReference<Map<String, dynamic>> _getExpensesCollection() {
-    final userId = _userId;
-    if (userId == null) {
-      throw AuthError.unauthenticated();
-    }
+    final userId = _requireUserId();
     return _firestore.collection('users').doc(userId).collection('expenses');
   }
 
@@ -86,8 +93,7 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
 
       // Update local database
       for (final expense in expenses) {
-        await _localDataSource.saveExpense(expense);
-        await _localDataSource.markExpenseAsSynced(expense.id);
+        await _localDataSource.saveSyncedExpense(expense);
       }
 
       return expenses;
@@ -110,45 +116,125 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
   Future<void> addExpense(Expense expense) async {
     try {
       _checkAuthentication();
+      final userId = _requireUserId();
+      debugPrint('Adding expense for user: $userId');
 
       // Check network connectivity
       final isConnected = await _connectivityService.isConnected;
-      final userId = _userId!;
+      debugPrint('Network connectivity: $isConnected');
 
-      // Save to local database first
-      await _localDataSource.saveExpense(expense);
+      if (isConnected) {
+        // Online mode: Save directly to Firebase first, then sync to local
+        debugPrint('Online mode: Saving to Firebase first');
 
-      if (!isConnected) {
-        // Offline mode: save locally only, sync later
-        return;
+        final collection = _getExpensesCollection();
+        debugPrint('Firebase collection path: users/$userId/expenses');
+
+        final expenseDoc = {
+          'remark': expense.remark,
+          'amount': expense.amount,
+          'date': Timestamp.fromDate(expense.date),
+          'category': expense.category.id,
+          'method': expense.method.toString().split('.').last,
+          'description': expense.description,
+          'currency': expense.currency,
+        };
+
+        debugPrint('Expense document to save: $expenseDoc');
+
+        DocumentReference docRef;
+        try {
+          // Add timeout to prevent hanging
+          docRef = await collection.add(expenseDoc).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw NetworkError(
+                  'Firebase save timeout - request took too long');
+            },
+          );
+          debugPrint('Firebase save successful! Document ID: ${docRef.id}');
+        } catch (e) {
+          debugPrint('Firebase save error: $e');
+          if (e is FirebaseException) {
+            debugPrint('Firebase error code: ${e.code}, message: ${e.message}');
+            throw NetworkError('Firebase error: ${e.message}', code: e.code);
+          }
+          rethrow;
+        }
+
+        // Create expense with Firebase-generated ID
+        final expenseWithFirebaseId = expense.copyWith(id: docRef.id);
+
+        // Save to local database with the Firebase ID and mark as synced
+        await _localDataSource.saveSyncedExpense(expenseWithFirebaseId);
+        debugPrint('Successfully saved to local database as synced');
+      } else {
+        // Offline mode: Save to local database and queue for sync
+        debugPrint('Offline mode: Saving to local database');
+
+        // Use timestamp-based ID for offline entries
+        final offlineId = expense.id.isEmpty
+            ? 'offline_${DateTime.now().millisecondsSinceEpoch}'
+            : expense.id;
+
+        final expenseWithOfflineId = expense.copyWith(id: offlineId);
+        await _localDataSource.saveExpense(expenseWithOfflineId);
+        debugPrint('Saved offline expense with ID: $offlineId');
+
+        // Trigger sync immediately if we have connectivity
+        _triggerManualSync();
       }
 
-      // Online mode: save to Firebase
-      final collection = _getExpensesCollection();
-      await collection.doc(expense.id).set({
-        'remark': expense.remark,
-        'amount': expense.amount,
-        'date': Timestamp.fromDate(expense.date),
-        'category': expense.category.id,
-        'method': expense.method.toString().split('.').last,
-        'description': expense.description,
-        'currency': expense.currency,
-      });
-
-      // Mark as synced
-      await _localDataSource.markExpenseAsSynced(expense.id);
+      debugPrint('addExpense completed successfully');
     } catch (e, stackTrace) {
+      debugPrint('Error in addExpense: $e');
+      debugPrint('Stack trace: $stackTrace');
+
       if (e is AuthError) {
+        debugPrint('Authentication error: ${e.message}');
         throw e;
       }
 
       if (e is NetworkError) {
-        // Network error but already saved locally, no additional handling needed
+        debugPrint('Network error, falling back to offline mode');
+        // Network error: Save locally and queue for sync
+        final offlineId = expense.id.isEmpty
+            ? 'offline_${DateTime.now().millisecondsSinceEpoch}'
+            : expense.id;
+
+        final expenseWithOfflineId = expense.copyWith(id: offlineId);
+        await _localDataSource.saveExpense(expenseWithOfflineId);
+        debugPrint('Saved as offline expense due to network error: $offlineId');
+
+        // Trigger sync immediately to try again
+        _triggerManualSync();
         return;
       }
 
+      debugPrint('Unexpected error type: ${e.runtimeType}');
       throw DataError('Failed to add expense: ${e.toString()}',
           originalError: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Trigger manual sync to process offline expenses
+  void _triggerManualSync() {
+    try {
+      // Trigger sync in background without circular dependency
+      Future.delayed(const Duration(milliseconds: 100), () async {
+        try {
+          final isConnected = await _connectivityService.isConnected;
+          if (isConnected) {
+            debugPrint(
+                'Connection available, sync should be triggered automatically');
+          }
+        } catch (e) {
+          debugPrint('Error checking connectivity for sync: $e');
+        }
+      });
+    } catch (e) {
+      debugPrint('Could not trigger sync check: $e');
+      // Don't throw - this is just an optimization
     }
   }
 

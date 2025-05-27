@@ -20,6 +20,20 @@ class CategoryBudget {
         budget: (map['budget'] as num?)?.toDouble() ?? 0,
         left: (map['left'] as num?)?.toDouble() ?? 0,
       );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! CategoryBudget) return false;
+
+    // Use a small epsilon for double comparison to handle floating point precision issues
+    const epsilon = 0.001;
+    return (other.budget - budget).abs() < epsilon &&
+        (other.left - left).abs() < epsilon;
+  }
+
+  @override
+  int get hashCode => budget.hashCode ^ left.hashCode;
 }
 
 /// Overall budget entity containing total budget and category-wise allocations
@@ -50,4 +64,41 @@ class Budget {
         categories: (map['categories'] as Map<String, dynamic>? ?? {})
             .map((k, v) => MapEntry(k, CategoryBudget.fromMap(v))),
       );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! Budget) return false;
+
+    // Use a small epsilon for double comparison
+    const epsilon = 0.001;
+    if ((other.total - total).abs() >= epsilon ||
+        (other.left - left).abs() >= epsilon) {
+      return false;
+    }
+
+    // Check if categories are the same
+    if (other.categories.length != categories.length) {
+      return false;
+    }
+
+    // Compare each category budget
+    for (final entry in categories.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      if (!other.categories.containsKey(key)) {
+        return false;
+      }
+
+      if (other.categories[key] != value) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  @override
+  int get hashCode => total.hashCode ^ left.hashCode ^ categories.hashCode;
 }

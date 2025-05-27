@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
+import 'currency_formatter.dart';
 
 /// Application constants management class
 class AppConstants {
-  /// Currency list
-  static const List<String> currencies = [
+  /// Currency list - use popular currencies for better UX
+  static final List<String> currencies = [
     'MYR',
     'USD',
     'EUR',
     'GBP',
+    'SGD',
     'JPY',
-    'CNY'
+    'CNY',
+    'THB',
+    'INR',
+    'AUD',
+    'CAD',
+    'HKD',
+    'KRW',
+    'CHF',
+    'NZD',
+    'PHP',
+    'VND',
+    'IDR'
   ];
+
+  /// Get all supported currencies from formatter
+  static List<String> getAllSupportedCurrencies() {
+    return CurrencyFormatter.getSupportedCurrencies();
+  }
 
   /// Payment methods list
   static const List<String> paymentMethods = [

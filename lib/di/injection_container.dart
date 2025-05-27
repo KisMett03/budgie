@@ -68,7 +68,7 @@ Future<void> init() async {
     ),
   );
 
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => ExpensesViewModel(
       expensesRepository: sl(),
       budgetRepository: sl(),
