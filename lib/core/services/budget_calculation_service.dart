@@ -2,9 +2,14 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/budget.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/expense.dart';
+import '../../presentation/utils/category_manager.dart';
+import 'currency_conversion_service.dart';
 
 /// Budget calculation service class
 class BudgetCalculationService {
+  static final CurrencyConversionService _currencyService =
+      CurrencyConversionService();
+
   /// Calculate total budget remaining amount and category remaining budgets
   ///
   /// [budget] Original budget data
@@ -12,19 +17,24 @@ class BudgetCalculationService {
   /// Returns updated budget object
   static Future<Budget> calculateBudget(
       Budget budget, List<Expense> expenses) async {
-    // Use compute function to calculate in background thread to avoid UI blocking
-    return compute(
-        _calculateBudgetInternal,
-        _CalculationParams(
-          budget: budget,
-          expenses: expenses,
-        ));
+    debugPrint('🧮 Starting budget calculation');
+    debugPrint('🧮 Budget currency: ${budget.currency}');
+
+    // Create a copy we can modify directly instead of using compute
+    // This avoids the async limitation in compute
+    final result = _calculateBudgetDirect(budget, expenses);
+
+    return result;
   }
 
-  /// Internal calculation function, runs in background thread
-  static Budget _calculateBudgetInternal(_CalculationParams params) {
-    final Budget budget = params.budget;
-    final List<Expense> expenses = params.expenses;
+  /// Direct calculation function that can handle async operations
+  static Future<Budget> _calculateBudgetDirect(
+      Budget budget, List<Expense> expenses) async {
+    final String budgetCurrency = budget.currency;
+
+    debugPrint('🧮 Calculating budget with currency: $budgetCurrency');
+    debugPrint('🧮 Total budget amount: ${budget.total}');
+    debugPrint('🧮 Number of expenses to process: ${expenses.length}');
 
     // Create category expense mapping
     final Map<String, double> categoryExpenses = {};
@@ -33,16 +43,47 @@ class BudgetCalculationService {
     // Note: assumes expenses are already filtered by month
     for (final expense in expenses) {
       final categoryId = expense.category.id;
+
+      // Convert expense amount to budget currency if needed
+      double convertedAmount = expense.amount;
+
+      if (expense.currency != budgetCurrency) {
+        try {
+          // Convert the expense amount to budget currency
+          convertedAmount = await _currencyService.convertCurrency(
+              expense.amount, expense.currency, budgetCurrency);
+
+          debugPrint(
+              '🧮 Converted ${expense.amount} ${expense.currency} to $convertedAmount $budgetCurrency');
+        } catch (e) {
+          debugPrint('🧮 Error converting currency: $e');
+          // Use original amount if conversion fails
+          debugPrint('🧮 Using original amount due to conversion error');
+        }
+      }
+
+      // Add the (converted) amount to category total
       categoryExpenses[categoryId] =
-          (categoryExpenses[categoryId] ?? 0) + expense.amount;
+          (categoryExpenses[categoryId] ?? 0) + convertedAmount;
     }
+
+    // Log category totals for debugging
+    categoryExpenses.forEach((categoryId, amount) {
+      final categoryName = CategoryManager.getNameFromId(categoryId);
+      debugPrint(
+          '🧮 Category "$categoryName" total expenses: $amount $budgetCurrency');
+    });
 
     // Calculate total expenses
     final double totalExpenses =
         categoryExpenses.values.fold(0.0, (sum, amount) => sum + amount);
 
+    debugPrint(
+        '🧮 Total expenses (converted to $budgetCurrency): $totalExpenses');
+
     // Calculate total remaining budget
     final double totalLeft = budget.total - totalExpenses;
+    debugPrint('🧮 Remaining budget: $totalLeft $budgetCurrency');
 
     // Create new category budget mapping
     final Map<String, CategoryBudget> newCategories = {};
@@ -63,6 +104,9 @@ class BudgetCalculationService {
         budget: categoryBudget.budget,
         left: categoryLeft,
       );
+
+      debugPrint(
+          '🧮 Category "${CategoryManager.getNameFromId(categoryId)}" budget: ${categoryBudget.budget}, spent: $categoryExpense, left: $categoryLeft');
     }
 
     // Create and return new budget object
@@ -70,7 +114,15 @@ class BudgetCalculationService {
       total: budget.total,
       left: totalLeft,
       categories: newCategories,
+      currency: budgetCurrency,
     );
+  }
+
+  /// Internal calculation function, runs in background thread
+  static Budget _calculateBudgetInternal(_CalculationParams params) {
+    // This is needed for compute, but we're not using it directly anymore
+    // We keep it for backwards compatibility
+    return params.budget;
   }
 }
 

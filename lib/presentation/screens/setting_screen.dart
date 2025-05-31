@@ -24,6 +24,7 @@ import 'add_expense_screen.dart';
 import 'notification_test_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../viewmodels/budget_viewmodel.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({Key? key}) : super(key: key);
@@ -100,13 +101,41 @@ class _SettingScreenState extends State<SettingScreen> {
 
   Future<void> _updateCurrency(String value) async {
     try {
+      // Get BudgetViewModel to update budget with new currency
+      final budgetViewModel =
+          Provider.of<BudgetViewModel>(context, listen: false);
+
+      debugPrint(
+          'Currency change initiated: from ${_settingsService.currency} to $value');
+
+      // Update the currency in settings first
       await _settingsService.updateCurrency(value);
-      debugPrint('Currency updated to: $value');
+      debugPrint('Settings updated with new currency: $value');
+
+      // Trigger budget currency conversion - this will convert all budget amounts
+      // and save them to Firebase with the new currency
+      debugPrint('Triggering budget currency conversion to: $value');
+      await budgetViewModel.onCurrencyChanged(value);
+
+      // Show a success message to the user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Currency updated to $value. All budgets have been converted.'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error updating currency: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update currency: $e')),
+          SnackBar(
+            content: Text('Failed to update currency: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -492,63 +521,63 @@ class _SettingScreenState extends State<SettingScreen> {
             },
           ),
 
-          // Debug: Force refresh settings button (only in debug mode)
-          if (kDebugMode)
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: const Icon(
-                  Icons.refresh,
-                  color: Colors.orange,
-                  size: 20,
-                ),
-              ),
-              title: const Text('Debug: Refresh Settings'),
-              subtitle: const Text('Force reload settings from Firebase'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () async {
-                try {
-                  // Show loading indicator
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Refreshing settings from Firebase...'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
+          // // Debug: Force refresh settings button (only in debug mode)
+          // if (kDebugMode)
+          //   ListTile(
+          //     leading: Container(
+          //       padding: const EdgeInsets.all(8.0),
+          //       decoration: BoxDecoration(
+          //         color: Colors.orange.withOpacity(0.1),
+          //         borderRadius: BorderRadius.circular(8.0),
+          //       ),
+          //       child: const Icon(
+          //         Icons.refresh,
+          //         color: Colors.orange,
+          //         size: 20,
+          //       ),
+          //     ),
+          //     title: const Text('Debug: Refresh Settings'),
+          //     subtitle: const Text('Force reload settings from Firebase'),
+          //     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          //     onTap: () async {
+          //       try {
+          //         // Show loading indicator
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           const SnackBar(
+          //             content: Text('Refreshing settings from Firebase...'),
+          //             duration: Duration(seconds: 2),
+          //           ),
+          //         );
 
-                  // Force refresh settings
-                  await _settingsService.forceReloadFromFirebase();
+          //         // Force refresh settings
+          //         await _settingsService.forceReloadFromFirebase();
 
-                  // Show success message
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Settings refreshed! Currency: ${_settingsService.currency}, Theme: ${_settingsService.theme}, Notifications: ${_settingsService.allowNotification}'),
-                        backgroundColor: Colors.green,
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to refresh settings: $e'),
-                        backgroundColor: Colors.red,
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
+          //         // Show success message
+          //         if (mounted) {
+          //           ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          //           ScaffoldMessenger.of(context).showSnackBar(
+          //             SnackBar(
+          //               content: Text(
+          //                   'Settings refreshed! Currency: ${_settingsService.currency}, Theme: ${_settingsService.theme}, Notifications: ${_settingsService.allowNotification}'),
+          //               backgroundColor: Colors.green,
+          //               duration: const Duration(seconds: 3),
+          //             ),
+          //           );
+          //         }
+          //       } catch (e) {
+          //         if (mounted) {
+          //           ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          //           ScaffoldMessenger.of(context).showSnackBar(
+          //             SnackBar(
+          //               content: Text('Failed to refresh settings: $e'),
+          //               backgroundColor: Colors.red,
+          //               duration: const Duration(seconds: 3),
+          //             ),
+          //           );
+          //         }
+          //       }
+          //     },
+          //   ),
         ],
       ),
       extendBody: true,

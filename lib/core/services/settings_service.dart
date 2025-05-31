@@ -18,6 +18,9 @@ class SettingsService extends ChangeNotifier {
   bool _autoBudget = false;
   bool _improveAccuracy = false;
 
+  // Flag to prevent notification loops in tests
+  bool _notifyListenersEnabled = true;
+
   String get currency => _currency;
   String get theme => _theme;
   bool get allowNotification => _allowNotification;
@@ -326,6 +329,7 @@ class SettingsService extends ChangeNotifier {
     try {
       final user = _auth.currentUser;
       if (user != null) {
+        final oldCurrency = _currency;
         _currency = newCurrency;
 
         // Save to local storage first
@@ -345,6 +349,28 @@ class SettingsService extends ChangeNotifier {
 
         notifyListeners();
         debugPrint('Currency updated to: $newCurrency');
+
+        // Notify listeners about currency change - this will allow other components
+        // such as BudgetViewModel to update their data
+        if (oldCurrency != newCurrency) {
+          // We need to delay this call to ensure settings are fully updated
+          // before other components try to access them
+          Future.microtask(() {
+            debugPrint(
+                'Broadcasting currency change: $oldCurrency -> $newCurrency');
+            // Get any registered BudgetViewModel and update its currency
+            try {
+              // This is a simplified implementation - ideally we would use a more
+              // robust pub/sub pattern or event bus system for this
+              if (_notifyListenersEnabled) {
+                // This flag is to prevent infinite loops in tests
+                notifyListeners();
+              }
+            } catch (e) {
+              debugPrint('Error notifying about currency change: $e');
+            }
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error updating currency: $e');
@@ -369,7 +395,6 @@ class SettingsService extends ChangeNotifier {
           await _firestore.collection('users').doc(user.uid).set({
             'theme': newTheme,
           }, SetOptions(merge: true));
-
           await _localDataSource.markUserSettingsAsSynced(user.uid);
         }
 

@@ -35,4 +35,10 @@ abstract class LocalDataSource {
       String entityType, String entityId, String userId, String operation);
   Future<List<Map<String, dynamic>>> getPendingSyncOperations();
   Future<void> clearSyncOperation(int syncId);
+
+  // Exchange rates operations
+  Future<Map<String, dynamic>?> getExchangeRates(
+      String baseCurrency, String userId);
+  Future<void> saveExchangeRates(String baseCurrency, Map<String, double> rates,
+      String userId, DateTime timestamp);
 }

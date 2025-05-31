@@ -448,4 +448,35 @@ class LocalDataSourceImpl implements LocalDataSource {
       debugPrint('Error clearing budget sync operations: $e');
     }
   }
+
+  // Clean up resources
+  void dispose() {
+    // Implementation will be added later when notification service is integrated
+  }
+
+  // Exchange rates operations
+  @override
+  Future<Map<String, dynamic>?> getExchangeRates(
+      String baseCurrency, String userId) async {
+    try {
+      // Implementation will be added when exchange_rates table is defined
+      // For now, return null to use the default fallback rates
+      return null;
+    } catch (e) {
+      debugPrint('Error getting exchange rates from local database: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveExchangeRates(String baseCurrency, Map<String, double> rates,
+      String userId, DateTime timestamp) async {
+    try {
+      // Implementation will be added when exchange_rates table is defined
+      debugPrint(
+          'Exchange rates will be saved when database schema is updated');
+    } catch (e) {
+      debugPrint('Error saving exchange rates to local database: $e');
+    }
+  }
 }

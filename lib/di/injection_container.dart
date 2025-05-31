@@ -19,6 +19,7 @@ import '../core/network/connectivity_service.dart';
 import '../core/services/sync_service.dart';
 import '../core/services/notification_service.dart';
 import '../core/services/settings_service.dart';
+import '../core/services/currency_conversion_service.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -55,6 +56,13 @@ Future<void> init() async {
         connectivityService: sl(),
       ));
 
+  // Currency conversion service
+  sl.registerLazySingleton(() {
+    final service = CurrencyConversionService();
+    service.setConnectivityService(sl<ConnectivityService>());
+    return service;
+  });
+
   // ViewModels - Register ThemeViewModel as singleton first
   sl.registerLazySingleton(() => ThemeViewModel());
 
@@ -78,7 +86,10 @@ Future<void> init() async {
   );
 
   sl.registerFactory(
-    () => BudgetViewModel(budgetRepository: sl()),
+    () => BudgetViewModel(
+      budgetRepository: sl(),
+      currencyConversionService: sl(),
+    ),
   );
 
   // Repositories - using injected services

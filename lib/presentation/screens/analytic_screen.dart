@@ -12,6 +12,7 @@ import 'add_expense_screen.dart';
 
 import '../../core/constants/routes.dart';
 import '../../core/router/page_transition.dart';
+import '../../core/services/settings_service.dart';
 
 String formatMonthId(DateTime date) {
   return '${date.year}-${date.month.toString().padLeft(2, '0')}';
@@ -32,6 +33,9 @@ class _AnalyticScreenState extends State<AnalyticScreen>
   String? _errorMessage;
   bool _isInitialized = false;
 
+  // To track currency changes
+  String? _currentCurrency;
+
   @override
   void initState() {
     super.initState();
@@ -41,12 +45,40 @@ class _AnalyticScreenState extends State<AnalyticScreen>
     _selectedDate = DateTime.now();
     _currentMonthId = formatMonthId(_selectedDate);
 
+    // Get initial currency from settings
+    final settingsService = SettingsService.instance;
+    if (settingsService != null) {
+      _currentCurrency = settingsService.currency;
+    }
+
     // Delay initialization to ensure context is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _initializeFilters();
+
+        // Listen for settings changes
+        final settingsService = SettingsService.instance;
+        if (settingsService != null) {
+          settingsService.addListener(_onSettingsChanged);
+        }
       }
     });
+  }
+
+  void _onSettingsChanged() {
+    // Check if currency has changed
+    final settingsService = SettingsService.instance;
+    if (settingsService != null &&
+        _currentCurrency != settingsService.currency) {
+      debugPrint(
+          'Currency changed from $_currentCurrency to ${settingsService.currency}');
+      _currentCurrency = settingsService.currency;
+
+      // Reload budget data with the new currency
+      if (mounted) {
+        _loadBudgetData();
+      }
+    }
   }
 
   @override
@@ -88,6 +120,13 @@ class _AnalyticScreenState extends State<AnalyticScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // When the app is resumed, refresh the data
     if (state == AppLifecycleState.resumed && mounted) {
+      // Check if currency has changed
+      final settingsService = SettingsService.instance;
+      if (settingsService != null &&
+          _currentCurrency != settingsService.currency) {
+        _currentCurrency = settingsService.currency;
+      }
+
       _loadBudgetData();
       Provider.of<ExpensesViewModel>(context, listen: false).refreshData();
     }
@@ -95,6 +134,12 @@ class _AnalyticScreenState extends State<AnalyticScreen>
 
   @override
   void dispose() {
+    // Remove the settings listener
+    final settingsService = SettingsService.instance;
+    if (settingsService != null) {
+      settingsService.removeListener(_onSettingsChanged);
+    }
+
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -114,6 +159,16 @@ class _AnalyticScreenState extends State<AnalyticScreen>
       final expensesViewModel =
           Provider.of<ExpensesViewModel>(context, listen: false);
 
+      // Get user's currency setting
+      final settingsService = SettingsService.instance;
+      final userCurrency = settingsService?.currency ?? 'MYR';
+
+      // Update current currency if needed
+      if (_currentCurrency != userCurrency) {
+        _currentCurrency = userCurrency;
+        debugPrint('Updating to user currency: $_currentCurrency');
+      }
+
       // Set selected month for expenses, ensure we persist the filter
       expensesViewModel.setSelectedMonth(_selectedDate,
           persist: true, screenKey: 'analytics');
@@ -123,7 +178,17 @@ class _AnalyticScreenState extends State<AnalyticScreen>
           _selectedDate.year, _selectedDate.month);
 
       // Load budget data from database (now updated)
-      await budgetViewModel.loadBudget(_currentMonthId);
+      // Pass checkCurrency=true to automatically check if currency conversion is needed
+      await budgetViewModel.loadBudget(_currentMonthId, checkCurrency: true);
+
+      // Make sure budget is using the right currency
+      if (budgetViewModel.budget != null &&
+          budgetViewModel.budget!.currency != _currentCurrency) {
+        debugPrint(
+            'Budget currency (${budgetViewModel.budget!.currency}) needs conversion to $_currentCurrency');
+        await budgetViewModel.checkAndConvertBudgetCurrency(
+            _currentMonthId, _currentCurrency!);
+      }
 
       // Check for errors
       if (budgetViewModel.errorMessage != null) {
@@ -209,6 +274,20 @@ class _AnalyticScreenState extends State<AnalyticScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Check for currency updates
+    final settingsService = SettingsService.instance;
+    if (settingsService != null &&
+        _currentCurrency != settingsService.currency) {
+      // Update currency tracking
+      _currentCurrency = settingsService.currency;
+      // Reload data if we just detected a change
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadBudgetData();
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Analytic'),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/budget.dart';
 import '../utils/category_manager.dart';
+import '../utils/currency_formatter.dart';
 
 class BudgetCard extends StatelessWidget {
   final Budget? budget;
@@ -67,6 +68,8 @@ class BudgetCard extends StatelessWidget {
     final percentage = budget!.total > 0 ? (remaining / budget!.total) : 0;
     final isLow = percentage < 0.3 && percentage > 0;
     final isNegative = remaining <= 0;
+    final currencySymbol =
+        CurrencyFormatter.getCurrencySymbol(budget!.currency);
 
     final statusColor = isNegative
         ? Colors.red
@@ -105,7 +108,7 @@ class BudgetCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'MYR ${budget!.total.toStringAsFixed(0)}',
+                  '${currencySymbol}${budget!.total.toStringAsFixed(0)}',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -128,7 +131,7 @@ class BudgetCard extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'MYR ${remaining.toStringAsFixed(2)}',
+                '${currencySymbol}${remaining.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
@@ -201,6 +204,8 @@ class BudgetCard extends StatelessWidget {
 
   Widget _buildCategoryList() {
     final categories = budget!.categories.entries.toList();
+    final currencySymbol =
+        CurrencyFormatter.getCurrencySymbol(budget!.currency);
 
     // 按剩余预算百分比排序（从低到高）
     categories.sort((a, b) {
@@ -268,7 +273,7 @@ class BudgetCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'MYR ${catBudget.left.toStringAsFixed(0)}',
+                          '${currencySymbol}${catBudget.left.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,

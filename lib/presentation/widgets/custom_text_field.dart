@@ -154,6 +154,7 @@ class CustomTextField extends StatelessWidget {
     String? Function(String?)? validator,
     bool isRequired = false,
     bool allowDecimal = true,
+    bool allowZero = false,
     int? maxLength,
     double borderRadius = 15.0,
   }) {
@@ -177,8 +178,13 @@ class CustomTextField extends StatelessWidget {
               if (double.tryParse(value) == null) {
                 return AppConstants.invalidNumberMessage;
               }
-              if (double.parse(value) <= 0) {
+              // Only validate positive if zero is not allowed
+              if (!allowZero && double.parse(value) <= 0) {
                 return AppConstants.positiveNumberMessage;
+              }
+              // When allowZero is true, we only check for negative values
+              if (allowZero && double.parse(value) < 0) {
+                return 'Value cannot be negative';
               }
             }
             return null;
@@ -207,6 +213,7 @@ class CustomTextField extends StatelessWidget {
     Function(String)? onChanged,
     String? Function(String?)? validator,
     bool isRequired = false,
+    bool allowZero = false,
     double borderRadius = 15.0,
   }) {
     return CustomTextField.number(
@@ -219,7 +226,26 @@ class CustomTextField extends StatelessWidget {
       prefixIcon: Icons.attach_money,
       suffixText: currencySymbol,
       onChanged: onChanged,
-      validator: validator,
+      validator: validator ??
+          (value) {
+            if (isRequired && (value == null || value.isEmpty)) {
+              return AppConstants.requiredFieldMessage;
+            }
+            if (value != null && value.isNotEmpty) {
+              if (double.tryParse(value) == null) {
+                return AppConstants.invalidNumberMessage;
+              }
+              // Only validate positive if zero is not allowed
+              if (!allowZero && double.parse(value) <= 0) {
+                return AppConstants.positiveNumberMessage;
+              }
+              // When allowZero is true, we only check for negative values
+              if (allowZero && double.parse(value) < 0) {
+                return 'Value cannot be negative';
+              }
+            }
+            return null;
+          },
       isRequired: isRequired,
       allowDecimal: true,
       borderRadius: borderRadius,
