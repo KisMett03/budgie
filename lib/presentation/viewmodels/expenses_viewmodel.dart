@@ -12,7 +12,7 @@ import '../../domain/usecase/expense/load_expenses_usecase.dart';
 import '../../domain/usecase/expense/filter_expenses_usecase.dart';
 import '../../domain/usecase/expense/calculate_expense_totals_usecase.dart';
 import '../utils/performance_utils.dart';
-import '../widgets/date_picker_button.dart';
+import '../shared/models/date_filter_mode.dart';
 import 'dart:async';
 
 /// Filter modes for expenses (import from date_picker_button)

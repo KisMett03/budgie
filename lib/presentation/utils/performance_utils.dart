@@ -2,16 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'dart:async';
 
-/// Performance utilities for optimizing UI operations
-class PerformanceUtils {
-  /// Debounce utility to prevent excessive function calls
-  static Timer? _debounceTimer;
+/// Runs only the most recent callback after a period of inactivity.
+class Debouncer {
+  Debouncer(this.delay);
 
-  static void debounce(Duration delay, VoidCallback callback) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(delay, callback);
+  final Duration delay;
+  Timer? _timer;
+
+  void run(VoidCallback callback, {Duration? overrideDelay}) {
+    _timer?.cancel();
+    _timer = Timer(overrideDelay ?? delay, callback);
   }
 
+  void dispose() => _timer?.cancel();
+}
+
+/// Performance utilities for optimizing UI operations
+class PerformanceUtils {
   /// Throttle utility to limit function call frequency
   static final Map<String, DateTime> _lastThrottleCall = {};
 
@@ -36,23 +43,6 @@ class PerformanceUtils {
     }
   }
 
-  /// Batch multiple notifyListeners calls
-  static void batchNotify(List<ChangeNotifier> notifiers) {
-    postFrame(() {
-      for (final notifier in notifiers) {
-        // Justification: We intentionally trigger batched notifications; use
-        // dynamic to bypass the protected analyzer check while remaining safe at runtime.
-        (notifier as dynamic).notifyListeners();
-      }
-    });
-  }
-
-  /// Check if device has sufficient memory for heavy operations
-  static bool isLowMemoryDevice() {
-    // Simplified check - in production, implement proper memory check using device_info_plus
-    return false;
-  }
-
   /// Dispose utility for cleaning up resources
   static void safeDispose(dynamic resource) {
     try {
@@ -72,14 +62,14 @@ class PerformanceUtils {
 
   /// Clean up all static resources
   static void cleanup() {
-    _debounceTimer?.cancel();
-    _debounceTimer = null;
     _lastThrottleCall.clear();
   }
 }
 
 /// Mixin for ViewModels to add performance optimizations
 mixin PerformanceOptimizedViewModel on ChangeNotifier {
+  final Debouncer _notifyDebouncer =
+      Debouncer(const Duration(milliseconds: 16));
   final List<StreamSubscription> _subscriptions = [];
   final List<Timer> _timers = [];
   bool _disposed = false;
@@ -98,11 +88,11 @@ mixin PerformanceOptimizedViewModel on ChangeNotifier {
   void notifyListenersDebounced(
       [Duration delay = const Duration(milliseconds: 16)]) {
     if (_disposed) return;
-    PerformanceUtils.debounce(delay, () {
+    _notifyDebouncer.run(() {
       if (!_disposed) {
         notifyListeners();
       }
-    });
+    }, overrideDelay: delay);
   }
 
   /// Throttled notifyListeners
@@ -117,6 +107,7 @@ mixin PerformanceOptimizedViewModel on ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _notifyDebouncer.dispose();
 
     // Clean up all tracked resources
     for (final subscription in _subscriptions) {

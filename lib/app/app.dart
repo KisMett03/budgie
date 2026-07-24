@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,15 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../core/constants/routes.dart';
-import '../core/router/app_router.dart';
-import '../core/router/navigation_keys.dart';
-import '../core/router/route_observers.dart';
-import '../data/infrastructure/services/settings_service.dart';
+import 'routing/app_router.dart';
+import 'routing/navigation_keys.dart';
+import 'routing/route_observers.dart';
 import '../di/injection_container.dart' as di;
-import '../presentation/screens/analytic_screen.dart';
-import '../presentation/screens/goals_screen.dart';
-import '../presentation/screens/home_screen.dart';
-import '../presentation/screens/setting_screen.dart';
 import '../presentation/utils/app_constants.dart';
 import '../presentation/utils/app_theme.dart';
 import '../presentation/viewmodels/analysis_viewmodel.dart';
@@ -32,12 +29,22 @@ class BudgieApp extends StatefulWidget {
 }
 
 class _BudgieAppState extends State<BudgieApp> with WidgetsBindingObserver {
-  final AppLifecycleHandler _lifecycleHandler = AppLifecycleHandler();
+  final AppLifecycleHandler _lifecycleHandler =
+      AppLifecycleHandler(syncService: di.sl());
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    if (kDebugMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(Future.delayed(
+          const Duration(milliseconds: 500),
+          AppConstants.debugTextSizes,
+        ));
+      });
+    }
   }
 
   @override
@@ -69,11 +76,6 @@ class _BudgieAppState extends State<BudgieApp> with WidgetsBindingObserver {
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (context, _) {
-          if (kDebugMode) {
-            Future.delayed(const Duration(milliseconds: 500), () {
-              AppConstants.debugTextSizes();
-            });
-          }
           return _buildMaterialApp();
         },
       ),
@@ -102,23 +104,10 @@ class _BudgieAppState extends State<BudgieApp> with WidgetsBindingObserver {
           scaffoldMessengerKey: scaffoldMessengerKey,
           navigatorKey: navigatorKey,
           navigatorObservers: [fabRouteObserver],
-          routes: _appRoutes,
           onGenerateRoute: AppRouter.generateRoute,
           initialRoute: Routes.splash,
         );
       },
     );
   }
-
-  Map<String, WidgetBuilder> get _appRoutes => {
-        Routes.home: (context) => MultiProvider(
-              providers: [
-                ChangeNotifierProvider.value(value: di.sl<SettingsService>()),
-              ],
-              child: const HomeScreen(),
-            ),
-        Routes.analytic: (context) => const AnalyticScreen(),
-        Routes.settings: (context) => const SettingScreen(),
-        Routes.goals: (context) => const GoalsScreen(),
-      };
 }

@@ -37,13 +37,9 @@ class BudgetRepositoryImpl implements BudgetRepository {
           '💾 BudgetRepository: Budget total: ${budget.total}, left: ${budget.left}, currency: ${budget.currency}');
 
       // Validate month ID format
-      if (!monthId.contains('-') || monthId.split('-').length != 2) {
+      if (!_isValidMonthId(monthId)) {
         debugPrint('💾 BudgetRepository: Invalid month ID format: $monthId');
-
-        // Fix the month ID format if needed
-        final now = DateTime.now();
-        monthId = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-        debugPrint('💾 BudgetRepository: Using corrected month ID: $monthId');
+        throw ArgumentError.value(monthId, 'monthId', 'Expected YYYY-MM');
       }
 
       // First check if the budget already exists and is identical
@@ -141,5 +137,9 @@ class BudgetRepositoryImpl implements BudgetRepository {
           '🔍 BudgetRepository: Error getting previous month budgets with savings: $e');
       return [];
     }
+  }
+
+  bool _isValidMonthId(String monthId) {
+    return RegExp(r'^\d{4}-(0[1-9]|1[0-2])$').hasMatch(monthId);
   }
 }

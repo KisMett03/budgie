@@ -9,7 +9,7 @@ Budgie is a comprehensive personal finance management application designed to em
 - **Goal Management**: Set, track, and manage your financial goals, with intelligent insights to help you stay on track.
 - **Data-Driven Insights**: Visualize your spending patterns, analyze your financial health, and receive personalized recommendations.
 - **Multi-Currency Support**: Seamlessly manage your finances in multiple currencies, with real-time exchange rate updates.
-- **Secure and Private**: Your financial data is stored securely on your device, ensuring complete privacy and control.
+- **Secure and Private**: Core financial records remain on-device; notification-derived text is sent for analysis only when the relevant feature is enabled.
 
 ## System Architecture
 
@@ -21,7 +21,7 @@ Budgie is built using a clean, scalable, and maintainable architecture that sepa
 
 The application follows the "Repository" pattern to abstract the data sources from the domain layer, making it easy to switch between different data providers without affecting the business logic.
 
-See also: `docs/Architecture_Audit.md` for current audit notes, misplacements, and non-breaking structural actions applied.
+See [the current architecture guide](docs/architecture.md) for the source-of-truth structure and composition rules.
 
 ### Architectural Diagram
 ```mermaid
@@ -52,75 +52,64 @@ graph TD
 
 Budgie uses the `Drift` (formerly Moor) library to manage its local SQLite database. The database is designed to store all the application's data, including expenses, budgets, goals, and user preferences.
 
-The database schema is defined in the `lib/data/local/database/app_database.dart` file and consists of the following tables:
+The database schema is defined in `lib/data/local/database/app_database.dart` and currently consists of the following tables:
 
 - **Expenses**: Stores all the user's expenses, including the amount, category, date, and description.
 - **Budgets**: Stores the user's budgets for different categories.
-- **Goals**: Stores the user's financial goals, including the target amount and current savings.
-- **Categories**: Stores the different expense categories.
-- **RecurringExpenses**: Stores information about recurring expenses.
+- **FinancialGoals**: Stores the user's financial goals, including the target amount and current savings.
+- **GoalHistory**: Stores completed-goal snapshots.
 - **ExchangeRates**: Caches exchange rates to minimize network requests.
-- **UserBehaviorProfile**: Stores user's financial behavior profile.
+- **UserProfiles**: Stores the user's financial behavior profile.
+- **AnalysisResults**: Stores serialized analysis responses for later review.
 
 ### Database Schema Diagram
 
 ```mermaid
 erDiagram
-    Users ||--o{ Expenses : has
-    Users ||--o{ Budgets : has
-    Users ||--o{ Goals : has
-    Categories ||--o{ Expenses : contains
-    Budgets ||--o{ Categories : "applies to"
-
     Expenses {
-        int id PK
-        String description
+        String id PK
+        String remark
         double amount
-        int categoryId FK
         DateTime date
+        String category
+        String currency
     }
 
     Budgets {
-        int id PK
-        int categoryId FK
-        double amount
-        String period
+        String monthId PK
+        double total
+        double left
+        String categoriesJson
+        String currency
     }
 
-    Goals {
-        int id PK
-        String name
+    FinancialGoals {
+        String id PK
+        String title
         double targetAmount
         double currentAmount
-        DateTime targetDate
-    }
-
-    Categories {
-        int id PK
-        String name
-    }
-
-    RecurringExpenses {
-        int id PK
-        String description
-        double amount
-        int categoryId FK
-        String frequency
-        DateTime startDate
-        DateTime endDate
+        DateTime deadline
     }
 
     ExchangeRates {
-        String currencyPair PK
-        double rate
-        DateTime lastUpdated
+        String baseCurrency PK
+        String ratesJson
+        DateTime updatedAt
     }
 
-    UserBehaviorProfile {
-        int id PK
-        String riskTolerance
-        String investmentExperience
-        String financialKnowledge
+    UserProfiles {
+        String id PK
+        String userId
+        String financialPriority
+        String savingHabit
+        String occupation
+    }
+
+    AnalysisResults {
+        String id PK
+        String userId
+        String analysisData
+        DateTime createdAt
     }
 ```
 
@@ -130,7 +119,7 @@ Budgie currently supports a hybrid detection approach:
 - Local TFLite classifier to detect if a notification contains an expense
 - Backend (FastAPI) extraction for structured details
 
-If you choose to move to API-only, remove TFLite dependencies and assets as described in `docs/Architecture_Audit.md`.
+The backend is used for structured extraction and financial analysis; see [data and privacy](docs/data-and-privacy.md) before changing this boundary.
 
 ## Getting Started
 
@@ -138,7 +127,7 @@ To run the application on your local machine, follow these steps:
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/your-username/budgie.git
+    git clone https://github.com/kailiang0120/budgie.git
     ```
 2.  **Install dependencies**:
     ```bash
@@ -147,4 +136,11 @@ To run the application on your local machine, follow these steps:
 3.  **Run the application**:
     ```bash
     flutter run
-    ``` 
+    ```
+
+## Project documentation
+
+- [Architecture](docs/architecture.md)
+- [Database](docs/database.md)
+- [Data and privacy](docs/data-and-privacy.md)
+- [Development](docs/development.md)

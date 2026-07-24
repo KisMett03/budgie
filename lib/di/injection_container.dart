@@ -67,15 +67,11 @@ import '../domain/usecase/goals/get_goals_usecase.dart';
 import '../domain/usecase/goals/manage_goals_usecase.dart';
 import '../domain/usecase/goals/allocate_savings_to_goals_usecase.dart';
 
-import 'performance_tracker.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // Performance Tracker
-  sl.registerLazySingleton(() => PerformanceTracker());
-
   // App Database - LazyDatabase already handles lazy opening
   sl.registerLazySingleton(() => AppDatabase());
 
@@ -121,11 +117,21 @@ Future<void> init() async {
   // =================================================================
   sl.registerLazySingleton<ConnectivityService>(
       () => ConnectivityServiceImpl());
-  sl.registerLazySingleton(() => GeminiApiClient());
-  sl.registerLazySingleton(() => SettingsService());
-  sl.registerLazySingleton(() => NotificationService());
   sl.registerLazySingleton(() => PermissionHandlerService());
-  sl.registerLazySingleton(() => NotificationListenerService());
+  sl.registerLazySingleton(() => NotificationListenerService(
+        permissionHandler: sl<PermissionHandlerService>(),
+      ));
+  sl.registerLazySingleton(() => SettingsService(
+        permissionHandler: sl<PermissionHandlerService>(),
+        notificationListenerService: sl<NotificationListenerService>(),
+      ));
+  sl.registerLazySingleton(() => NotificationService(
+        settingsService: sl<SettingsService>(),
+      ));
+  sl.registerLazySingleton(() => GeminiApiClient(
+        client: sl<http.Client>(),
+        connectivityService: sl<ConnectivityService>(),
+      ));
 
   sl.registerLazySingleton(() => BackgroundTaskService());
   sl.registerLazySingleton(() => SyncService(
@@ -134,23 +140,22 @@ Future<void> init() async {
       connectivityService: sl(),
       settingsService: sl()));
 
-  sl.registerLazySingleton(() {
-    final service = CurrencyConversionService();
-    service.setConnectivityService(sl<ConnectivityService>());
-    return service;
-  });
+  sl.registerLazySingleton(() => CurrencyConversionService(
+        connectivityService: sl<ConnectivityService>(),
+      ));
 
   sl.registerLazySingleton<ExpenseExtractionService>(
-      () => ExpenseExtractionServiceImpl());
+      () => ExpenseExtractionServiceImpl(
+            apiClient: sl<GeminiApiClient>(),
+            connectivityService: sl<ConnectivityService>(),
+          ));
 
   // Register ExpenseExtractionDomainService
-  sl.registerLazySingleton(() {
-    final domainService = ExpenseExtractionDomainService();
-    // Set up dependencies
-    domainService.setExtractionService(sl<ExpenseExtractionService>());
-    domainService.setNotificationService(sl<NotificationService>());
-    return domainService;
-  });
+  sl.registerLazySingleton(() => ExpenseExtractionDomainService(
+        extractionService: sl<ExpenseExtractionService>(),
+        notificationService: sl<NotificationService>(),
+        apiClient: sl<GeminiApiClient>(),
+      ));
 
   sl.registerLazySingleton(() => BudgetCalculationService(
         currencyService: sl<CurrencyConversionService>(),
@@ -164,12 +169,10 @@ Future<void> init() async {
         geminiApiClient: sl<GeminiApiClient>(),
         settingsService: sl<SettingsService>(),
       ));
-  sl.registerLazySingleton(() {
-    final service = SpendingBehaviorAnalysisService();
-    service.setGeminiApiClient(sl<GeminiApiClient>());
-    service.setConnectivityService(sl<ConnectivityService>());
-    return service;
-  });
+  sl.registerLazySingleton(() => SpendingBehaviorAnalysisService(
+        apiClient: sl<GeminiApiClient>(),
+        connectivityService: sl<ConnectivityService>(),
+      ));
   sl.registerLazySingleton(() => GoalFundingService());
 
   // =================================================================
@@ -188,7 +191,6 @@ Future<void> init() async {
       budgetRepository: sl(),
       expensesRepository: sl(),
       budgetCalculationService: sl(),
-      settingsService: sl(),
       loadBudgetUseCase: sl()));
   sl.registerLazySingleton(() => SaveBudgetUseCase(budgetRepository: sl()));
   sl.registerLazySingleton(() => ReallocateBudgetUseCase(
@@ -199,25 +201,19 @@ Future<void> init() async {
   // Expenses use cases
   sl.registerLazySingleton(() => AddExpenseUseCase(
       expensesRepository: sl(),
-      refreshBudgetUseCase: sl(),
-      connectivityService: sl(),
-      settingsService: sl()));
+      refreshBudgetUseCase: sl()));
   sl.registerLazySingleton(
       () => CalculateExpenseTotalsUseCase(settingsService: sl()));
   sl.registerLazySingleton(() => DeleteExpenseUseCase(
       expensesRepository: sl(),
-      refreshBudgetUseCase: sl(),
-      connectivityService: sl(),
-      settingsService: sl()));
+      refreshBudgetUseCase: sl()));
   sl.registerLazySingleton(() => FilterExpensesUseCase());
   sl.registerLazySingleton(() => LoadExpensesUseCase(expensesRepository: sl()));
   sl.registerLazySingleton(
       () => ProcessRecurringExpensesUseCase(expensesRepository: sl()));
   sl.registerLazySingleton(() => UpdateExpenseUseCase(
       expensesRepository: sl(),
-      refreshBudgetUseCase: sl(),
-      connectivityService: sl(),
-      settingsService: sl()));
+      refreshBudgetUseCase: sl()));
 
   // Goals use cases
   sl.registerLazySingleton(() => GetGoalsUseCase(goalsRepository: sl()));

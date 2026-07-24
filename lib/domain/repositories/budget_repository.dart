@@ -1,4 +1,6 @@
 import '../entities/budget.dart';
+import '../entities/budget_period.dart';
+export '../entities/budget_period.dart';
 
 /// Repository interface for budget operations
 abstract class BudgetRepository {
@@ -19,15 +21,4 @@ abstract class BudgetRepository {
 
   /// Gets budgets from previous months only that have savings available for goal funding
   Future<List<BudgetWithMonth>> getPreviousMonthBudgetsWithSavings();
-}
-
-/// Budget with month ID for multi-month operations
-class BudgetWithMonth {
-  final String monthId;
-  final Budget budget;
-
-  BudgetWithMonth({
-    required this.monthId,
-    required this.budget,
-  });
 }

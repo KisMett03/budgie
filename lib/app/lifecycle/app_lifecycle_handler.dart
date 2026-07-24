@@ -3,23 +3,22 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../data/infrastructure/services/sync_service.dart';
-import '../../di/injection_container.dart' as di;
 
 /// Handles application lifecycle transitions that require service coordination.
 class AppLifecycleHandler {
+  AppLifecycleHandler({required SyncService syncService})
+      : _syncService = syncService;
+
+  final SyncService _syncService;
+
   void handleResume() {
     try {
-      if (!di.sl.isRegistered<SyncService>()) {
-        return;
-      }
-
-      final syncService = di.sl<SyncService>();
       if (kDebugMode) {
         debugPrint('?? App resumed - checking for pending syncs');
       }
 
       unawaited(Future.delayed(const Duration(seconds: 1), () {
-        syncService.syncData(fullSync: false);
+        unawaited(_syncService.syncData(fullSync: false));
       }));
     } catch (e) {
       if (kDebugMode) {
@@ -30,11 +29,7 @@ class AppLifecycleHandler {
 
   void handleDetached() {
     try {
-      if (!di.sl.isRegistered<SyncService>()) {
-        return;
-      }
-
-      di.sl<SyncService>().dispose();
+      _syncService.dispose();
       if (kDebugMode) {
         debugPrint('?? App detached: disposed SyncService');
       }

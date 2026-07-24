@@ -8,8 +8,8 @@ import 'dart:async';
 
 import '../../models/expense_detection_models.dart';
 import 'package:budgie/core/constants/routes.dart';
-import 'package:budgie/core/router/navigation_keys.dart'; // for navigatorKey
-import 'settings_service.dart'; // For SettingsService.notificationsEnabled
+import 'package:budgie/app/routing/navigation_keys.dart'; // for navigatorKey
+import 'settings_service.dart';
 
 /// Data class for navigation events triggered by notifications
 class NotificationNavigationAction {
@@ -38,9 +38,10 @@ typedef ExpenseRefreshCallback = Future<void> Function();
 /// Unified notification service for sending local notifications
 /// Provides a clean interface for all notification sending functionality
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-  NotificationService._internal();
+  NotificationService({required SettingsService settingsService})
+      : _settingsService = settingsService;
+
+  final SettingsService _settingsService;
 
   // Temporary storage for extracted expense data
   final Map<String, _TempExpenseData> _tempExpenseStorage = {};
@@ -113,7 +114,7 @@ class NotificationService {
     String? channelId,
   }) async {
     // Check if notifications are enabled before sending
-    if (!SettingsService.notificationsEnabled) {
+    if (!_settingsService.allowNotification) {
       if (kDebugMode) {
         debugPrint(
             '📤 NotificationService: Notifications are disabled in settings. Skipping sendNotification.');
@@ -155,7 +156,7 @@ class NotificationService {
     required ExpenseExtractionResult extractionResult,
   }) async {
     // Check if notifications are enabled before sending
-    if (!SettingsService.notificationsEnabled) {
+    if (!_settingsService.allowNotification) {
       if (kDebugMode) {
         debugPrint(
             '📤 NotificationService: Notifications are disabled in settings. Skipping sendExpenseDetectedNotification.');
@@ -266,7 +267,7 @@ class NotificationService {
     String? payload,
   }) async {
     // Check if notifications are enabled before sending
-    if (!SettingsService.notificationsEnabled) {
+    if (!_settingsService.allowNotification) {
       if (kDebugMode) {
         debugPrint(
             '📤 NotificationService: Notifications are disabled in settings. Skipping sendReminderNotification.');
@@ -292,7 +293,7 @@ class NotificationService {
     String? channelId,
   }) async {
     // Check if notifications are enabled before scheduling
-    if (!SettingsService.notificationsEnabled) {
+    if (!_settingsService.allowNotification) {
       if (kDebugMode) {
         debugPrint(
             '📤 NotificationService: Notifications are disabled in settings. Skipping scheduleNotification.');

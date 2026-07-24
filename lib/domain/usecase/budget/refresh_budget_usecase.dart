@@ -5,7 +5,6 @@ import '../../repositories/budget_repository.dart';
 import '../../repositories/expenses_repository.dart';
 import '../../services/budget_calculation_service.dart';
 import '../../../data/infrastructure/errors/app_error.dart';
-import '../../../data/infrastructure/services/settings_service.dart';
 import 'load_budget_usecase.dart';
 
 /// Use case for refreshing budget data and recalculating budget amounts
@@ -13,20 +12,16 @@ class RefreshBudgetUseCase {
   final BudgetRepository _budgetRepository;
   final ExpensesRepository _expensesRepository;
   final BudgetCalculationService _budgetCalculationService;
-  // ignore: unused_field
-  final SettingsService _settingsService;
   final LoadBudgetUseCase _loadBudgetUseCase;
 
   RefreshBudgetUseCase({
     required BudgetRepository budgetRepository,
     required ExpensesRepository expensesRepository,
     required BudgetCalculationService budgetCalculationService,
-    required SettingsService settingsService,
     required LoadBudgetUseCase loadBudgetUseCase,
   })  : _budgetRepository = budgetRepository,
         _expensesRepository = expensesRepository,
         _budgetCalculationService = budgetCalculationService,
-        _settingsService = settingsService,
         _loadBudgetUseCase = loadBudgetUseCase;
 
   /// Execute the refresh budget use case

@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/infrastructure/config/firebase_options.dart';
 import '../../data/infrastructure/services/background_task_service.dart';
 import '../../data/infrastructure/services/notification_service.dart';
-import '../../data/infrastructure/services/permission_handler_service.dart';
 import '../../data/infrastructure/services/settings_service.dart';
 import '../../data/infrastructure/services/sync_service.dart';
 import '../../di/injection_container.dart' as di;
@@ -117,13 +116,11 @@ class AppBootstrapper {
       }
 
       final settingsService = di.sl<SettingsService>();
-      final permissionHandler = di.sl<PermissionHandlerService>();
-
       if (Platform.isAndroid) {
         await Future.delayed(const Duration(milliseconds: 200));
       }
 
-      await settingsService.initialize(permissionHandler: permissionHandler);
+      await settingsService.initialize();
 
       _refreshThemeFromSettings();
     } catch (e) {
@@ -264,7 +261,7 @@ class AppBootstrapper {
       }
 
       if (settingsService.syncEnabled) {
-        syncService.initialize(startPeriodicSync: true);
+        await syncService.initialize(startPeriodicSync: true);
         if (kDebugMode) {
           debugPrint('? SyncService periodic sync enabled');
         }
@@ -272,12 +269,12 @@ class AppBootstrapper {
         final backgroundTaskService = di.sl<BackgroundTaskService>();
         await backgroundTaskService.updateSyncTask(true);
 
-        Future.delayed(const Duration(seconds: 3), () {
-          syncService.forceFullSync();
+        unawaited(Future.delayed(const Duration(seconds: 3), () {
+          unawaited(syncService.forceFullSync());
           if (kDebugMode) {
             debugPrint('?? Initial sync started');
           }
-        });
+        }));
       }
     } catch (e) {
       if (kDebugMode) {
@@ -291,12 +288,12 @@ class AppBootstrapper {
       final backgroundTaskService = di.sl<BackgroundTaskService>();
       await backgroundTaskService.scheduleRecurringExpenseTask();
 
-      Future.delayed(const Duration(seconds: 10), () {
-        di.sl<ProcessRecurringExpensesUseCase>().execute();
+      unawaited(Future.delayed(const Duration(seconds: 10), () {
+        unawaited(di.sl<ProcessRecurringExpensesUseCase>().execute());
         if (kDebugMode) {
           debugPrint('? Initial recurring expense processing completed');
         }
-      });
+      }));
 
       if (kDebugMode) {
         debugPrint('? Recurring expense service started');

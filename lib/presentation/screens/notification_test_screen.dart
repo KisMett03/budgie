@@ -23,8 +23,8 @@ class NotificationTestScreen extends StatefulWidget {
 
 class _NotificationTestScreenState extends State<NotificationTestScreen> {
   // Services
-  final _notificationService = NotificationService();
-  final _listenerService = NotificationListenerService();
+  final _notificationService = di.sl<NotificationService>();
+  final _listenerService = di.sl<NotificationListenerService>();
   final _permissionHandler = di.sl<PermissionHandlerService>();
   late final ExpenseExtractionDomainService _extractionService;
 
@@ -211,7 +211,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
 
       // Check listener service status (SettingsService handles the rest)
       try {
-        await _listenerService.initialize();
+        await _listenerService.initialize(
+          settingsService: di.sl<SettingsService>(),
+        );
         _addLog('🔔 Listener Service: ✅ Initialized');
 
         // Get detailed health status
@@ -337,7 +339,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
 
     try {
       // Always initialize the listener service before starting
-      await _listenerService.initialize();
+      await _listenerService.initialize(
+        settingsService: di.sl<SettingsService>(),
+      );
       if (_isListening) {
         _addLog('🛑 Stopping notification listener...');
         await _listenerService.stopListening();

@@ -7,19 +7,11 @@ import 'package:flutter/material.dart';
 
 /// Service for handling currency conversion with exchange rates from Bank Negara Malaysia (BNM)
 class CurrencyConversionService {
-  // Singleton instance
-  static final CurrencyConversionService _instance =
-      CurrencyConversionService._internal();
-  factory CurrencyConversionService() => _instance;
-  CurrencyConversionService._internal();
+  CurrencyConversionService({required ConnectivityService connectivityService})
+      : _connectivityService = connectivityService;
 
   // Dependencies
-  ConnectivityService? _connectivityService;
-
-  // Set dependencies (called from injection container)
-  void setConnectivityService(ConnectivityService connectivityService) {
-    _connectivityService = connectivityService;
-  }
+  final ConnectivityService _connectivityService;
 
   // BNM API configuration
   static const String _bnmApiBaseUrl = 'https://api.bnm.gov.my/public';
@@ -227,8 +219,7 @@ class CurrencyConversionService {
 
   /// Check if device is connected to network
   Future<bool> _isNetworkConnected() async {
-    if (_connectivityService == null) return false;
-    return await _connectivityService!.isConnected;
+    return await _connectivityService.isConnected;
   }
 
   /// Check if memory cache is still valid

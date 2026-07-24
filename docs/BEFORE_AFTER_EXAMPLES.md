@@ -463,3 +463,6 @@ Timeline Events:
 ---
 
 **The improvements are production-ready, lightweight, and provide immediate value with better code organization, faster startup, and actionable performance insights!**
+# Historical document
+
+> These examples are illustrative and may not match the current source tree. See [the current architecture guide](architecture.md) instead.

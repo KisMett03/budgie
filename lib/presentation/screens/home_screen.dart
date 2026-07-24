@@ -24,7 +24,7 @@ import 'add_budget_screen.dart';
 
 import '../../core/constants/routes.dart';
 import '../../data/infrastructure/services/settings_service.dart';
-import '../../core/router/page_transition.dart';
+import '../../app/routing/page_transition.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

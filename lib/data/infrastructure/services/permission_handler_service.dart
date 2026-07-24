@@ -5,17 +5,12 @@ import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:async';
 
-import 'settings_service.dart';
 
 /// Comprehensive service for managing all app permissions
 /// Provides centralized permission handling with proper platform support
 /// This is the single source of truth for all permission-related operations
 class PermissionHandlerService with WidgetsBindingObserver {
-  // Singleton instance
-  static final PermissionHandlerService _instance =
-      PermissionHandlerService._internal();
-  factory PermissionHandlerService() => _instance;
-  PermissionHandlerService._internal() {
+  PermissionHandlerService() {
     // Add app lifecycle observer to detect when app returns from settings
     WidgetsBinding.instance.addObserver(this);
   }
@@ -26,18 +21,12 @@ class PermissionHandlerService with WidgetsBindingObserver {
   // Track if method channel is ready
   bool _isMethodChannelReady = false;
 
-  // Settings service reference
-  // ignore: unused_field
-  late final SettingsService _settingsService;
-
   // Permission request tracking
   final Map<Permission, Completer<bool>> _pendingPermissions = {};
   bool _isWaitingForPermission = false;
 
   /// Initialize the service with required dependencies
-  Future<void> initialize(SettingsService settingsService) async {
-    _settingsService = settingsService;
-
+  Future<void> initialize() async {
     // Test method channel availability
     await _testMethodChannel();
 

@@ -20,25 +20,16 @@ import '../../data/infrastructure/services/gemini_api_client.dart';
 /// - Personalized insights and alerts
 /// - Anomaly detection
 class SpendingBehaviorAnalysisService {
-  static final SpendingBehaviorAnalysisService _instance =
-      SpendingBehaviorAnalysisService._internal();
-  factory SpendingBehaviorAnalysisService() => _instance;
-  SpendingBehaviorAnalysisService._internal();
+  SpendingBehaviorAnalysisService({
+    required GeminiApiClient apiClient,
+    required ConnectivityService connectivityService,
+  })  : _apiClient = apiClient,
+        _connectivityService = connectivityService;
 
   // Services
-  GeminiApiClient? _apiClient;
-  ConnectivityService? _connectivityService;
+  final GeminiApiClient _apiClient;
+  final ConnectivityService _connectivityService;
   bool _isInitialized = false;
-
-  /// Set the API client (for dependency injection)
-  void setGeminiApiClient(GeminiApiClient apiClient) {
-    _apiClient = apiClient;
-  }
-
-  /// Set the connectivity service (for dependency injection)
-  void setConnectivityService(ConnectivityService connectivityService) {
-    _connectivityService = connectivityService;
-  }
 
   /// Initialize the spending behavior analysis service
   Future<void> initialize() async {
@@ -47,15 +38,8 @@ class SpendingBehaviorAnalysisService {
     try {
       debugPrint('💡 SpendingBehaviorAnalysisService: Initializing...');
 
-      if (_apiClient == null) {
-        throw AIApiException(
-          'API client not set',
-          code: 'CLIENT_NOT_SET',
-        );
-      }
-
       // Initialize the API client
-      await _apiClient!.initialize();
+      await _apiClient.initialize();
 
       _isInitialized = true;
       debugPrint(
@@ -120,20 +104,13 @@ class SpendingBehaviorAnalysisService {
   }
 
   Future<void> _ensureInitialized() async {
-    if (!_isInitialized || _apiClient == null) {
+    if (!_isInitialized) {
       await initialize();
     }
   }
 
   Future<void> _checkConnectivity() async {
-    if (_connectivityService == null) {
-      throw AIApiException(
-        'Connectivity service not initialized',
-        code: 'SERVICE_NOT_INITIALIZED',
-      );
-    }
-
-    final isConnected = await _connectivityService!.isConnected;
+    final isConnected = await _connectivityService.isConnected;
     if (!isConnected) {
       throw AIApiException(
         'Internet connection required for spending behavior analysis',
@@ -224,7 +201,7 @@ class SpendingBehaviorAnalysisService {
     try {
       debugPrint('💡 Calling FastAPI backend for comprehensive analysis...');
 
-      final response = await _apiClient!.analyzeSpendingBehavior(
+      final response = await _apiClient.analyzeSpendingBehavior(
         request: request,
       );
 
@@ -297,8 +274,6 @@ class SpendingBehaviorAnalysisService {
 
   /// Clean up resources
   void dispose() {
-    _apiClient = null;
-    _connectivityService = null;
     _isInitialized = false;
     debugPrint('💡 SpendingBehaviorAnalysisService: Disposed');
   }

@@ -1,5 +1,7 @@
 # Architecture Improvements - Quick Start Guide
 
+> Historical document: the checklist below describes an earlier proposal and may not match the running application. See [the current architecture guide](architecture.md) for source-of-truth structure.
+
 ## ✅ What Was Implemented
 
 ### 1. **Modularization** - Breaking Down Monolithic Services
@@ -63,7 +65,7 @@ final result = await _logger.traceAsync('loadData', () async {
 ```
 
 #### Enhanced PerformanceTracker:
-**Updated `lib/di/performance_tracker.dart`**
+**Updated `lib/core/diagnostics/performance_tracker.dart`**
 - ✅ Integrated with Flutter's Timeline API
 - ✅ Uses `dart:developer` for structured logging
 - ✅ Timeline events visible in DevTools Performance tab

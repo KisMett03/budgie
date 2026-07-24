@@ -4,8 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/routes.dart';
-import '../../core/router/page_transition.dart';
-import '../../core/router/navigation_helper.dart';
+import '../../app/routing/page_transition.dart';
+import '../../app/routing/navigation_helper.dart';
 import '../../presentation/viewmodels/theme_viewmodel.dart';
 import '../../presentation/viewmodels/budget_viewmodel.dart';
 
@@ -61,7 +61,7 @@ class _SettingScreenState extends State<SettingScreen> {
           debugPrint('❌ Error initializing SettingsService: $e');
         }
         // Create a new instance if DI fails
-        _settingsService = SettingsService();
+        _settingsService = di.sl<SettingsService>();
       }
 
       try {

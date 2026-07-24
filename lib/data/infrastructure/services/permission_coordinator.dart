@@ -11,9 +11,9 @@ class PermissionCoordinator {
   PermissionCoordinator(this._permissionHandler);
   
   /// Initialize permission handler
-  Future<void> initialize(dynamic settingsService) async {
+  Future<void> initialize() async {
     return _logger.traceAsync('initialize', () async {
-      await _permissionHandler.initialize(settingsService);
+      await _permissionHandler.initialize();
       _logger.info('Permission coordinator initialized');
     });
   }

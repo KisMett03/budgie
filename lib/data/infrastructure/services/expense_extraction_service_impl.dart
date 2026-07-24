@@ -9,7 +9,6 @@ import 'gemini_api_client.dart';
 import '../network/connectivity_service.dart';
 import '../../models/expense_detection_models.dart';
 import '../../../domain/services/expense_extraction_service.dart';
-import '../../../di/injection_container.dart' as di;
 
 /// Infrastructure implementation of Expense Extraction using hybrid approach
 ///
@@ -18,14 +17,15 @@ import '../../../di/injection_container.dart' as di;
 /// 2. FastAPI backend communication for detailed expense information extraction
 /// Classification is done locally, extraction uses the BudgieAI FastAPI backend.
 class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
-  static final ExpenseExtractionServiceImpl _instance =
-      ExpenseExtractionServiceImpl._internal();
-  factory ExpenseExtractionServiceImpl() => _instance;
-  ExpenseExtractionServiceImpl._internal();
+  ExpenseExtractionServiceImpl({
+    required GeminiApiClient apiClient,
+    required ConnectivityService connectivityService,
+  })  : _apiClient = apiClient,
+        _connectivityService = connectivityService;
 
   // Services
-  GeminiApiClient? _apiClient;
-  ConnectivityService? _connectivityService;
+  final GeminiApiClient _apiClient;
+  final ConnectivityService _connectivityService;
   bool _isInitialized = false;
 
   // TensorFlow Lite model components
@@ -48,9 +48,9 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
         await _initialize();
       }
 
-      if (_apiClient == null) return false;
+      if (!_isInitialized) return false;
 
-      final healthStatus = await _apiClient!.checkServicesHealth();
+      final healthStatus = await _apiClient.checkServicesHealth();
       return healthStatus['expense_detection'] == true;
     } catch (e) {
       debugPrint('🤖 ExpenseExtractionServiceImpl: Health check failed: $e');
@@ -66,12 +66,8 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
       debugPrint(
           '🤖 ExpenseExtractionServiceImpl: Initializing FastAPI client and TensorFlow model...');
 
-      // Get the API client from dependency injection
-      _apiClient = di.sl<GeminiApiClient>();
-      _connectivityService = di.sl<ConnectivityService>();
-
       // Initialize the API client
-      await _apiClient!.initialize();
+      await _apiClient.initialize();
 
       // Initialize TensorFlow Lite model
       await _initializeTensorFlowModel();
@@ -244,13 +240,10 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
       await _ensureInitialized();
 
       // Check network connectivity first
-      if (_connectivityService != null) {
-        final isConnected = await _connectivityService!.isConnected;
-        if (!isConnected) {
-          debugPrint(
-              '🤖 ExpenseExtractionServiceImpl: No network connection available for extraction');
-          return null;
-        }
+      if (!await _connectivityService.isConnected) {
+        debugPrint(
+            '🤖 ExpenseExtractionServiceImpl: No network connection available for extraction');
+        return null;
       }
 
       debugPrint(
@@ -271,7 +264,7 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
       );
 
       // Call FastAPI backend with the request object
-      final response = await _apiClient!.extractExpenseFromNotification(
+      final response = await _apiClient.extractExpenseFromNotification(
         request: apiRequest,
       );
 
@@ -318,8 +311,6 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
 
   /// Clean up resources
   void dispose() {
-    _apiClient = null;
-    _connectivityService = null;
     _interpreter?.close();
     _interpreter = null;
     _vocabulary = null;

@@ -13,6 +13,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/submit_button.dart';
 import '../utils/currency_formatter.dart';
 import '../../data/infrastructure/services/settings_service.dart';
+import '../../di/injection_container.dart' as di;
 
 class AddBudgetScreen extends StatefulWidget {
   final String? monthId;
@@ -100,12 +101,10 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     }
 
     // Get currency from settings service
-    final settingsService = SettingsService.instance;
-    if (settingsService != null) {
-      _currency = settingsService.currency;
-      if (kDebugMode) {
-        debugPrint('Using currency from settings: $_currency');
-      }
+    final settingsService = di.sl<SettingsService>();
+    _currency = settingsService.currency;
+    if (kDebugMode) {
+      debugPrint('Using currency from settings: $_currency');
     }
 
     _setupListeners();
@@ -259,8 +258,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       }
 
       // If no budget exists, get currency from settings
-      final settingsService = SettingsService.instance;
-      if (settingsService != null && _currency != settingsService.currency) {
+      final settingsService = di.sl<SettingsService>();
+      if (_currency != settingsService.currency) {
         setState(() {
           _currency = settingsService.currency;
         });
@@ -348,8 +347,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       final expensesVM = Provider.of<ExpensesViewModel>(context, listen: false);
 
       // Get the user's current currency setting
-      final settingsService = SettingsService.instance;
-      if (settingsService != null && _currency != settingsService.currency) {
+      final settingsService = di.sl<SettingsService>();
+      if (_currency != settingsService.currency) {
         setState(() {
           _currency = settingsService.currency;
         });
@@ -523,7 +522,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
   @override
   Widget build(BuildContext context) {
     // Check for currency updates from settings service instead of just budget view model
-    final settingsService = SettingsService.instance;
+    final settingsService = di.sl<SettingsService>();
     final budgetVM = Provider.of<BudgetViewModel>(context);
 
     // Priority order:
@@ -533,8 +532,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       setState(() {
         _currency = budgetVM.budget!.currency;
       });
-    } else if (settingsService != null &&
-        _currency != settingsService.currency) {
+    } else if (_currency != settingsService.currency) {
       setState(() {
         _currency = settingsService.currency;
       });

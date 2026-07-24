@@ -376,3 +376,6 @@ These improvements provide:
 - ✅ Production-ready performance monitoring
 
 The code is lightweight, follows Flutter best practices, and provides actionable performance insights through DevTools integration.
+# Historical document
+
+> This document records an earlier architecture proposal. It is not a description of the running application; see [the current architecture guide](architecture.md) instead.

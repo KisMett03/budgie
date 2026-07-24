@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import '../di/performance_tracker.dart';
+import '../core/diagnostics/performance_tracker.dart';
 import 'startup/app_bootstrapper.dart';
 
 /// Application bootstrap entry-point used by `main.dart`.

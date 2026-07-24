@@ -16,10 +16,8 @@ import 'settings_service.dart'; // Added for SettingsService
 /// service (e.g., DataCollectionService) at app startup ONLY if the user
 /// has enabled expense detection in the app settings.
 class NotificationListenerService {
-  static final NotificationListenerService _instance =
-      NotificationListenerService._internal();
-  factory NotificationListenerService() => _instance;
-  NotificationListenerService._internal();
+  NotificationListenerService({required PermissionHandlerService permissionHandler})
+      : _permissionHandler = permissionHandler;
 
   // Method channel for native communication
   static const platform = MethodChannel('com.kai.budgie/notification_listener');
@@ -33,10 +31,14 @@ class NotificationListenerService {
   bool _hasPermissions = false;
 
   // Dependencies
-  late final PermissionHandlerService _permissionHandler;
+  final PermissionHandlerService _permissionHandler;
+  SettingsService? _settingsService;
+
+  bool get _notificationsEnabled => _settingsService?.allowNotification ?? false;
 
   /// Initialize the notification listener service
-  Future<void> initialize() async {
+  Future<void> initialize({SettingsService? settingsService}) async {
+    _settingsService ??= settingsService;
     if (_isInitialized) {
       debugPrint(
           '🔔 NotificationListenerService: Already initialized, skipping');
@@ -45,9 +47,6 @@ class NotificationListenerService {
 
     try {
       debugPrint('🔔 NotificationListenerService: Initializing...');
-
-      // Initialize service dependencies
-      _permissionHandler = PermissionHandlerService();
 
       // Check current state
       await _updateServiceState();
@@ -72,7 +71,7 @@ class NotificationListenerService {
       Function(String title, String content, String packageName) callback) {
     _onNotificationReceived = (title, content, packageName) {
       // Check if notifications are enabled before processing
-      if (!SettingsService.notificationsEnabled) {
+      if (!_notificationsEnabled) {
         debugPrint(
             '🔔 NotificationListenerService: Notifications are disabled in settings. Skipping processing.');
         return;
@@ -285,7 +284,7 @@ class NotificationListenerService {
     required DateTime timestamp,
   }) async {
     // Check if notifications are enabled before processing
-    if (!SettingsService.notificationsEnabled) {
+    if (!_notificationsEnabled) {
       debugPrint(
           '🔔 NotificationListenerService: Notifications are disabled in settings. Skipping hybrid detection.');
       return;

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 
 import '../entities/category.dart' as app_category;
 import '../../data/models/expense_detection_models.dart';
-import '../../di/injection_container.dart' as di;
 import '../../data/infrastructure/services/gemini_api_client.dart';
 import '../../data/infrastructure/services/notification_service.dart';
 
@@ -43,7 +42,7 @@ abstract class ExpenseExtractionService {
 ///
 /// Usage example:
 /// ```dart
-/// final service = ExpenseExtractionDomainService();
+/// final service = serviceLocator<ExpenseExtractionDomainService>();
 /// await service.initialize();
 ///
 /// // Option 1: Complete hybrid processing (recommended)
@@ -68,31 +67,23 @@ abstract class ExpenseExtractionService {
 /// }
 /// ```
 class ExpenseExtractionDomainService {
-  static final ExpenseExtractionDomainService _instance =
-      ExpenseExtractionDomainService._internal();
-  factory ExpenseExtractionDomainService() => _instance;
-  ExpenseExtractionDomainService._internal();
+  ExpenseExtractionDomainService({
+    required ExpenseExtractionService extractionService,
+    required NotificationService notificationService,
+    required GeminiApiClient apiClient,
+  })  : _extractionService = extractionService,
+        _notificationService = notificationService,
+        _apiClient = apiClient;
 
   // Dependencies (injected from infrastructure)
-  ExpenseExtractionService? _extractionService;
-  NotificationService? _notificationService;
+  final ExpenseExtractionService _extractionService;
+  final NotificationService _notificationService;
+  final GeminiApiClient _apiClient;
   bool _isInitialized = false;
 
   // Business rules and configuration
   static const double _minimumConfidenceThreshold = 0.5;
-  // ignore: unused_field
-  static const double _highConfidenceThreshold = 0.8;
   static const Duration _maxProcessingTime = Duration(seconds: 10);
-
-  /// Set the extraction service implementation (dependency injection)
-  void setExtractionService(ExpenseExtractionService extractionService) {
-    _extractionService = extractionService;
-  }
-
-  /// Set the notification service implementation
-  void setNotificationService(NotificationService notificationService) {
-    _notificationService = notificationService;
-  }
 
   /// Initialize the expense extraction service
   Future<void> initialize() async {
@@ -101,19 +92,9 @@ class ExpenseExtractionDomainService {
     try {
       debugPrint('🤖 ExpenseExtractionDomainService: Initializing...');
 
-      if (_extractionService == null) {
-        throw Exception(
-            'Extraction service not injected. Call setExtractionService() first.');
-      }
-      if (_notificationService == null) {
-        throw Exception(
-            'Notification service not injected. Call setNotificationService() first.');
-      }
-
       // Initialize GeminiApiClient with connectivity service
       try {
-        final geminiApiClient = di.sl<GeminiApiClient>();
-        await geminiApiClient.initialize(modelPreset: 'gemma3_27b');
+        await _apiClient.initialize(modelPreset: 'gemma3_27b');
         debugPrint(
             '✅ ExpenseExtractionDomainService: Gemini API client initialized');
       } catch (e) {
@@ -122,7 +103,7 @@ class ExpenseExtractionDomainService {
       }
 
       // Verify extraction service is healthy
-      final isHealthy = await _extractionService!.isHealthy();
+      final isHealthy = await _extractionService.isHealthy();
       if (!isHealthy) {
         debugPrint(
             '⚠️ ExpenseExtractionDomainService: Extraction service is not healthy');
@@ -155,7 +136,7 @@ class ExpenseExtractionDomainService {
       debugPrint(
           '🤖 ExpenseExtractionDomainService: Classifying notification from ${source ?? 'unknown'}');
 
-      final result = await _extractionService!.classifyNotification(
+      final result = await _extractionService.classifyNotification(
         title: title,
         content: content,
         source: source,
@@ -246,7 +227,7 @@ class ExpenseExtractionDomainService {
       final availableCategories = _getAvailableCategories();
 
       // Delegate to API extraction service
-      final extractionResult = await _extractionService!.extractExpenseDetails(
+      final extractionResult = await _extractionService.extractExpenseDetails(
         title: title,
         content: content,
         source: source,
@@ -300,7 +281,7 @@ class ExpenseExtractionDomainService {
       // Generate a simple detection ID for notification payload
       final detectionId = DateTime.now().millisecondsSinceEpoch.toString();
 
-      await _notificationService?.sendExpenseDetectedNotification(
+      await _notificationService.sendExpenseDetectedNotification(
         detectionId: detectionId,
         extractionResult: result,
       );
@@ -378,12 +359,10 @@ class ExpenseExtractionDomainService {
   }
 
   /// Check if service is properly initialized
-  bool get isInitialized => _isInitialized && _extractionService != null;
+  bool get isInitialized => _isInitialized;
 
   /// Clean up resources
   void dispose() {
-    _extractionService = null;
-    _notificationService = null;
     _isInitialized = false;
     debugPrint('🤖 ExpenseExtractionDomainService: Disposed');
   }

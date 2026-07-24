@@ -16,7 +16,7 @@ import '../utils/app_constants.dart';
 import 'add_expense_screen.dart';
 
 import '../../core/constants/routes.dart';
-import '../../core/router/page_transition.dart';
+import '../../app/routing/page_transition.dart';
 
 String formatMonthId(DateTime date) {
   return '${date.year}-${date.month.toString().padLeft(2, '0')}';

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/config/app_config.dart';
 import '../../models/exceptions.dart';
 import '../network/connectivity_service.dart';
 import '../../models/expense_detection_models.dart';
@@ -15,33 +16,25 @@ import '../../models/spending_behavior_models.dart';
 /// This service handles all communication with the BudgieAI FastAPI backend following clean architecture principles.
 /// It provides a centralized, type-safe way to interact with AI-powered services through RESTful APIs.
 class GeminiApiClient {
-  static final GeminiApiClient _instance = GeminiApiClient._internal();
-  factory GeminiApiClient() => _instance;
-  GeminiApiClient._internal();
+  GeminiApiClient({
+    required http.Client client,
+    required ConnectivityService connectivityService,
+  })  : _client = client,
+        _connectivityService = connectivityService;
 
   //         ? 'http://10.0.2.2:8000'
   //         : 'http://localhost:8000'
 
-  static const String _baseUrl = 'https://budgiefastapi.onrender.com';
-  static const String _apiVersion = 'v1';
-  static const String _apiBaseUrl = '$_baseUrl/$_apiVersion';
+  static String get _apiBaseUrl =>
+      '${AppConfig.apiBaseUrl}/${AppConfig.apiVersion}';
 
   // Timeouts
-  // ignore: unused_field
-  static const Duration _connectTimeout = Duration(seconds: 30);
   static const Duration _receiveTimeout = Duration(seconds: 180);
-  // ignore: unused_field
-  static const Duration _sendTimeout = Duration(seconds: 60);
 
   // HTTP Client
-  late http.Client _client;
-  ConnectivityService? _connectivityService;
+  final http.Client _client;
+  final ConnectivityService _connectivityService;
   bool _isInitialized = false;
-
-  /// Set the connectivity service for dependency injection
-  void setConnectivityService(ConnectivityService connectivityService) {
-    _connectivityService = connectivityService;
-  }
 
   /// Initialize the HTTP client service
   Future<void> initialize({
@@ -53,7 +46,6 @@ class GeminiApiClient {
 
     try {
       debugPrint('🤖 BudgieApiClient: Initializing HTTP client...');
-      _client = http.Client();
       _isInitialized = true;
       debugPrint('🤖 BudgieApiClient: Initialized successfully');
     } catch (e) {
@@ -67,8 +59,7 @@ class GeminiApiClient {
 
   /// Check network connectivity
   Future<bool> _hasConnection() async {
-    if (_connectivityService == null) return true;
-    return await _connectivityService!.isConnected;
+    return await _connectivityService.isConnected;
   }
 
   /// Generic API request handler with error handling
@@ -97,11 +88,11 @@ class GeminiApiClient {
       defaultHeaders.addAll(headers);
     }
 
-    // Log the request body in debug mode
-    if (kDebugMode && body != null) {
+    // Keep verbose logging endpoint-only so financial payloads are never logged.
+    if (AppConfig.enableVerboseLogging && kDebugMode && body != null) {
       try {
         final requestBodyJson =
-            const JsonEncoder.withIndent('  ').convert(body);
+            const JsonEncoder.withIndent('  ').convert({'endpoint': endpoint});
         debugPrint('🤖 Request to $endpoint:\n$requestBodyJson');
       } catch (e) {
         debugPrint('🤖 Could not format request body for logging: $e');
@@ -338,8 +329,6 @@ class GeminiApiClient {
 
   /// Reset the service (useful for testing or changing configurations)
   void reset() {
-    _client.close();
-    _client = http.Client();
     _isInitialized = false;
     debugPrint('🤖 BudgieApiClient: Service reset');
   }
@@ -355,7 +344,6 @@ class GeminiApiClient {
   /// Dispose resources
   void dispose() {
     _client.close();
-    _connectivityService = null;
     _isInitialized = false;
     debugPrint('🤖 BudgieApiClient: Disposed');
   }

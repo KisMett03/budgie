@@ -5,13 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_theme.dart';
 import 'package:flutter/foundation.dart';
+import '../shared/models/date_filter_mode.dart';
 
-/// Filter modes for date picker
-enum DateFilterMode {
-  day,
-  month,
-  year,
-}
+export '../shared/models/date_filter_mode.dart';
 
 /// A comprehensive date picker and filter component with modern UI design
 class DatePickerButton extends StatelessWidget {

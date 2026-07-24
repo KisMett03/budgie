@@ -41,7 +41,7 @@ This implementation provides **production-ready** modularization, database optim
 
 ### Enhanced Files
 
-7. **`lib/di/performance_tracker.dart`** ✨ Updated
+7. **`lib/core/diagnostics/performance_tracker.dart`** ✨ Updated
    - Integrated with Flutter's Timeline API
    - Uses dart:developer for structured logging
    - Reduced console noise
@@ -182,7 +182,7 @@ All new files compile without errors:
 ✅ lib/data/infrastructure/services/notification_scheduler.dart
 ✅ lib/domain/repositories/background_task_repository.dart
 ✅ lib/data/repositories/background_task_repository_impl.dart
-✅ lib/di/performance_tracker.dart (updated)
+✅ lib/core/diagnostics/performance_tracker.dart (updated)
 ✅ lib/di/injection_container.dart (updated)
 ✅ lib/app/startup/app_bootstrapper.dart (updated)
 ```
@@ -291,3 +291,6 @@ Refer to:
 **Happy Coding! 🚀**
 
 Your Budgie app now has a modular, performant, and maintainable architecture with actionable performance insights through DevTools integration.
+# Historical document
+
+> This document records an earlier architecture proposal. It is not a description of the running application; see [the current architecture guide](architecture.md) instead.

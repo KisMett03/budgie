@@ -9,7 +9,6 @@ import '../../../di/injection_container.dart' as di;
 /// Service responsible for managing all app settings and preferences
 /// Acts as the single source of truth for user settings
 class SettingsService extends ChangeNotifier {
-  static SettingsService? _instance;
   bool _hasLoadedPersistedSettings = false;
   bool _hasCompletedInitialization = false;
 
@@ -52,8 +51,12 @@ class SettingsService extends ChangeNotifier {
   bool get storageEnabled => _storageEnabled;
   bool get biometricEnabled => _biometricEnabled;
 
-  SettingsService() {
-    _instance = this;
+  SettingsService({
+    required PermissionHandlerService permissionHandler,
+    required NotificationListenerService notificationListenerService,
+  }) {
+    _permissionHandler = permissionHandler;
+    _notificationListenerService = notificationListenerService;
     _theme = 'light';
     _allowNotification = false;
     _autoBudget = false;
@@ -64,12 +67,6 @@ class SettingsService extends ChangeNotifier {
     _storageEnabled = false;
     _biometricEnabled = false;
   }
-
-  static SettingsService? get instance => _instance;
-
-  /// Static getter for allowNotification for global access
-  static bool get notificationsEnabled =>
-      _instance?._allowNotification ?? false;
 
   Map<String, dynamic> get currentSettings => {
         'currency': _currency,
@@ -112,11 +109,8 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
-  Future<void> initialize({PermissionHandlerService? permissionHandler}) async {
+  Future<void> initialize() async {
     if (_hasCompletedInitialization) {
-      if (permissionHandler != null && _permissionHandler == null) {
-        _permissionHandler = permissionHandler;
-      }
       return;
     }
 
@@ -127,14 +121,10 @@ class SettingsService extends ChangeNotifier {
         debugPrint('🔧 SettingsService: Initializing settings');
       }
 
-      if (permissionHandler != null) {
-        _permissionHandler = permissionHandler;
-        await permissionHandler.initialize(this);
-      }
+      await _permissionHandler?.initialize();
 
       try {
-        _notificationListenerService = NotificationListenerService();
-        await _notificationListenerService!.initialize();
+        await _notificationListenerService?.initialize(settingsService: this);
         if (kDebugMode) {
           debugPrint(
               '🔧 SettingsService: NotificationListenerService initialized');
@@ -520,8 +510,7 @@ class SettingsService extends ChangeNotifier {
           debugPrint(
               '🔧 SettingsService: Creating notification listener service...');
         }
-        _notificationListenerService = NotificationListenerService();
-        await _notificationListenerService!.initialize();
+        await _notificationListenerService?.initialize(settingsService: this);
       }
 
       // Proactively check for "run in background" permission

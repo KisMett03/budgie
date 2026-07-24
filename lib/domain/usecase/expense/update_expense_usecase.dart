@@ -4,27 +4,17 @@ import 'package:flutter/foundation.dart';
 
 import '../budget/refresh_budget_usecase.dart';
 import '../../../data/infrastructure/errors/app_error.dart';
-import '../../../data/infrastructure/network/connectivity_service.dart';
-import '../../../data/infrastructure/services/settings_service.dart';
 
 /// Use case for updating an existing expense
 class UpdateExpenseUseCase {
   final ExpensesRepository _expensesRepository;
   final RefreshBudgetUseCase _refreshBudgetUseCase;
-  // ignore: unused_field
-  final ConnectivityService _connectivityService;
-  // ignore: unused_field
-  final SettingsService _settingsService;
 
   UpdateExpenseUseCase({
     required ExpensesRepository expensesRepository,
     required RefreshBudgetUseCase refreshBudgetUseCase,
-    required ConnectivityService connectivityService,
-    required SettingsService settingsService,
   })  : _expensesRepository = expensesRepository,
-        _refreshBudgetUseCase = refreshBudgetUseCase,
-        _connectivityService = connectivityService,
-        _settingsService = settingsService;
+        _refreshBudgetUseCase = refreshBudgetUseCase;
 
   /// Execute the update expense use case
   Future<void> execute(Expense expense) async {
