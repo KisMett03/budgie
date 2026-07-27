@@ -1,28 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'permission_handler_service.dart';
 import 'notification_listener_service.dart';
-import '../../../domain/services/expense_extraction_service.dart';
-import '../../../di/injection_container.dart' as di;
+import '../storage/settings_storage.dart';
 
 /// Service responsible for managing all app settings and preferences
 /// Acts as the single source of truth for user settings
 class SettingsService extends ChangeNotifier {
   bool _hasLoadedPersistedSettings = false;
   bool _hasCompletedInitialization = false;
-
-  // Keys for shared preferences
-  final String _themeKey = 'app_theme';
-  final String _allowNotificationKey = 'allow_notification';
-  final String _autoBudgetKey = 'auto_budget';
-
-  final String _syncEnabledKey = 'sync_enabled';
-  final String _currencyKey = 'user_currency';
-  final String _locationEnabledKey = 'location_enabled';
-  final String _cameraEnabledKey = 'camera_enabled';
-  final String _storageEnabledKey = 'storage_enabled';
-  final String _biometricEnabledKey = 'biometric_enabled';
 
   // Settings values
   late String _theme;
@@ -36,9 +22,10 @@ class SettingsService extends ChangeNotifier {
   late bool _biometricEnabled;
 
   // Services
-  PermissionHandlerService? _permissionHandler;
-  NotificationListenerService? _notificationListenerService;
-  SharedPreferences? _prefs;
+  final SettingsStorage _storage;
+  final PermissionHandlerService _permissionHandler;
+  final NotificationListenerService _notificationListenerService;
+  final Future<void> Function() _initializeExpenseExtraction;
 
   // Getters
   String get theme => _theme;
@@ -52,11 +39,14 @@ class SettingsService extends ChangeNotifier {
   bool get biometricEnabled => _biometricEnabled;
 
   SettingsService({
+    required SettingsStorage storage,
     required PermissionHandlerService permissionHandler,
     required NotificationListenerService notificationListenerService,
-  }) {
-    _permissionHandler = permissionHandler;
-    _notificationListenerService = notificationListenerService;
+    required Future<void> Function() initializeExpenseExtraction,
+  })  : _storage = storage,
+        _permissionHandler = permissionHandler,
+        _notificationListenerService = notificationListenerService,
+        _initializeExpenseExtraction = initializeExpenseExtraction {
     _theme = 'light';
     _allowNotification = false;
     _autoBudget = false;
@@ -82,17 +72,6 @@ class SettingsService extends ChangeNotifier {
         },
       };
 
-  Future<SharedPreferences> _getPrefs() async {
-    final cached = _prefs;
-    if (cached != null) {
-      return cached;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    _prefs = prefs;
-    return prefs;
-  }
-
   Future<void> loadPersistedSettings() async {
     if (_hasLoadedPersistedSettings) {
       return;
@@ -102,9 +81,9 @@ class SettingsService extends ChangeNotifier {
       await _loadSettings();
       _hasLoadedPersistedSettings = true;
       notifyListeners();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error loading persisted settings: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
@@ -121,18 +100,17 @@ class SettingsService extends ChangeNotifier {
         debugPrint('🔧 SettingsService: Initializing settings');
       }
 
-      await _permissionHandler?.initialize();
+      await _permissionHandler.initialize();
 
       try {
-        await _notificationListenerService?.initialize(settingsService: this);
+        await _notificationListenerService.initialize(settingsService: this);
         if (kDebugMode) {
           debugPrint(
               '🔧 SettingsService: NotificationListenerService initialized');
         }
-      } catch (e) {
+      } catch (_) {
         if (kDebugMode) {
-          debugPrint(
-              '🔧 SettingsService: Error initializing NotificationListenerService: $e');
+          debugPrint('SettingsService: Diagnostic output redacted');
         }
       }
 
@@ -157,9 +135,9 @@ class SettingsService extends ChangeNotifier {
         debugPrint('🔧 SettingsService: Initialization completed');
       }
       _hasCompletedInitialization = true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error initializing settings: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       notifyListeners();
     }
@@ -167,38 +145,36 @@ class SettingsService extends ChangeNotifier {
 
   Future<void> _loadSettings() async {
     try {
-      final prefs = await _getPrefs();
-      _theme = prefs.getString(_themeKey) ?? 'light';
-      _allowNotification = prefs.getBool(_allowNotificationKey) ?? false;
-      _autoBudget = prefs.getBool(_autoBudgetKey) ?? false;
-      _syncEnabled = prefs.getBool(_syncEnabledKey) ?? false;
-      _currency = prefs.getString(_currencyKey) ?? 'MYR';
-      _locationEnabled = prefs.getBool(_locationEnabledKey) ?? false;
-      _cameraEnabled = prefs.getBool(_cameraEnabledKey) ?? false;
-      _storageEnabled = prefs.getBool(_storageEnabledKey) ?? false;
-      _biometricEnabled = prefs.getBool(_biometricEnabledKey) ?? false;
+      final persisted = await _storage.loadAll();
+      _theme = persisted['theme'] as String;
+      _allowNotification = persisted['allowNotification'] as bool;
+      _autoBudget = persisted['autoBudget'] as bool;
+      _syncEnabled = persisted['syncEnabled'] as bool;
+      _currency = persisted['currency'] as String;
+      _locationEnabled = persisted['locationEnabled'] as bool;
+      _cameraEnabled = persisted['cameraEnabled'] as bool;
+      _storageEnabled = persisted['storageEnabled'] as bool;
+      _biometricEnabled = persisted['biometricEnabled'] as bool;
 
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Loaded settings - theme=$_theme, currency=$_currency, allowNotification=$_allowNotification, autoBudget=$_autoBudget, syncEnabled=$_syncEnabled, locationEnabled=$_locationEnabled, cameraEnabled=$_cameraEnabled, storageEnabled=$_storageEnabled, biometricEnabled=$_biometricEnabled');
+        debugPrint('SettingsService: Persisted settings loaded');
       }
       _hasLoadedPersistedSettings = true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error loading settings: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
 
   Future<void> _verifyPermissionSettings() async {
-    if (_permissionHandler == null) return;
     try {
       // The notification permission check has been moved to _startNotificationListener
       // to avoid race conditions on app startup. This method will now only
       // verify other permissions if needed in the future.
 
       if (_locationEnabled) {
-        final hasPermission = await _permissionHandler!.hasLocationPermission();
+        final hasPermission = await _permissionHandler.hasLocationPermission();
         if (!hasPermission) {
           if (kDebugMode) {
             debugPrint(
@@ -208,7 +184,7 @@ class SettingsService extends ChangeNotifier {
         }
       }
       if (_cameraEnabled) {
-        final hasPermission = await _permissionHandler!.hasCameraPermission();
+        final hasPermission = await _permissionHandler.hasCameraPermission();
         if (!hasPermission) {
           if (kDebugMode) {
             debugPrint(
@@ -218,7 +194,7 @@ class SettingsService extends ChangeNotifier {
         }
       }
       if (_storageEnabled) {
-        final hasPermission = await _permissionHandler!.hasStoragePermission();
+        final hasPermission = await _permissionHandler.hasStoragePermission();
         if (!hasPermission) {
           if (kDebugMode) {
             debugPrint(
@@ -227,45 +203,40 @@ class SettingsService extends ChangeNotifier {
           await updateStorageSetting(false);
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Error verifying permission settings: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
 
   Future<void> resetToDefaults() async {
     try {
-      final prefs = await _getPrefs();
-      await prefs.clear();
+      await _storage.clearAll();
       _hasLoadedPersistedSettings = false;
       await loadPersistedSettings();
       notifyListeners();
       if (kDebugMode) {
         debugPrint('🔧 SettingsService: Settings reset to defaults');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error resetting settings: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
 
   Future<void> updateCurrency(String newCurrency) async {
     try {
-      final oldCurrency = _currency;
       _currency = newCurrency;
-      final prefs = await _getPrefs();
-      await prefs.setString(_currencyKey, newCurrency);
+      await _storage.saveCurrency(newCurrency);
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Currency updated from $oldCurrency to $newCurrency');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       notifyListeners();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating currency: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       _currency = 'MYR';
     }
@@ -274,15 +245,14 @@ class SettingsService extends ChangeNotifier {
   Future<void> updateTheme(String newTheme) async {
     try {
       _theme = newTheme;
-      final prefs = await _getPrefs();
-      await prefs.setString(_themeKey, newTheme);
+      await _storage.saveTheme(newTheme);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Theme updated to: $newTheme');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating theme: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
@@ -290,13 +260,12 @@ class SettingsService extends ChangeNotifier {
   Future<bool> updateNotificationSetting(bool enabled) async {
     try {
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Updating notification setting to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
 
       // Check permissions if enabling
-      if (enabled && _permissionHandler != null) {
-        final hasPermissions = await _permissionHandler!
+      if (enabled) {
+        final hasPermissions = await _permissionHandler
             .hasPermissionsForFeature(PermissionFeature.notifications);
         if (!hasPermissions) {
           if (kDebugMode) {
@@ -311,8 +280,7 @@ class SettingsService extends ChangeNotifier {
 
       // Update the setting
       _allowNotification = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_allowNotificationKey, enabled);
+      await _storage.saveNotificationEnabled(enabled);
 
       // Manage notification listener based on setting
       if (enabled && !previousValue) {
@@ -333,22 +301,19 @@ class SettingsService extends ChangeNotifier {
               '🔧 SettingsService: Notification already enabled - ensuring listener is running...');
         }
         // Ensure listener is running if it should be
-        if (_notificationListenerService != null &&
-            !_notificationListenerService!.isListening) {
+        if (!_notificationListenerService.isListening) {
           await _startNotificationListener();
         }
       }
 
       notifyListeners();
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Notification setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Error updating notification setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return false;
     }
@@ -357,17 +322,14 @@ class SettingsService extends ChangeNotifier {
   Future<void> updateAutoBudgetSetting(bool enabled) async {
     try {
       _autoBudget = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_autoBudgetKey, enabled);
+      await _storage.saveAutoBudget(enabled);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Auto budget setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Error updating auto budget setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
@@ -375,23 +337,22 @@ class SettingsService extends ChangeNotifier {
   Future<void> updateSyncSetting(bool enabled) async {
     try {
       _syncEnabled = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_syncEnabledKey, enabled);
+      await _storage.saveSyncEnabled(enabled);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Sync setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating sync setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
 
   Future<bool> updateLocationSetting(bool enabled) async {
     try {
-      if (enabled && _permissionHandler != null) {
-        final hasPermission = await _permissionHandler!.hasLocationPermission();
+      if (enabled) {
+        final hasPermission = await _permissionHandler.hasLocationPermission();
         if (!hasPermission) {
           if (kDebugMode) {
             debugPrint(
@@ -401,16 +362,15 @@ class SettingsService extends ChangeNotifier {
         }
       }
       _locationEnabled = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_locationEnabledKey, enabled);
+      await _storage.saveLocationEnabled(enabled);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Location setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating location setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return false;
     }
@@ -418,8 +378,8 @@ class SettingsService extends ChangeNotifier {
 
   Future<bool> updateCameraSetting(bool enabled) async {
     try {
-      if (enabled && _permissionHandler != null) {
-        final hasPermission = await _permissionHandler!.hasCameraPermission();
+      if (enabled) {
+        final hasPermission = await _permissionHandler.hasCameraPermission();
         if (!hasPermission) {
           if (kDebugMode) {
             debugPrint(
@@ -429,16 +389,15 @@ class SettingsService extends ChangeNotifier {
         }
       }
       _cameraEnabled = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_cameraEnabledKey, enabled);
+      await _storage.saveCameraEnabled(enabled);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Camera setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating camera setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return false;
     }
@@ -446,8 +405,8 @@ class SettingsService extends ChangeNotifier {
 
   Future<bool> updateStorageSetting(bool enabled) async {
     try {
-      if (enabled && _permissionHandler != null) {
-        final hasPermission = await _permissionHandler!.hasStoragePermission();
+      if (enabled) {
+        final hasPermission = await _permissionHandler.hasStoragePermission();
         if (!hasPermission) {
           if (kDebugMode) {
             debugPrint(
@@ -457,16 +416,15 @@ class SettingsService extends ChangeNotifier {
         }
       }
       _storageEnabled = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_storageEnabledKey, enabled);
+      await _storage.saveStorageEnabled(enabled);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Storage setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating storage setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
       return false;
     }
@@ -475,16 +433,14 @@ class SettingsService extends ChangeNotifier {
   Future<void> updateBiometricSetting(bool enabled) async {
     try {
       _biometricEnabled = enabled;
-      final prefs = await _getPrefs();
-      await prefs.setBool(_biometricEnabledKey, enabled);
+      await _storage.saveBiometricEnabled(enabled);
       notifyListeners();
       if (kDebugMode) {
-        debugPrint(
-            '🔧 SettingsService: Biometric setting updated to: $enabled');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('🔧 SettingsService: Error updating biometric setting: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
   }
@@ -493,74 +449,48 @@ class SettingsService extends ChangeNotifier {
     try {
       // First, verify that we have the necessary permissions before proceeding.
       // This is the correct place to check, right before execution.
-      if (_permissionHandler != null) {
-        final hasPermissions = await _permissionHandler!
-            .hasPermissionsForFeature(PermissionFeature.notifications);
-        if (!hasPermissions) {
-          if (kDebugMode) {
-            debugPrint(
-                '❌ SettingsService: Cannot start listener, required permissions are missing. The user setting remains ON.');
-          }
-          return; // Abort starting the listener
-        }
-      }
-
-      if (_notificationListenerService == null) {
+      final hasPermissions = await _permissionHandler
+          .hasPermissionsForFeature(PermissionFeature.notifications);
+      if (!hasPermissions) {
         if (kDebugMode) {
           debugPrint(
-              '🔧 SettingsService: Creating notification listener service...');
+              '❌ SettingsService: Cannot start listener, required permissions are missing. The user setting remains ON.');
         }
-        await _notificationListenerService?.initialize(settingsService: this);
+        return; // Abort starting the listener
       }
 
+      await _notificationListenerService.initialize(settingsService: this);
+
       // Proactively check for "run in background" permission
-      if (_permissionHandler != null) {
-        final hasIgnoreBatteryPermission =
-            await _permissionHandler!.hasIgnoreBatteryOptimizationsPermission();
-        if (!hasIgnoreBatteryPermission) {
-          if (kDebugMode) {
-            debugPrint(
-                '🔧 SettingsService: Missing "run in background" permission, requesting...');
-          }
-          await _permissionHandler!
-              .requestIgnoreBatteryOptimizationsPermission();
+      final hasIgnoreBatteryPermission =
+          await _permissionHandler.hasIgnoreBatteryOptimizationsPermission();
+      if (!hasIgnoreBatteryPermission) {
+        if (kDebugMode) {
+          debugPrint(
+              '🔧 SettingsService: Missing "run in background" permission, requesting...');
         }
+        await _permissionHandler.requestIgnoreBatteryOptimizationsPermission();
       }
 
       if (kDebugMode) {
         debugPrint('🔧 SettingsService: Starting notification listener...');
       }
 
-      // Ensure expense extraction service is ready
       try {
-        final extractionService = di.sl<ExpenseExtractionDomainService>();
-        if (!extractionService.isInitialized) {
-          if (kDebugMode) {
-            debugPrint(
-                '🔧 SettingsService: Initializing expense extraction service...');
-          }
-          await extractionService.initialize();
-          if (kDebugMode) {
-            debugPrint(
-                '✅ SettingsService: Expense extraction service initialized');
-          }
-        } else {
-          if (kDebugMode) {
-            debugPrint(
-                '✅ SettingsService: Expense extraction service already initialized');
-          }
-        }
-      } catch (e) {
+        await _initializeExpenseExtraction();
         if (kDebugMode) {
-          debugPrint(
-              '⚠️ SettingsService: Failed to initialize expense extraction service: $e');
+          debugPrint('SettingsService: Expense extraction service ready');
+        }
+      } catch (_) {
+        if (kDebugMode) {
+          debugPrint('SettingsService: Expense extraction service unavailable');
         }
       }
 
       // Set up notification callback
-      _notificationListenerService!
+      _notificationListenerService
           .setNotificationCallback((title, content, packageName) {
-        _notificationListenerService!.processNotificationWithHybridDetection(
+        _notificationListenerService.processNotificationWithHybridDetection(
           title: title,
           content: content,
           packageName: packageName,
@@ -572,26 +502,23 @@ class SettingsService extends ChangeNotifier {
       bool started = false;
       for (int attempt = 1; attempt <= 3; attempt++) {
         try {
-          started = await _notificationListenerService!.startListening();
+          started = await _notificationListenerService.startListening();
           if (started) {
             if (kDebugMode) {
-              debugPrint(
-                  '✅ SettingsService: Notification listener started successfully on attempt $attempt');
+              debugPrint('SettingsService: Diagnostic output redacted');
             }
             break;
           } else {
             if (kDebugMode) {
-              debugPrint(
-                  '⚠️ SettingsService: Failed to start listener on attempt $attempt');
+              debugPrint('SettingsService: Diagnostic output redacted');
             }
             if (attempt < 3) {
               await Future.delayed(Duration(milliseconds: 500 * attempt));
             }
           }
-        } catch (e) {
+        } catch (_) {
           if (kDebugMode) {
-            debugPrint(
-                '❌ SettingsService: Error starting listener on attempt $attempt: $e');
+            debugPrint('SettingsService: Diagnostic output redacted');
           }
           if (attempt < 3) {
             await Future.delayed(Duration(milliseconds: 500 * attempt));
@@ -605,18 +532,15 @@ class SettingsService extends ChangeNotifier {
               '❌ SettingsService: Failed to start notification listener after all attempts');
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ SettingsService: Error starting notification listener: $e');
+        debugPrint('SettingsService: Error starting notification listener');
       }
     }
   }
 
   Future<void> _stopNotificationListener() async {
     try {
-      if (_notificationListenerService == null) return;
-
       if (kDebugMode) {
         debugPrint('🔧 SettingsService: Stopping notification listener...');
       }
@@ -625,17 +549,15 @@ class SettingsService extends ChangeNotifier {
       bool stopped = false;
       for (int attempt = 1; attempt <= 3; attempt++) {
         try {
-          await _notificationListenerService!.stopListening();
+          await _notificationListenerService.stopListening();
           stopped = true;
           if (kDebugMode) {
-            debugPrint(
-                '✅ SettingsService: Notification listener stopped successfully on attempt $attempt');
+            debugPrint('SettingsService: Diagnostic output redacted');
           }
           break;
-        } catch (e) {
+        } catch (_) {
           if (kDebugMode) {
-            debugPrint(
-                '❌ SettingsService: Error stopping listener on attempt $attempt: $e');
+            debugPrint('SettingsService: Diagnostic output redacted');
           }
           if (attempt < 3) {
             await Future.delayed(Duration(milliseconds: 200 * attempt));
@@ -649,10 +571,9 @@ class SettingsService extends ChangeNotifier {
               '❌ SettingsService: Failed to stop notification listener after all attempts');
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ SettingsService: Error stopping notification listener: $e');
+        debugPrint('SettingsService: Error stopping notification listener');
       }
     }
   }
@@ -686,10 +607,16 @@ class SettingsService extends ChangeNotifier {
       }
 
       notifyListeners();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('❌ SettingsService: Error during on-resume sync: $e');
+        debugPrint('SettingsService: Diagnostic output redacted');
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _notificationListenerService.dispose();
+    super.dispose();
   }
 }

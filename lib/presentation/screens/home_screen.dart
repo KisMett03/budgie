@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
         // Force budget refresh to ensure it's loaded
         final monthId = _getBudgetMonthId();
-        debugPrint('🏠 HomeScreen: Initial budget refresh for month: $monthId');
+        debugPrint('home_screen: Diagnostic output redacted');
         Provider.of<BudgetViewModel>(context, listen: false)
             .refreshBudget(monthId);
       }
@@ -79,15 +79,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _selectedDate = vm.getScreenFilterDate('home');
       _filterMode = vm.getFilterMode('home');
 
-      debugPrint(
-          '🏠 HomeScreen: Initializing filters - selectedDate: $_selectedDate, filterMode: $_filterMode');
+      debugPrint('home_screen: Diagnostic output redacted');
 
       // Apply the filter using the new filter mode system
       vm.setFilterMode(_filterMode, _selectedDate, screenKey: 'home');
 
       setState(() {});
     } catch (e) {
-      debugPrint('🏠 HomeScreen: Error initializing date filter: $e');
+      debugPrint('home_screen: Diagnostic output redacted');
       _selectedDate = DateTime.now();
       _filterMode = DateFilterMode.month;
     }
@@ -153,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // Use refreshBudget to ensure we get fresh data
       budgetVM.refreshBudget(monthId);
     } catch (e) {
-      debugPrint('Error changing selected month: $e');
+      debugPrint('home_screen: Diagnostic output redacted');
     }
   }
 
@@ -166,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final vm = Provider.of<ExpensesViewModel>(context, listen: false);
       vm.setFilterMode(_filterMode, _selectedDate, screenKey: 'home');
     } catch (e) {
-      debugPrint('Error changing filter mode: $e');
+      debugPrint('home_screen: Diagnostic output redacted');
     }
   }
 
@@ -182,8 +181,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ).then((result) {
       // Refresh budget data when returning from budget screen
       if (mounted) {
-        debugPrint(
-            '🏠 HomeScreen: Returned from budget screen with result: $result');
+        debugPrint('home_screen: Diagnostic output redacted');
 
         // Run the shared refresh path once to load budgets, expenses, and goals
         _refreshData();
@@ -363,30 +361,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           : expensesVM.getExpensesForMonth(
               _selectedDate.year, _selectedDate.month);
 
-      debugPrint(
-          '🏠 HomeScreen: Found ${currentExpenses.length} expenses for the selected period');
+      debugPrint('home_screen: Diagnostic output redacted');
 
       // Step 4: Refresh budget data for the selected month (optimize by combining operations)
       if (mounted) {
-        debugPrint('🏠 HomeScreen: Refreshing budget for month: $monthId');
+        debugPrint('home_screen: Diagnostic output redacted');
 
         // Optimize: Use refreshBudget which internally loads and calculates
         await budgetVM.refreshBudget(monthId);
-        debugPrint(
-            '🏠 HomeScreen: Budget after refresh exists: ${budgetVM.budget != null}');
+        debugPrint('home_screen: Diagnostic output redacted');
 
         // Only calculate budget remaining if needed (avoid redundant calculation)
         if (budgetVM.budget != null && currentExpenses.isNotEmpty) {
           await budgetVM.calculateBudgetRemaining(currentExpenses, monthId);
-          debugPrint(
-              '🏠 HomeScreen: Budget after recalculation exists: ${budgetVM.budget != null}');
+          debugPrint('home_screen: Diagnostic output redacted');
         }
 
         final goalsVM = Provider.of<GoalsViewModel>(context, listen: false);
         await goalsVM.init(force: true);
 
-        debugPrint(
-            '🏠 HomeScreen: Refresh completed successfully - expenses count: ${expensesVM.expenses.length}');
+        debugPrint('home_screen: Diagnostic output redacted');
 
         // Force UI update only if still mounted
         if (mounted) {
@@ -396,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      debugPrint('🏠 HomeScreen: Error during refresh: $e');
+      debugPrint('home_screen: Diagnostic output redacted');
 
       // Show error to user if needed
       if (mounted) {
@@ -417,8 +411,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final expenses = vm.expenses;
     final isLoading = vm.isLoading;
 
-    debugPrint(
-        '🏠 HomeScreen: Building UI with ${expenses.length} expenses, loading: $isLoading');
+    debugPrint('home_screen: Diagnostic output redacted');
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -536,11 +529,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ).then((result) {
             // Only refresh data if an expense was actually added (result == true)
-            debugPrint(
-                '🏠 HomeScreen: Returned from AddExpenseScreen with result: $result');
+            debugPrint('home_screen: Diagnostic output redacted');
             if (!mounted || result != true) {
-              debugPrint(
-                  '🏠 HomeScreen: Not refreshing - mounted: $mounted, result: $result');
+              debugPrint('home_screen: Diagnostic output redacted');
               return;
             }
 
@@ -583,11 +574,3 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 }
-
-
-
-
-
-
-
-

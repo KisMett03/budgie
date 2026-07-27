@@ -24,9 +24,7 @@ class LoadBudgetUseCase {
       final loadedBudget = await _budgetRepository.getBudget(monthId);
 
       if (loadedBudget != null) {
-        // Log the currency for debugging
-        debugPrint('Budget loaded with currency: ${loadedBudget.currency}, '
-            'App preferred currency: ${_settingsService.currency}');
+        debugPrint('LoadBudgetUseCase: Budget loaded');
 
         // Check if currency conversion is needed
         if (checkCurrency &&

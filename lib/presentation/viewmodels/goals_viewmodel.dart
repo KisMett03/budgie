@@ -114,7 +114,7 @@ class GoalsViewModel extends ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error loading available savings: $e');
+        debugPrint('goals_viewmodel: Diagnostic output redacted');
       }
     }
   }
@@ -133,8 +133,7 @@ class GoalsViewModel extends ChangeNotifier {
         await loadAvailableSavings();
 
         if (kDebugMode) {
-          debugPrint(
-              '🎯 GoalsViewModel: Successfully allocated savings to ${distribution.length} goals');
+          debugPrint('goals_viewmodel: Diagnostic output redacted');
         }
         return true;
       } else {
@@ -184,8 +183,7 @@ class GoalsViewModel extends ChangeNotifier {
         await loadAvailableSavings();
 
         if (kDebugMode) {
-          debugPrint(
-              '🎯 GoalsViewModel: Successfully allocated custom amount $amount to ${distribution.length} goals');
+          debugPrint('goals_viewmodel: Diagnostic output redacted');
         }
         return true;
       } else {
@@ -239,7 +237,7 @@ class GoalsViewModel extends ChangeNotifier {
           await _userBehaviorRepository.getUserBehaviorProfile(_defaultUserId);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Failed to load behavior profile: $e');
+        debugPrint('goals_viewmodel: Diagnostic output redacted');
       }
     }
   }
@@ -647,7 +645,7 @@ class GoalsViewModel extends ChangeNotifier {
   void _setError(String message) {
     _errorMessage = message;
     if (kDebugMode) {
-      debugPrint('GoalsViewModel Error: $message');
+      debugPrint('goals_viewmodel: Diagnostic output redacted');
     }
     notifyListeners();
   }

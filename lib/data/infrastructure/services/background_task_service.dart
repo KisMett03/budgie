@@ -42,7 +42,7 @@ void callbackDispatcher() {
       }
 
       if (kDebugMode) {
-        debugPrint('Background task started: $task');
+        debugPrint('background_task_service: Diagnostic output redacted');
       }
 
       switch (task) {
@@ -58,18 +58,16 @@ void callbackDispatcher() {
                 '${now.year}-${now.month.toString().padLeft(2, '0')}';
             for (final user in allUsers) {
               if (kDebugMode) {
-                debugPrint(
-                    '🔄 Background: Starting auto budget reallocation for ${user.userId} in $monthId');
+                debugPrint('background_task_service: Diagnostic output redacted');
               }
               await reallocationService.reallocateBudget(user.userId, monthId);
               if (kDebugMode) {
-                debugPrint(
-                    '✅ Background: Auto budget reallocation for ${user.userId} completed successfully');
+                debugPrint('background_task_service: Diagnostic output redacted');
               }
             }
           } catch (e) {
             if (kDebugMode) {
-              debugPrint('❌ Background: Auto budget reallocation failed: $e');
+              debugPrint('background_task_service: Diagnostic output redacted');
             }
           }
           break;
@@ -92,7 +90,7 @@ void callbackDispatcher() {
       return Future.value(true);
     } catch (err) {
       if (kDebugMode) {
-        debugPrint('Error in background task: $err');
+        debugPrint('background_task_service: Diagnostic output redacted');
       }
       return Future.value(false);
     }

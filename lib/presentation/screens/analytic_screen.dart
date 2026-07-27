@@ -77,10 +77,9 @@ class _AnalyticScreenState extends State<AnalyticScreen>
       _selectedDate = expensesViewModel.getScreenFilterDate('analytics');
       _currentMonthId = formatMonthId(_selectedDate);
 
-      debugPrint(
-          'Analytics: Initializing filters with date: ${_selectedDate.year}-${_selectedDate.month}');
-      debugPrint('Analytics: Set current month ID to: $_currentMonthId');
-      debugPrint('Analytics: Selected date details: $_selectedDate');
+      debugPrint('analytic_screen: Diagnostic output redacted');
+      debugPrint('analytic_screen: Diagnostic output redacted');
+      debugPrint('analytic_screen: Diagnostic output redacted');
 
       // Apply the filter explicitly - only need to call this once
       expensesViewModel.setSelectedMonth(_selectedDate,
@@ -98,10 +97,10 @@ class _AnalyticScreenState extends State<AnalyticScreen>
         }
       });
     } catch (e) {
-      debugPrint('Error retrieving analytic screen filter: $e');
+      debugPrint('analytic_screen: Diagnostic output redacted');
       _selectedDate = DateTime.now();
       _currentMonthId = formatMonthId(_selectedDate);
-      debugPrint('Fallback to current date: $_currentMonthId');
+      debugPrint('analytic_screen: Diagnostic output redacted');
 
       // Set initialized flag without calling setState during build
       _isInitialized = true;
@@ -153,7 +152,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
 
       // Get current month ID for consistency
       _currentMonthId = _getMonthIdFromDate(_selectedDate);
-      debugPrint('Analytics: Current month ID: $_currentMonthId');
+      debugPrint('analytic_screen: Diagnostic output redacted');
 
       // Only set the filter if it's not already set to avoid redundant operations
       if (!_isDataLoaded) {
@@ -167,7 +166,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
         await expensesViewModel.refreshData();
 
         // Load and refresh budget data
-        debugPrint('Analytics: Loading budget data for $_currentMonthId');
+        debugPrint('analytic_screen: Diagnostic output redacted');
         await budgetViewModel.loadBudget(_currentMonthId);
         await budgetViewModel.refreshBudget(_currentMonthId);
 
@@ -186,12 +185,9 @@ class _AnalyticScreenState extends State<AnalyticScreen>
       // Verify filtering was applied correctly
       final filteredExpenses = expensesViewModel.filteredExpenses;
       final selectedMonth = expensesViewModel.selectedMonth;
-      debugPrint(
-          'Analytics: After filtering: ${filteredExpenses.length} expenses for month $_currentMonthId');
-      debugPrint(
-          'Analytics: ViewModel selected month: ${selectedMonth.year}-${selectedMonth.month}');
-      debugPrint(
-          'Analytics: Screen selected date: ${_selectedDate.year}-${_selectedDate.month}');
+      debugPrint('analytic_screen: Diagnostic output redacted');
+      debugPrint('analytic_screen: Diagnostic output redacted');
+      debugPrint('analytic_screen: Diagnostic output redacted');
 
       // Force data refresh for dashboard cards
       if (mounted) {
@@ -200,7 +196,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
         });
       }
     } catch (e) {
-      debugPrint('Analytics: Error loading data: $e');
+      debugPrint('analytic_screen: Diagnostic output redacted');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to load data: ${e.toString()}';
@@ -248,7 +244,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
           persist: true, screenKey: 'analytics');
 
       // Step 3: Refresh budget data for the selected month
-      debugPrint('Analytics: Refreshing budget for month: $monthId');
+      debugPrint('analytic_screen: Diagnostic output redacted');
 
       // First load the current budget
       await budgetViewModel.loadBudget(monthId);
@@ -273,7 +269,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
         });
       }
     } catch (e) {
-      debugPrint('Analytics: Error during refresh: $e');
+      debugPrint('analytic_screen: Diagnostic output redacted');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to refresh data: ${e.toString()}';
@@ -289,8 +285,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
   }
 
   void _onDateChanged(DateTime newDate) {
-    debugPrint(
-        'Analytics: Date changed from ${_selectedDate.year}-${_selectedDate.month}-${_selectedDate.day} to ${newDate.year}-${newDate.month}-${newDate.day}');
+    debugPrint('analytic_screen: Diagnostic output redacted');
 
     // Check if date has actually changed based on filter mode
     bool dateChanged = false;
@@ -322,15 +317,14 @@ class _AnalyticScreenState extends State<AnalyticScreen>
       _isDataLoaded = false; // Reset data loaded flag when date changes
     });
 
-    debugPrint('Analytics: Updated current month ID to: $_currentMonthId');
-    debugPrint('Analytics: New selected date details: $_selectedDate');
+    debugPrint('analytic_screen: Diagnostic output redacted');
+    debugPrint('analytic_screen: Diagnostic output redacted');
 
     // Save to screen-specific filter and force reload
     final expensesViewModel =
         Provider.of<ExpensesViewModel>(context, listen: false);
 
-    debugPrint(
-        'Analytics: Setting filter for new date with mode: $_filterMode');
+    debugPrint('analytic_screen: Diagnostic output redacted');
     // Set filter based on mode
     expensesViewModel.setFilterMode(_filterMode, _selectedDate,
         screenKey: 'analytics');
@@ -348,7 +342,7 @@ class _AnalyticScreenState extends State<AnalyticScreen>
       _isDataLoaded = false; // Reset data loaded flag when filter mode changes
     });
 
-    debugPrint('Analytics: Filter mode changed to: $newMode');
+    debugPrint('analytic_screen: Diagnostic output redacted');
 
     // Apply the new filter mode
     final expensesViewModel =

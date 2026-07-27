@@ -73,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.of(context).pushReplacementNamed(Routes.home);
       }
     } catch (e) {
-      debugPrint('Splash screen error: $e');
+      debugPrint('splash_screen: Diagnostic output redacted');
       if (mounted) {
         // Fallback to home screen in case of error
         Navigator.of(context).pushReplacementNamed(Routes.home);

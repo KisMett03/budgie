@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart'; // Added for kDebugMode
 
 import 'permission_handler_service.dart';
 import '../../../domain/services/expense_extraction_service.dart';
-import '../../../di/injection_container.dart' as di;
 import 'settings_service.dart'; // Added for SettingsService
 
 /// Service responsible for listening to system notifications
@@ -16,8 +15,12 @@ import 'settings_service.dart'; // Added for SettingsService
 /// service (e.g., DataCollectionService) at app startup ONLY if the user
 /// has enabled expense detection in the app settings.
 class NotificationListenerService {
-  NotificationListenerService({required PermissionHandlerService permissionHandler})
-      : _permissionHandler = permissionHandler;
+  NotificationListenerService({
+    required PermissionHandlerService permissionHandler,
+    required ExpenseExtractionDomainService Function()
+        expenseExtractionServiceProvider,
+  })  : _permissionHandler = permissionHandler,
+        _expenseExtractionServiceProvider = expenseExtractionServiceProvider;
 
   // Method channel for native communication
   static const platform = MethodChannel('com.kai.budgie/notification_listener');
@@ -32,6 +35,8 @@ class NotificationListenerService {
 
   // Dependencies
   final PermissionHandlerService _permissionHandler;
+  final ExpenseExtractionDomainService Function()
+      _expenseExtractionServiceProvider;
   SettingsService? _settingsService;
 
   bool get _notificationsEnabled => _settingsService?.allowNotification ?? false;
@@ -58,10 +63,10 @@ class NotificationListenerService {
       _isInitialized = true;
 
       debugPrint('✅ NotificationListenerService: Initialization completed');
-      debugPrint('📊 Service State: $_getDetailedStateString()');
-    } catch (e, stackTrace) {
-      debugPrint('❌ NotificationListenerService: Initialization failed: $e');
-      debugPrint('📍 Stack trace: $stackTrace');
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Initialization failed');
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
       rethrow;
     }
   }
@@ -130,11 +135,10 @@ class NotificationListenerService {
       _isListening = true;
       debugPrint(
           '✅ NotificationListenerService: Notification listening started');
-      debugPrint('📊 Service State: $_getDetailedStateString()');
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
       return true;
-    } catch (e) {
-      debugPrint(
-          '❌ NotificationListenerService: Failed to start listening: $e');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
       _isListening = false;
       return false;
     }
@@ -152,9 +156,8 @@ class NotificationListenerService {
       try {
         await platform.invokeMethod('stopListening');
         debugPrint('✅ NotificationListenerService: Platform listener stopped');
-      } catch (e) {
-        debugPrint(
-            '⚠️ NotificationListenerService: Error stopping platform listener: $e');
+      } catch (_) {
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
       }
 
       // No background execution to disable since we're not using FlutterBackground
@@ -163,9 +166,9 @@ class NotificationListenerService {
       _isListening = false;
       debugPrint(
           '✅ NotificationListenerService: Notification listening stopped');
-      debugPrint('📊 Service State: $_getDetailedStateString()');
-    } catch (e) {
-      debugPrint('❌ NotificationListenerService: Error stopping listener: $e');
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Error stopping listener');
       // Force stop even if there were errors
       _isListening = false;
     }
@@ -182,9 +185,8 @@ class NotificationListenerService {
         // Try to verify the connection by checking if the service is responding
         final isServiceEnabled = await checkNotificationServiceEnabled();
         isActuallyListening = isServiceEnabled && _isListening;
-      } catch (e) {
-        debugPrint(
-            '⚠️ NotificationListenerService: Could not verify connection: $e');
+      } catch (_) {
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
         isActuallyListening = false;
       }
     }
@@ -209,8 +211,7 @@ class NotificationListenerService {
   /// Check if notification permission is granted
   Future<bool> checkNotificationPermission() async {
     final hasPermission = await _permissionHandler.hasNotificationPermission();
-    debugPrint(
-        '🔐 NotificationListenerService: Basic permission check: $hasPermission');
+    debugPrint('NotificationListenerService: Diagnostic output redacted');
     return hasPermission;
   }
 
@@ -218,8 +219,7 @@ class NotificationListenerService {
   Future<bool> checkNotificationListenerPermission() async {
     final hasPermission =
         await _permissionHandler.hasNotificationListenerPermission();
-    debugPrint(
-        '🔐 NotificationListenerService: Listener permission check: $hasPermission');
+    debugPrint('NotificationListenerService: Diagnostic output redacted');
     return hasPermission;
   }
 
@@ -230,14 +230,12 @@ class NotificationListenerService {
         final result =
             await platform.invokeMethod<bool>('isNotificationServiceEnabled');
         final enabled = result ?? false;
-        debugPrint(
-            '⚙️ NotificationListenerService: Service enabled check: $enabled');
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
         return enabled;
       }
       return true; // Non-Android platforms don't need this
-    } catch (e) {
-      debugPrint(
-          '❌ NotificationListenerService: Error checking service enabled: $e');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
       return false;
     }
   }
@@ -252,8 +250,7 @@ class NotificationListenerService {
     // Update state after permission request
     await _updateServiceState();
 
-    debugPrint(
-        '🔐 NotificationListenerService: Permission request result: ${result.message}');
+    debugPrint('NotificationListenerService: Diagnostic output redacted');
     return result;
   }
 
@@ -264,10 +261,9 @@ class NotificationListenerService {
           .hasPermissionsForFeature(PermissionFeature.notifications);
       _isServiceEnabled = await checkNotificationServiceEnabled();
 
-      debugPrint(
-          '📊 NotificationListenerService: State updated - Permissions: $_hasPermissions, Service: $_isServiceEnabled');
-    } catch (e) {
-      debugPrint('❌ NotificationListenerService: Error updating state: $e');
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Error updating state');
     }
   }
 
@@ -290,15 +286,7 @@ class NotificationListenerService {
       return;
     }
     try {
-      if (!di.sl.isRegistered<ExpenseExtractionDomainService>()) {
-        if (kDebugMode) {
-          debugPrint(
-              '� NotificationListener: Expense extraction service not registered, skipping processing');
-        }
-        return;
-      }
-
-      final extractionService = di.sl<ExpenseExtractionDomainService>();
+      final extractionService = _expenseExtractionServiceProvider();
 
       // Ensure the service itself is initialized (loads TFLite model)
       if (!extractionService.isInitialized) {
@@ -310,9 +298,6 @@ class NotificationListenerService {
       if (kDebugMode) {
         debugPrint(
             '🔔 NotificationListener: Processing notification with hybrid detection');
-        debugPrint('📱 Package: $packageName');
-        debugPrint('📝 Title: "$title"');
-        debugPrint('📄 Content: "$content"');
       }
 
       // Only track performance in debug mode
@@ -335,16 +320,9 @@ class NotificationListenerService {
 
       if (extractionResult != null) {
         debugPrint('✅ NotificationListener: Expense detected and extracted!');
-        debugPrint(
-            '💰 Amount: ${extractionResult.amount} ${extractionResult.currency ?? 'MYR'}');
-        debugPrint('🏪 Merchant: ${extractionResult.merchantName}');
-        debugPrint('💳 Payment Method: ${extractionResult.paymentMethod}');
-        debugPrint(
-            '🏷️ Suggested Category: ${extractionResult.suggestedCategory}');
-        debugPrint(
-            '🎯 Confidence: ${(extractionResult.confidence * 100).toStringAsFixed(1)}%');
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
         if (kDebugMode && stopwatch != null) {
-          debugPrint('⏱️ Processing Time: ${stopwatch.elapsedMilliseconds}ms');
+          debugPrint('NotificationListenerService: Diagnostic output redacted');
         }
 
         // The service automatically:
@@ -358,12 +336,11 @@ class NotificationListenerService {
         debugPrint(
             '📱 NotificationListener: Notification classified as non-expense or extraction failed');
         if (kDebugMode && stopwatch != null) {
-          debugPrint(
-              '⏱️ Classification Time: ${stopwatch.elapsedMilliseconds}ms');
+          debugPrint('NotificationListenerService: Diagnostic output redacted');
         }
       }
-    } catch (e) {
-      debugPrint('❌ NotificationListener: Hybrid processing failed: $e');
+    } catch (_) {
+      debugPrint('NotificationListener: Hybrid processing failed');
     }
   }
 
@@ -374,7 +351,7 @@ class NotificationListenerService {
     required String packageName,
   }) async {
     try {
-      final expenseService = di.sl<ExpenseExtractionDomainService>();
+      final expenseService = _expenseExtractionServiceProvider();
 
       if (!expenseService.isInitialized) return;
 
@@ -395,8 +372,7 @@ class NotificationListenerService {
       
       if (kDebugMode) {
         classificationStopwatch?.stop();
-        debugPrint(
-            '🤖 Classification: ${isExpense ? "EXPENSE" : "NOT EXPENSE"} (${classificationStopwatch?.elapsedMilliseconds ?? 0}ms)');
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
       }
 
       if (isExpense) {
@@ -419,20 +395,16 @@ class NotificationListenerService {
 
         if (extractionResult != null) {
           if (kDebugMode) {
-            debugPrint(
-                '✅ Extraction: SUCCESS (${extractionStopwatch?.elapsedMilliseconds ?? 0}ms)');
-            debugPrint(
-                '💰 Details: ${extractionResult.amount} at ${extractionResult.merchantName}');
+            debugPrint('NotificationListenerService: Diagnostic output redacted');
           }
         } else {
           if (kDebugMode) {
-            debugPrint(
-                '❌ Extraction: FAILED (${extractionStopwatch?.elapsedMilliseconds ?? 0}ms)');
+            debugPrint('NotificationListenerService: Diagnostic output redacted');
           }
         }
       }
-    } catch (e) {
-      debugPrint('❌ NotificationListener: Step-by-step processing failed: $e');
+    } catch (_) {
+      debugPrint('NotificationListener: Step-by-step processing failed');
     }
   }
 
@@ -447,8 +419,8 @@ class NotificationListenerService {
       platform.setMethodCallHandler(_handleNotificationData);
       debugPrint(
           '✅ NotificationListenerService: Method channel setup completed');
-    } catch (e) {
-      debugPrint('❌ NotificationListenerService: Background setup failed: $e');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Background setup failed');
     }
   }
 
@@ -458,9 +430,8 @@ class NotificationListenerService {
       // It's a system service that runs independently
       debugPrint(
           '✅ NotificationListenerService: Background service setup completed (system service)');
-    } catch (e) {
-      debugPrint(
-          '❌ NotificationListenerService: Background service failed: $e');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
     }
   }
 
@@ -468,8 +439,8 @@ class NotificationListenerService {
     try {
       await platform.invokeMethod('startListening');
       debugPrint('✅ NotificationListenerService: Platform listener started');
-    } catch (e) {
-      debugPrint('❌ NotificationListenerService: Platform listener failed: $e');
+    } catch (_) {
+      debugPrint('NotificationListenerService: Platform listener failed');
       rethrow;
     }
   }
@@ -481,19 +452,16 @@ class NotificationListenerService {
       final title = data['title'] ?? '';
       final content = data['content'] ?? '';
 
-      debugPrint(
-          '🔔 NotificationListenerService: Raw notification received from $packageName');
+      debugPrint('NotificationListenerService: Diagnostic output redacted');
 
       // Filter out system notifications and other irrelevant sources
       if (_shouldIgnoreNotification(packageName, title, content)) {
-        debugPrint(
-            '🔔 NotificationListenerService: Ignoring filtered notification from $packageName - $title');
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
         return;
       }
 
       if (_onNotificationReceived != null) {
-        debugPrint(
-            '🔔 NotificationListenerService: Processing notification - $title: $content (from $packageName)');
+        debugPrint('NotificationListenerService: Diagnostic output redacted');
         _onNotificationReceived!(title, content, packageName);
       } else {
         debugPrint(

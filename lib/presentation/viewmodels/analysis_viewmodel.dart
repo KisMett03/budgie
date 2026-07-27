@@ -130,8 +130,7 @@ class AnalysisViewModel extends ChangeNotifier {
       final goals = await _goalsRepository.getActiveGoals();
 
       if (kDebugMode) {
-        debugPrint(
-            '📊 AnalysisViewModel: Data collected - ${historicalExpenses.length} expenses, ${goals.length} goals');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
 
       // Perform analysis
@@ -157,8 +156,7 @@ class AnalysisViewModel extends ChangeNotifier {
         }
       } catch (saveError) {
         if (kDebugMode) {
-          debugPrint(
-              '⚠️ AnalysisViewModel: Failed to save analysis result: $saveError');
+          debugPrint('analysis_viewmodel: Diagnostic output redacted');
         }
         // Continue execution even if save fails - don't break the user flow
       }
@@ -181,8 +179,8 @@ class AnalysisViewModel extends ChangeNotifier {
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('❌ AnalysisViewModel: Spending behavior analysis error: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       _errorMessage = e.toString();
       _spendingAnalysisResult = null;
@@ -232,14 +230,12 @@ class AnalysisViewModel extends ChangeNotifier {
       if (kDebugMode) {
         debugPrint(
             '📊 AnalysisViewModel: Budget reallocation analysis completed successfully');
-        debugPrint(
-            '📊 Found ${result.suggestions.length} reallocation suggestions');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ AnalysisViewModel: Budget reallocation analysis error: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       _errorMessage = e.toString();
       _reallocationResult = null;
@@ -260,18 +256,18 @@ class AnalysisViewModel extends ChangeNotifier {
         debugPrint('🔍 AnalysisViewModel: Checking API health...');
       }
 
-      final healthStatus = await _apiClient.checkServicesHealth();
+      await _apiClient.checkServicesHealth();
       if (kDebugMode) {
         debugPrint('✅ AnalysisViewModel: API health check completed');
-        debugPrint('📊 Health status: $healthStatus');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
 
       // You can process the health status here if needed
       // For now, we'll just log it
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('❌ AnalysisViewModel: API health check error: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       _errorMessage = e.toString();
     } finally {
@@ -311,7 +307,7 @@ class AnalysisViewModel extends ChangeNotifier {
       }
 
       // Apply recommendations using the use case
-      final updatedBudget = await _reallocateBudgetUseCase.execute(
+      await _reallocateBudgetUseCase.execute(
         monthId,
         _reallocationResult!.suggestions,
       );
@@ -319,15 +315,13 @@ class AnalysisViewModel extends ChangeNotifier {
       if (kDebugMode) {
         debugPrint(
             '✅ AnalysisViewModel: Budget recommendations applied successfully');
-        debugPrint(
-            '📊 Updated budget total: ${updatedBudget.total} ${updatedBudget.currency}');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       return true;
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ AnalysisViewModel: Failed to apply budget recommendations: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       _errorMessage = 'Failed to apply recommendations: ${e.toString()}';
       return false;
@@ -472,11 +466,9 @@ class AnalysisViewModel extends ChangeNotifier {
         if (kDebugMode) {
           debugPrint(
               '✅ AnalysisViewModel: Latest analysis loaded successfully');
-          debugPrint('📊 Analysis summary: ${latestAnalysis.summary}');
-          debugPrint(
-              '📊 Key insights: ${latestAnalysis.keyInsights.length} items');
-          debugPrint(
-              '📊 Category insights: ${latestAnalysis.categoryInsights.length} items');
+          debugPrint('AnalysisViewModel: Latest analysis loaded');
+          debugPrint('analysis_viewmodel: Diagnostic output redacted');
+          debugPrint('analysis_viewmodel: Diagnostic output redacted');
         }
         notifyListeners();
       } else {
@@ -487,8 +479,8 @@ class AnalysisViewModel extends ChangeNotifier {
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('❌ AnalysisViewModel: Error loading latest analysis: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       _errorMessage = 'Failed to load previous analysis: ${e.toString()}';
       _spendingAnalysisResult = null;
@@ -505,8 +497,7 @@ class AnalysisViewModel extends ChangeNotifier {
       return latestAnalysis != null;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ AnalysisViewModel: Error checking for previous analysis: $e');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       return false;
     }
@@ -577,8 +568,8 @@ class AnalysisViewModel extends ChangeNotifier {
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('❌ AnalysisViewModel: Full analysis failed: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
+        debugPrint('analysis_viewmodel: Diagnostic output redacted');
       }
       _errorMessage = e.toString();
       notifyListeners();

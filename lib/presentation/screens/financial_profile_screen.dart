@@ -61,10 +61,8 @@ class _FinancialProfileScreenState extends State<FinancialProfileScreen> {
   void _initializeFromExistingProfile() {
     if (widget.existingProfile != null) {
       final profile = widget.existingProfile!;
-      debugPrint(
-          '📊 FinancialProfileScreen: Loading existing profile for user: ${profile.userId}');
-      debugPrint(
-          '📊 FinancialProfileScreen: Profile data - Income: ${profile.incomeStability.displayName}, Spending: ${profile.spendingMentality.displayName}');
+      debugPrint('financial_profile_screen: Diagnostic output redacted');
+      debugPrint('financial_profile_screen: Diagnostic output redacted');
 
       setState(() {
         _selectedIncomeStability = profile.incomeStability;
@@ -78,8 +76,7 @@ class _FinancialProfileScreenState extends State<FinancialProfileScreen> {
         _dataConsentAccepted = profile.hasDataConsent;
       });
 
-      debugPrint(
-          '📊 FinancialProfileScreen: Profile loaded successfully - Data consent: $_dataConsentAccepted');
+      debugPrint('financial_profile_screen: Diagnostic output redacted');
     } else {
       debugPrint(
           '📊 FinancialProfileScreen: No existing profile found, using default values');

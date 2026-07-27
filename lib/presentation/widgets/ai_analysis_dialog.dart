@@ -71,7 +71,7 @@ class _AIAnalysisDialogState extends State<AIAnalysisDialog>
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error loading previous analysis: $e');
+        debugPrint('AIAnalysisDialog: Error loading previous analysis');
       }
       // Don't show error for loading previous analysis, just continue without it
       if (mounted) {
@@ -105,7 +105,7 @@ class _AIAnalysisDialogState extends State<AIAnalysisDialog>
       });
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error starting analysis: $e');
+        debugPrint('AIAnalysisDialog: Error starting analysis');
       }
       if (mounted) {
         setState(() {
@@ -1632,7 +1632,7 @@ class _AIAnalysisDialogState extends State<AIAnalysisDialog>
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error applying budget suggestions: $e');
+        debugPrint('AIAnalysisDialog: Error applying budget suggestions');
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

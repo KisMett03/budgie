@@ -45,8 +45,7 @@ class SpendingBehaviorAnalysisService {
       debugPrint(
           '💡 SpendingBehaviorAnalysisService: Initialized successfully');
     } catch (e) {
-      debugPrint(
-          '💡 SpendingBehaviorAnalysisService: Initialization error: $e');
+      debugPrint('spending_behavior_analysis_service: Diagnostic output redacted');
       throw AIApiException(
         'Failed to initialize spending behavior analysis service: $e',
         code: 'INITIALIZATION_ERROR',
@@ -89,16 +88,15 @@ class SpendingBehaviorAnalysisService {
           '💡 Comprehensive spending behavior analysis completed successfully');
       return analysisResult;
     } catch (e) {
-      debugPrint('💡 Comprehensive spending behavior analysis error: $e');
+      debugPrint('Spending behavior analysis failed');
 
       if (e is AIApiException) {
         rethrow;
       }
 
       throw AIApiException(
-        'Failed to analyze spending behavior: $e',
+        'Failed to analyze spending behavior',
         code: 'ANALYSIS_ERROR',
-        details: {'originalError': e.toString()},
       );
     }
   }
@@ -174,14 +172,9 @@ class SpendingBehaviorAnalysisService {
     // Sort by date for pattern analysis
     relevantExpenses.sort((a, b) => a.date.compareTo(b.date));
 
-    debugPrint('💡 [COMPREHENSIVE ANALYSIS DATA PREPARATION] ===============');
-    debugPrint('💡 Total historical expenses: ${historicalExpenses.length}');
-    debugPrint(
-        '💡 Relevant expenses (last 30 days): ${relevantExpenses.length}');
-    debugPrint('💡 User profile complete: ${userProfile.isComplete}');
-    debugPrint('💡 Financial goals: ${goals?.length ?? 0}');
-    debugPrint(
-        '💡 Current budget total: ${currentBudget.total} ${currentBudget.currency}');
+    debugPrint('Spending analysis request prepared');
+    debugPrint('spending_behavior_analysis_service: Diagnostic output redacted');
+    debugPrint('spending_behavior_analysis_service: Diagnostic output redacted');
 
     return SpendingBehaviorAnalysisRequest(
       historicalExpenses: relevantExpenses
@@ -207,12 +200,11 @@ class SpendingBehaviorAnalysisService {
 
       debugPrint('💡 FastAPI backend response received successfully');
       return response;
-    } catch (e) {
-      debugPrint('💡 Failed to call FastAPI backend: $e');
+    } catch (_) {
+      debugPrint('Spending behavior backend request failed');
       throw AIApiException(
-        'AI analysis failed: $e',
+        'AI analysis failed',
         code: 'API_ERROR',
-        details: {'originalError': e.toString()},
       );
     }
   }
@@ -222,52 +214,37 @@ class SpendingBehaviorAnalysisService {
     try {
       debugPrint('💡 [AI COMPREHENSIVE RESPONSE - SIMPLIFIED] ===============');
       debugPrint('💡 Raw response received');
-      debugPrint('💡 Response keys: ${response.keys.toList()}');
+      debugPrint('spending_behavior_analysis_service: Diagnostic output redacted');
 
       // Log the main response components
       if (response.containsKey('categoryInsights')) {
-        final categoryInsights =
-            response['categoryInsights'] as List<dynamic>? ?? [];
-        debugPrint('💡 Category insights count: ${categoryInsights.length}');
+        debugPrint('SpendingBehaviorAnalysisService: Category insights received');
       }
 
       if (response.containsKey('keyInsights')) {
-        final keyInsights = response['keyInsights'] as List<dynamic>? ?? [];
-        debugPrint('💡 Key insights count: ${keyInsights.length}');
+        debugPrint('SpendingBehaviorAnalysisService: Key insights received');
       }
 
       if (response.containsKey('actionableRecommendations')) {
-        final recommendations =
-            response['actionableRecommendations'] as List<dynamic>? ?? [];
         debugPrint(
-            '💡 Actionable recommendations count: ${recommendations.length}');
+            'SpendingBehaviorAnalysisService: Recommendations received');
       }
 
       if (response.containsKey('summary')) {
-        final summary = response['summary'] as String? ?? '';
-        debugPrint('💡 Summary length: ${summary.length} characters');
+        debugPrint('SpendingBehaviorAnalysisService: Summary received');
       }
 
       final analysisResult = SpendingBehaviorAnalysisResult.fromJson(response);
 
       debugPrint('💡 Simplified response parsed successfully');
-      debugPrint('💡 Summary: ${analysisResult.summary}');
-      debugPrint(
-          '💡 Category insights: ${analysisResult.categoryInsights.length}');
-      debugPrint('💡 Key insights: ${analysisResult.keyInsights.length}');
-      debugPrint(
-          '💡 Recommendations: ${analysisResult.actionableRecommendations.length}');
+      debugPrint('SpendingBehaviorAnalysisService: Response parsed');
 
       return analysisResult;
-    } catch (e) {
-      debugPrint('💡 Failed to parse simplified response: $e');
+    } catch (_) {
+      debugPrint('Spending behavior response parsing failed');
       throw AIApiException(
-        'Failed to parse comprehensive analysis: $e',
+        'Failed to parse comprehensive analysis',
         code: 'PARSE_ERROR',
-        details: {
-          'originalError': e.toString(),
-          'rawResponse': response.toString()
-        },
       );
     }
   }

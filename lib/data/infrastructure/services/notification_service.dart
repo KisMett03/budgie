@@ -96,10 +96,10 @@ class NotificationService {
       if (kDebugMode) {
         debugPrint('✅ NotificationService: Initialization completed');
       }
-    } catch (e, stackTrace) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('❌ NotificationService: Initialization failed: $e');
-        debugPrint('📍 Stack trace: $stackTrace');
+        debugPrint('NotificationService: Initialization failed');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
       // Don't throw - app should continue working even if notifications fail
     }
@@ -139,12 +139,12 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        debugPrint('📤 NotificationService: Sent notification - $title');
+        debugPrint('NotificationService: Notification sent');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('❌ NotificationService: Failed to send notification: $e');
+        debugPrint('NotificationService: Failed to send notification');
       }
       return false;
     }
@@ -218,10 +218,9 @@ class NotificationService {
             '📤 NotificationService: Sent actionable expense notification');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ NotificationService: Failed to send actionable notification: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -255,8 +254,7 @@ class NotificationService {
   void clearStoredExpenseData(String detectionId) {
     _tempExpenseStorage.remove(detectionId);
     if (kDebugMode) {
-      debugPrint(
-          '📤 NotificationService: Cleared stored data for detection ID: $detectionId');
+      debugPrint('notification_service: Diagnostic output redacted');
     }
   }
 
@@ -337,14 +335,12 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        debugPrint(
-            '📤 NotificationService: Scheduled notification for ${scheduledTime.toString()}');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ NotificationService: Failed to schedule notification: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
 
       // Fallback to Future.delayed if zonedSchedule fails
@@ -366,11 +362,11 @@ class NotificationService {
     try {
       await _plugin.cancel(id);
       if (kDebugMode) {
-        debugPrint('📤 NotificationService: Cancelled notification $id');
+        debugPrint('NotificationService: Notification cancelled');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('❌ NotificationService: Failed to cancel notification: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
     }
   }
@@ -382,10 +378,9 @@ class NotificationService {
       if (kDebugMode) {
         debugPrint('📤 NotificationService: Cancelled all notifications');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ NotificationService: Failed to cancel all notifications: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
     }
   }
@@ -394,10 +389,9 @@ class NotificationService {
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     try {
       return await _plugin.pendingNotificationRequests();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ NotificationService: Failed to get pending notifications: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
       return [];
     }
@@ -409,10 +403,9 @@ class NotificationService {
       if (Platform.isAndroid) {
         return await _plugin.getActiveNotifications();
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ NotificationService: Failed to get active notifications: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
     }
     return [];
@@ -447,10 +440,9 @@ class NotificationService {
           debugPrint('⚠️ NotificationService: No refresh callback registered');
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ NotificationService: Error during cleanup after expense addition: $e');
+        debugPrint('notification_service: Diagnostic output redacted');
       }
     }
   }
@@ -606,8 +598,7 @@ class NotificationService {
     final String? payload = notificationResponse.payload;
     final String? actionId = notificationResponse.actionId;
     if (kDebugMode) {
-      debugPrint(
-          '📤 NotificationService: Notification tapped with payload: $payload, action: $actionId');
+      debugPrint('NotificationService: Notification response received');
     }
 
     if (payload == null) return;
@@ -620,10 +611,9 @@ class NotificationService {
       if (type == 'expense_detected') {
         _handleExpenseNotificationResponse(actionId, payload);
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '📤 NotificationService: Error handling notification response: $e');
+        debugPrint('NotificationService: Error handling notification response');
       }
     }
   }
@@ -655,10 +645,9 @@ class NotificationService {
         // Clear the temporary storage
         clearStoredExpenseData(detectionId);
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '📤 NotificationService: Error handling expense notification: $e');
+        debugPrint('NotificationService: Error handling expense notification');
       }
     }
   }
@@ -689,9 +678,9 @@ class NotificationService {
         Routes.addExpense,
         arguments: arguments,
       );
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error navigating from notification: $e');
+        debugPrint('NotificationService: Error navigating from notification');
       }
     }
   }

@@ -22,7 +22,7 @@ class AppLifecycleHandler {
       }));
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('?? Resume sync failed: $e');
+        debugPrint('app_lifecycle_handler: Diagnostic output redacted');
       }
     }
   }
@@ -35,7 +35,7 @@ class AppLifecycleHandler {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('?? Cleanup failed: $e');
+        debugPrint('app_lifecycle_handler: Diagnostic output redacted');
       }
     }
   }

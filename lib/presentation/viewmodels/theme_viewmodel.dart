@@ -26,8 +26,7 @@ class ThemeViewModel extends ChangeNotifier {
       _currentTheme = settingsTheme;
       _isDarkMode = _currentTheme == 'dark';
       if (kDebugMode) {
-        debugPrint(
-            '🎨 ThemeViewModel: Refreshed theme from settings: $_currentTheme');
+        debugPrint('theme_viewmodel: Diagnostic output redacted');
       }
     }
   }
@@ -42,7 +41,7 @@ class ThemeViewModel extends ChangeNotifier {
     // Save theme setting to local settings service
     await _settingsService.updateTheme(theme);
     if (kDebugMode) {
-      debugPrint('🎨 ThemeViewModel: Theme set to: $theme');
+      debugPrint('theme_viewmodel: Diagnostic output redacted');
     }
   }
 
@@ -60,7 +59,7 @@ class ThemeViewModel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('🎨 ThemeViewModel: Error refreshing theme: $e');
+        debugPrint('theme_viewmodel: Diagnostic output redacted');
       }
       // Don't rethrow - just keep the default theme
     }

@@ -311,7 +311,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
                 'ALTER TABLE user_profiles_new RENAME TO user_profiles');
           } catch (e) {
-            debugPrint('Error migrating user profiles schema: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
         }
         if (from < 16) {
@@ -355,8 +355,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
                 'ALTER TABLE user_profiles_new RENAME TO user_profiles');
           } catch (e) {
-            debugPrint(
-                'Error removing unnecessary columns from user profiles: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
         }
         if (from < 17) {
@@ -399,8 +398,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
                 'ALTER TABLE user_profiles_new RENAME TO user_profiles');
           } catch (e) {
-            debugPrint(
-                'Error migrating user profiles schema to v17: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
         }
         if (from < 18) {
@@ -449,8 +447,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
                 'ALTER TABLE user_profiles_new RENAME TO user_profiles');
           } catch (e) {
-            debugPrint(
-                'Error migrating user profiles schema to v18: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
         }
         if (from < 12) {
@@ -461,7 +458,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
                 'ALTER TABLE app_settings ADD COLUMN currency TEXT NOT NULL DEFAULT \'MYR\'');
           } catch (e) {
-            debugPrint('Error adding currency column to app_settings: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
 
           // Create new tables without user ID if needed
@@ -550,7 +547,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('DROP TABLE IF EXISTS users');
             await customStatement('DROP TABLE IF EXISTS sync_queue');
           } catch (e) {
-            debugPrint('Error during migration: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
         }
 
@@ -560,7 +557,7 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(financialGoals);
             await m.createTable(goalHistory);
           } catch (e) {
-            debugPrint('Error creating financial goals tables: $e');
+            debugPrint('app_database: Diagnostic output redacted');
           }
         }
       },

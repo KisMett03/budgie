@@ -33,7 +33,7 @@ class LoadExpensesUseCase {
       // Load expenses from repository directly
       return await _expensesRepository.getExpenses();
     } catch (e) {
-      debugPrint('Error loading expenses: $e');
+      debugPrint('load_expenses_usecase: Diagnostic output redacted');
       // If there's an error, try to load from local data
       return await _expensesRepository.getExpenses();
     }

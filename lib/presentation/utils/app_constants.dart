@@ -211,27 +211,22 @@ class AppConstants {
   static void debugTextSizes() {
     if (kDebugMode) {
       debugPrint('=== AppConstants Debug Info ===');
-      debugPrint('Screen Width: ${1.sw}');
-      debugPrint('Screen Height: ${1.sh}');
-      debugPrint('Text Scale Factor: ${ScreenUtil().textScaleFactor}');
-      debugPrint('Status Bar Height: ${ScreenUtil().statusBarHeight}');
-      debugPrint('Bottom Bar Height: ${ScreenUtil().bottomBarHeight}');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
       debugPrint('');
       debugPrint('Text Sizes:');
-      debugPrint(
-          'textSizeXXSmall: ${textSizeXXSmall}sp = ${textSizeXXSmall.sp}px');
-      debugPrint(
-          'textSizeXSmall: ${textSizeXSmall}sp = ${textSizeXSmall.sp}px');
-      debugPrint('textSizeSmall: ${textSizeSmall}sp = ${textSizeSmall.sp}px');
-      debugPrint(
-          'textSizeMedium: ${textSizeMedium}sp = ${textSizeMedium.sp}px');
-      debugPrint('textSizeLarge: ${textSizeLarge}sp = ${textSizeLarge.sp}px');
-      debugPrint(
-          'textSizeXLarge: ${textSizeXLarge}sp = ${textSizeXLarge.sp}px');
-      debugPrint(
-          'textSizeXXLarge: ${textSizeXXLarge}sp = ${textSizeXXLarge.sp}px');
-      debugPrint('textSizeHuge: ${textSizeHuge}sp = ${textSizeHuge.sp}px');
-      debugPrint('textSizeGiant: ${textSizeGiant}sp = ${textSizeGiant.sp}px');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
+      debugPrint('app_constants: Diagnostic output redacted');
       debugPrint('==============================');
     }
   }

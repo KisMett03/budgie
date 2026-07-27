@@ -55,7 +55,7 @@ class PerformanceUtils {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Warning: Error disposing resource: $e');
+        debugPrint('performance_utils: Diagnostic output redacted');
       }
     }
   }

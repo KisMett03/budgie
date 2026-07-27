@@ -20,10 +20,9 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     runApp(app);
     bootstrapper.startPostLaunchServices();
     _schedulePerformanceReport();
-  } catch (e, stackTrace) {
+  } catch (_) {
     if (kDebugMode) {
-      debugPrint('? App initialization failed: $e');
-      debugPrint(stackTrace.toString());
+      debugPrint('bootstrap: Diagnostic output redacted');
     }
 
     runApp(await builder());

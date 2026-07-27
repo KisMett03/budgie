@@ -24,51 +24,45 @@ class ConvertBudgetCurrencyUseCase {
 
       // If no budget, return null
       if (budget == null) {
-        debugPrint(
-            '💱 ConvertBudgetCurrency: No budget found for month: $monthId');
+        debugPrint('ConvertBudgetCurrencyUseCase: Budget not found');
         return null;
       }
 
       // If already converting or currencies match, return existing budget
       if (_isConvertingCurrency) {
         debugPrint(
-            '💱 ConvertBudgetCurrency: Conversion already in progress, skipping');
+            'ConvertBudgetCurrencyUseCase: Conversion already in progress');
         return budget;
       }
 
       if (budget.currency == targetCurrency) {
         debugPrint(
-            '💱 ConvertBudgetCurrency: Budget already in target currency ($targetCurrency)');
+            'ConvertBudgetCurrencyUseCase: Budget already uses target currency');
         return budget;
       }
 
-      debugPrint(
-          '💱 ConvertBudgetCurrency: Starting conversion from ${budget.currency} to $targetCurrency');
-      debugPrint(
-          '💱 ConvertBudgetCurrency: Current budget total: ${budget.total}');
+      debugPrint('ConvertBudgetCurrencyUseCase: Conversion started');
 
       // Perform conversion
       final convertedBudget =
           await _convertBudget(budget, targetCurrency, monthId);
 
       if (convertedBudget != null) {
-        debugPrint(
-            '💱 ConvertBudgetCurrency: Conversion completed - new total: ${convertedBudget.total}');
+        debugPrint('ConvertBudgetCurrencyUseCase: Conversion completed');
       } else {
-        debugPrint('💱 ConvertBudgetCurrency: Conversion failed');
+        debugPrint('ConvertBudgetCurrencyUseCase: Conversion failed');
       }
 
       return convertedBudget;
-    } catch (e) {
-      debugPrint('💱 ConvertBudgetCurrency: Error in currency conversion: $e');
+    } catch (_) {
+      debugPrint('ConvertBudgetCurrencyUseCase: Currency conversion failed');
       // Reset the conversion flag in case of error to prevent deadlock
       _isConvertingCurrency = false;
       // Return the original budget on error
       try {
         return await _budgetRepository.getBudget(monthId);
-      } catch (fallbackError) {
-        debugPrint(
-            '💱 ConvertBudgetCurrency: Fallback getBudget also failed: $fallbackError');
+      } catch (_) {
+        debugPrint('ConvertBudgetCurrencyUseCase: Budget recovery failed');
         return null;
       }
     }
@@ -80,7 +74,8 @@ class ConvertBudgetCurrencyUseCase {
     // Check if the currency is already the same
     if (budget.currency == newCurrency) {
       if (kDebugMode) {
-        print('Budget currency already matches new currency: $newCurrency');
+        debugPrint(
+            'ConvertBudgetCurrencyUseCase: Budget already uses target currency');
       }
       return budget;
     }
@@ -88,8 +83,7 @@ class ConvertBudgetCurrencyUseCase {
     // Check if a conversion is already in progress
     if (_isConvertingCurrency) {
       if (kDebugMode) {
-        print(
-            'Currency conversion already in progress, skipping duplicate request');
+        debugPrint('ConvertBudgetCurrencyUseCase: Duplicate conversion skipped');
       }
       return budget;
     }
@@ -99,9 +93,7 @@ class ConvertBudgetCurrencyUseCase {
       _isConvertingCurrency = true;
 
       if (kDebugMode) {
-        print(
-            'Currency changed to $newCurrency - updating budget from ${budget.currency}');
-        print('Before conversion - Budget total: ${budget.total}');
+        debugPrint('ConvertBudgetCurrencyUseCase: Budget conversion started');
       }
 
       // Convert the budget using our enhanced CurrencyConversionService
@@ -116,20 +108,21 @@ class ConvertBudgetCurrencyUseCase {
         final categoryBudget = entry.value;
 
         // Convert budget and left amounts
-        final convertedBudget = await _currencyConversionService
+        final convertedCategoryBudget = await _currencyConversionService
             .convertCurrency(categoryBudget.budget, oldCurrency, newCurrency);
 
-        final convertedLeft = await _currencyConversionService.convertCurrency(
-            categoryBudget.left, oldCurrency, newCurrency);
+        final convertedCategoryLeft =
+            await _currencyConversionService.convertCurrency(
+                categoryBudget.left, oldCurrency, newCurrency);
 
         newCategories[categoryId] = CategoryBudget(
-          budget: convertedBudget,
-          left: convertedLeft,
+          budget: convertedCategoryBudget,
+          left: convertedCategoryLeft,
         );
 
         if (kDebugMode) {
-          print(
-              'Converted category "$categoryId": Budget ${categoryBudget.budget} $oldCurrency → $convertedBudget $newCurrency');
+          debugPrint(
+              'ConvertBudgetCurrencyUseCase: Category conversion completed');
         }
       }
 
@@ -153,30 +146,24 @@ class ConvertBudgetCurrencyUseCase {
       );
 
       if (kDebugMode) {
-        print(
-            'Converted total budget: ${budget.total} $oldCurrency → ${convertedBudget.total} $newCurrency');
-        print(
-            'Converted left budget: ${budget.left} $oldCurrency → ${convertedBudget.left} $newCurrency');
-        print(
-            'Converted saving: ${budget.saving} $oldCurrency → ${convertedBudget.saving} $newCurrency');
+        debugPrint(
+            'ConvertBudgetCurrencyUseCase: Aggregate conversion completed');
       }
 
       // Save the converted budget
       if (kDebugMode) {
-        print('Saving converted budget with currency: $newCurrency');
+        debugPrint('ConvertBudgetCurrencyUseCase: Saving converted budget');
       }
       await _budgetRepository.setBudget(monthId, convertedBudget);
 
       if (kDebugMode) {
-        print(
-            'Budget successfully converted and saved with new currency: $newCurrency');
-        print('Final budget total: ${convertedBudget.total}');
+        debugPrint('ConvertBudgetCurrencyUseCase: Converted budget saved');
       }
 
       return convertedBudget;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        print('Error handling currency change: $e');
+        debugPrint('ConvertBudgetCurrencyUseCase: Budget conversion failed');
       }
       rethrow;
     } finally {

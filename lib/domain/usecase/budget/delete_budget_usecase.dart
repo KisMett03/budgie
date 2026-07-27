@@ -13,14 +13,12 @@ class DeleteBudgetUseCase {
   /// Execute the delete budget use case
   Future<void> execute(String monthId) async {
     try {
-      debugPrint(
-          '🗑️ DeleteBudgetUseCase: Deleting budget for month: $monthId');
+      debugPrint('delete_budget_usecase: Diagnostic output redacted');
 
       // Check if the budget exists first
       final budget = await _budgetRepository.getBudget(monthId);
       if (budget == null) {
-        debugPrint(
-            '🗑️ DeleteBudgetUseCase: No budget found for month: $monthId');
+        debugPrint('delete_budget_usecase: Diagnostic output redacted');
         return; // Nothing to delete
       }
 
@@ -29,8 +27,7 @@ class DeleteBudgetUseCase {
       debugPrint('🗑️ DeleteBudgetUseCase: Budget deleted successfully');
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
-      debugPrint(
-          '🗑️ DeleteBudgetUseCase: Error deleting budget: ${error.message}');
+      debugPrint('delete_budget_usecase: Diagnostic output redacted');
       error.log();
       rethrow;
     }

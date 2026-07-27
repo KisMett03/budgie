@@ -135,12 +135,10 @@ class NavigationHelper {
       final existingProfile =
           await userBehaviorRepository.getUserBehaviorProfile('guest_user');
 
-      debugPrint(
-          '🔄 NavigationHelper: Profile loaded - ${existingProfile != null ? 'Found existing profile' : 'No existing profile'}');
+      debugPrint('navigation_helper: Diagnostic output redacted');
 
       if (existingProfile != null) {
-        debugPrint(
-            '🔄 NavigationHelper: Profile details - Income: ${existingProfile.incomeStability.displayName}, Data consent: ${existingProfile.hasDataConsent}');
+        debugPrint('navigation_helper: Diagnostic output redacted');
       }
 
       if (!context.mounted) return null;
@@ -155,7 +153,7 @@ class NavigationHelper {
         duration: const Duration(milliseconds: 400),
       );
     } catch (e) {
-      debugPrint('❌ NavigationHelper: Error loading profile: $e');
+      debugPrint('navigation_helper: Diagnostic output redacted');
 
       // Show error and navigate without existing profile
       if (context.mounted) {

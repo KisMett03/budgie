@@ -18,7 +18,7 @@ class DeleteExpenseUseCase {
   /// Execute the delete expense use case
   Future<void> execute(String expenseId, DateTime expenseDate) async {
     try {
-      debugPrint('Deleting expense: $expenseId');
+      debugPrint('DeleteExpenseUseCase: Deleting expense');
 
       // Delete expense from repository
       await _expensesRepository.deleteExpense(expenseId);
@@ -27,7 +27,8 @@ class DeleteExpenseUseCase {
       await _updateBudgetAfterExpenseChange(expenseDate);
     } catch (e, stackTrace) {
       final appError = AppError.from(e, stackTrace);
-      debugPrint('Error deleting expense: ${appError.message}');
+      appError.log();
+      debugPrint('delete_expense_usecase: Diagnostic output redacted');
       rethrow;
     }
   }
@@ -41,8 +42,8 @@ class DeleteExpenseUseCase {
 
       // Refresh budget for the month
       await _refreshBudgetUseCase.execute(monthId);
-    } catch (e) {
-      debugPrint('Error updating budget after expense deletion: $e');
+    } catch (_) {
+      debugPrint('delete_expense_usecase: Diagnostic output redacted');
       // Don't rethrow - this is a secondary operation
     }
   }

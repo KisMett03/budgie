@@ -86,7 +86,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final data = widget.prefilledData!;
 
     if (kDebugMode) {
-      debugPrint('📱 AddExpenseScreen: Processing extracted data: $data');
+      debugPrint('AddExpenseScreen: Processing extracted expense data');
     }
 
     // Set amount if available
@@ -138,10 +138,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           _mapSuggestedCategory(suggestedCategory.toString());
       if (mappedCategory != null) {
         _selectedCategory.value = mappedCategory;
-        if (kDebugMode) {
-          debugPrint(
-              '📱 AddExpenseScreen: Set category to: ${mappedCategory.id}');
-        }
       }
     }
 
@@ -172,7 +168,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       } catch (e) {
         // Keep current time if parsing fails
         if (kDebugMode) {
-          debugPrint('Failed to parse extracted datetime: $e');
+          debugPrint('AddExpenseScreen: Failed to parse extracted datetime');
         }
       }
     }
@@ -183,8 +179,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
 
     if (kDebugMode) {
-      debugPrint(
-          '📱 AddExpenseScreen: Preloaded data - Amount: ${_amountController.text}, Remarks: ${_remarkController.text}, Currency: ${_currency.value}, Payment Method: ${_selectedPaymentMethod.value}, Category: ${_selectedCategory.value.id}');
+      debugPrint('AddExpenseScreen: Extracted expense data preloaded');
     }
   }
 
@@ -225,17 +220,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     // Direct ID mapping - this should handle all cases from the backend
     final directCategory = CategoryExtension.fromId(categoryLower);
     if (directCategory != null) {
-      if (kDebugMode) {
-        debugPrint(
-            '📱 AddExpenseScreen: Mapped category "$suggestedCategory" to ${directCategory.id}');
-      }
       return directCategory;
     }
 
     // Fallback - if somehow the backend returns an unexpected category
     if (kDebugMode) {
-      debugPrint(
-          '📱 AddExpenseScreen: Unknown category "$suggestedCategory" from backend, defaulting to others');
+      debugPrint('AddExpenseScreen: Unknown category from backend');
     }
     return Category.others;
   }
@@ -340,8 +330,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         if (_detectionId != null) {
           _notificationService.cleanupAfterExpenseAdded(_detectionId!);
           if (kDebugMode) {
-            debugPrint(
-                '📱 Notification cleanup completed for detection ID: $_detectionId');
+            debugPrint('add_expense_screen: Diagnostic output redacted');
           }
         }
       } catch (e, stackTrace) {

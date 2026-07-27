@@ -17,8 +17,8 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
       // Get expenses from local database
       final localExpenses = await _localDataSource.getExpenses();
       return localExpenses;
-    } catch (e) {
-      debugPrint('Error getting expenses: $e');
+    } catch (_) {
+      debugPrint('ExpensesRepository: Error getting expenses');
       return [];
     }
   }
@@ -28,9 +28,9 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     try {
       // Save to local database
       await _localDataSource.saveExpense(expense);
-    } catch (e) {
-      debugPrint('Error adding expense: $e');
-      throw Exception('Failed to add expense: $e');
+    } catch (_) {
+      debugPrint('ExpensesRepository: Error adding expense');
+      rethrow;
     }
   }
 
@@ -39,9 +39,9 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     try {
       // Update in local database
       await _localDataSource.updateExpense(expense);
-    } catch (e) {
-      debugPrint('Error updating expense: $e');
-      throw Exception('Failed to update expense: $e');
+    } catch (_) {
+      debugPrint('ExpensesRepository: Error updating expense');
+      rethrow;
     }
   }
 
@@ -50,9 +50,9 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     try {
       // Delete from local database
       await _localDataSource.deleteExpense(id);
-    } catch (e) {
-      debugPrint('Error deleting expense: $e');
-      throw Exception('Failed to delete expense: $e');
+    } catch (_) {
+      debugPrint('ExpensesRepository: Error deleting expense');
+      rethrow;
     }
   }
 }

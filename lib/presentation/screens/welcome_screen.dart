@@ -232,7 +232,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         }
       }
     } catch (e) {
-      debugPrint('Error requesting $permissionName permission: $e');
+      debugPrint('WelcomeScreen: Error requesting permission');
       if (mounted) {
         setState(() {
           _permissionRequestStates[permissionName] = false;
@@ -295,7 +295,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         await settingsService.updateLocationSetting(hasLocation);
       }
     } catch (e) {
-      debugPrint('⚠️ Error updating settings based on permissions: $e');
+      debugPrint('WelcomeScreen: Error updating settings based on permissions');
     }
   }
 

@@ -1,10 +1,8 @@
 import 'dart:convert';
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-import '../../models/exceptions.dart';
 import 'gemini_api_client.dart';
 import '../network/connectivity_service.dart';
 import '../../models/expense_detection_models.dart';
@@ -52,8 +50,8 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
 
       final healthStatus = await _apiClient.checkServicesHealth();
       return healthStatus['expense_detection'] == true;
-    } catch (e) {
-      debugPrint('🤖 ExpenseExtractionServiceImpl: Health check failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionServiceImpl: Health check failed');
       return false;
     }
   }
@@ -74,8 +72,8 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
 
       _isInitialized = true;
       debugPrint('✅ ExpenseExtractionServiceImpl: Initialization completed');
-    } catch (e) {
-      debugPrint('❌ ExpenseExtractionServiceImpl: Initialization failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionServiceImpl: Initialization failed');
       _isInitialized = false;
       rethrow;
     }
@@ -91,19 +89,14 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
       _interpreter = await Interpreter.fromAsset(_modelPath);
 
       debugPrint('🤖 ExpenseExtractionServiceImpl: Model loaded successfully');
-      debugPrint('🤖 Input tensors: ${_interpreter!.getInputTensors()}');
-      debugPrint('🤖 Output tensors: ${_interpreter!.getOutputTensors()}');
-
       // Load vocabulary
       final vocabJson = await rootBundle.loadString(_vocabPath);
       final vocabData = json.decode(vocabJson) as Map<String, dynamic>;
       _vocabulary = Map<String, int>.from(vocabData['word2idx'] as Map);
 
-      debugPrint(
-          '🤖 ExpenseExtractionServiceImpl: Vocabulary loaded with ${_vocabulary!.length} tokens');
-    } catch (e) {
-      debugPrint(
-          '❌ ExpenseExtractionServiceImpl: Failed to load TensorFlow model: $e');
+      debugPrint('expense_extraction_service_impl: Diagnostic output redacted');
+    } catch (_) {
+      debugPrint('ExpenseExtractionServiceImpl: Failed to load TensorFlow model');
       rethrow;
     }
   }
@@ -126,15 +119,9 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
 
       debugPrint(
           '🤖 ExpenseExtractionServiceImpl: Classifying notification using TensorFlow model');
-      debugPrint('🤖 Title: "$title"');
-      debugPrint('🤖 Content: "$content"');
-
       // Tokenize title and content
       final titleTokens = _tokenizeText(title, _titleMaxLength);
       final contentTokens = _tokenizeText(content, _contentMaxLength);
-
-      debugPrint('🤖 Title tokens (${titleTokens.length}): $titleTokens');
-      debugPrint('🤖 Content tokens (${contentTokens.length}): $contentTokens');
 
       // Prepare input tensors
       final titleInput = [Int32List.fromList(titleTokens)];
@@ -150,13 +137,11 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
       final probability = output[0][0] as double;
       final isExpense = probability >= _confidenceThreshold;
 
-      debugPrint(
-          '🤖 ExpenseExtractionServiceImpl: TensorFlow classification result: $isExpense (probability: ${probability.toStringAsFixed(4)})');
+      debugPrint('expense_extraction_service_impl: Diagnostic output redacted');
 
       return isExpense;
-    } catch (e) {
-      debugPrint(
-          '🤖 ExpenseExtractionServiceImpl: TensorFlow classification failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionServiceImpl: TensorFlow classification failed');
       debugPrint('🤖 Falling back to keyword-based classification');
 
       // Fallback to simple classification
@@ -268,8 +253,7 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
         request: apiRequest,
       );
 
-      debugPrint(
-          '✅ ExpenseExtractionServiceImpl: FastAPI response received: $response');
+      debugPrint('ExpenseExtractionServiceImpl: FastAPI response received');
 
       if (response['success'] != true) {
         debugPrint(
@@ -292,12 +276,8 @@ class ExpenseExtractionServiceImpl implements ExpenseExtractionService {
 
       // Convert FastAPI response to ExpenseExtractionResult
       return ExpenseExtractionResult.fromJson(extractionData);
-    } catch (e) {
-      debugPrint(
-          '❌ ExpenseExtractionServiceImpl: FastAPI extraction failed: $e');
-      if (e is AIApiException) {
-        debugPrint('Details: ${e.details}');
-      }
+    } catch (_) {
+      debugPrint('ExpenseExtractionServiceImpl: FastAPI extraction failed');
       return null;
     }
   }

@@ -98,7 +98,7 @@ class SyncService {
       return _settingsService.syncEnabled;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error checking sync enabled status: $e');
+        debugPrint('sync_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -109,7 +109,7 @@ class SyncService {
     try {
       await _settingsService.updateSyncSetting(enabled);
       if (kDebugMode) {
-        debugPrint('Sync ${enabled ? 'enabled' : 'disabled'} setting saved');
+        debugPrint('Sync setting saved');
       }
 
       // If enabling sync, trigger a sync
@@ -119,7 +119,7 @@ class SyncService {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error setting sync enabled status: $e');
+        debugPrint('sync_service: Diagnostic output redacted');
       }
     }
   }
@@ -189,7 +189,7 @@ class SyncService {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Sync error: $e');
+        debugPrint('sync_service: Diagnostic output redacted');
       }
     } finally {
       _isSyncing = false;
@@ -212,7 +212,7 @@ class SyncService {
       // Get local expenses
       final expenses = await _expensesRepository.getExpenses();
       if (kDebugMode) {
-        debugPrint('Found ${expenses.length} expenses in local database');
+        debugPrint('sync_service: Diagnostic output redacted');
       }
 
       // In a real app, we would sync with Firebase here
@@ -222,7 +222,7 @@ class SyncService {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error syncing expenses: $e');
+        debugPrint('sync_service: Diagnostic output redacted');
       }
     }
   }
@@ -242,11 +242,11 @@ class SyncService {
       final budget = await _budgetRepository.getBudget(monthId);
       if (budget != null) {
         if (kDebugMode) {
-          debugPrint('Found budget for month $monthId in local database');
+          debugPrint('sync_service: Diagnostic output redacted');
         }
       } else {
         if (kDebugMode) {
-          debugPrint('No budget found for month $monthId');
+          debugPrint('sync_service: Diagnostic output redacted');
         }
       }
 
@@ -257,7 +257,7 @@ class SyncService {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error syncing budgets: $e');
+        debugPrint('sync_service: Diagnostic output redacted');
       }
     }
   }

@@ -53,9 +53,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     super.initState();
     try {
       _extractionService = di.sl<ExpenseExtractionDomainService>();
-    } catch (e) {
-      debugPrint('❌ NotificationTestScreen: Failed to initialize services: $e');
-      _addLog('❌ Service initialization failed: $e');
+    } catch (_) {
+      debugPrint('NotificationTestScreen: Failed to initialize services');
+      _addLog('❌ Service initialization failed');
     }
     _checkServiceHealth();
     _setupNotificationListener();
@@ -80,8 +80,7 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
 
   Future<void> _setupNotificationListener() async {
     _listenerService.setNotificationCallback((title, content, packageName) {
-      _addLog(
-          '🔔 Notification received: $title - $content (from $packageName)');
+      _addLog('🔔 Notification received (payload redacted)');
 
       // Run the full classification and extraction pipeline
       _processReceivedNotification(title, content, packageName);
@@ -125,8 +124,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
       } else {
         _addLog('ℹ️ No expense details extracted.');
       }
-    } catch (e) {
-      _addLog('❌ Pipeline processing failed: $e');
+    } catch (_) {
+      _addLog('❌ Pipeline processing failed');
     }
   }
 
@@ -138,18 +137,14 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     required String source,
     required String packageName,
   }) async {
-    _addLog('✅ EXPENSE EXTRACTED!');
-    _addLog('💰 Amount: ${result.amount ?? 'N/A'} ${result.currency ?? 'N/A'}');
-    _addLog('🏪 Merchant: ${result.merchantName ?? 'N/A'}');
-    _addLog('💳 Payment Method: ${result.paymentMethod ?? 'N/A'}');
-    _addLog('📊 Suggested Category: ${result.suggestedCategory ?? 'N/A'}');
-    _addLog('🎯 Confidence: ${result.confidence.toStringAsFixed(2)}');
+    _addLog('✅ Expense extracted (details redacted for privacy)');
+    _addLog('📊 Extraction completed successfully');
 
     setState(() => _status = 'Expense extracted successfully!');
 
     // Generate detection ID and send actionable notification
     final detectionId = DateTime.now().millisecondsSinceEpoch.toString();
-    _addLog('📊 Generated detection ID: $detectionId');
+    _addLog('📊 Generated detection ID');
     await _sendActionableNotification(result, detectionId);
   }
 
@@ -168,8 +163,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
       } else {
         _addLog('❌ Failed to send actionable notification');
       }
-    } catch (e) {
-      _addLog('❌ Error sending actionable notification: $e');
+    } catch (_) {
+      _addLog('❌ Error sending actionable notification');
     }
   }
 
@@ -185,8 +180,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
         _notificationSettingEnabled = settingsService.allowNotification;
         _addLog(
             '⚙️ Notification Setting: ${_notificationSettingEnabled ? '✅ Enabled' : '❌ Disabled'}');
-      } catch (e) {
-        _addLog('❌ Error checking notification setting: $e');
+      } catch (_) {
+        _addLog('❌ Error checking notification setting');
         _notificationSettingEnabled = false;
       }
 
@@ -197,16 +192,16 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
         extractionServiceHealthy = _extractionService.isInitialized;
         _addLog(
             '🤖 ExpenseExtractionDomainService: ${extractionServiceHealthy ? '✅ Ready' : '❌ Failed'}');
-      } catch (e) {
-        _addLog('❌ ExpenseExtractionDomainService initialization failed: $e');
+      } catch (_) {
+        _addLog('❌ ExpenseExtractionDomainService initialization failed');
       }
 
       // Check notification service
       try {
         await _notificationService.initialize();
         _addLog('📱 Notification Service: ✅ Initialized');
-      } catch (e) {
-        _addLog('❌ Notification Service failed: $e');
+      } catch (_) {
+        _addLog('❌ Notification Service failed');
       }
 
       // Check listener service status (SettingsService handles the rest)
@@ -237,8 +232,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
 
         _addLog('✅ Service health check completed');
         _addLog('📋 Final Status: $_status');
-      } catch (e) {
-        _addLog('❌ Listener Service failed: $e');
+      } catch (_) {
+        _addLog('❌ Listener Service failed');
       }
 
       setState(() {
@@ -250,9 +245,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
 
       _addLog('✅ Service health check completed');
       _addLog('📋 Final Status: $_status');
-    } catch (e) {
-      _addLog('❌ Error checking service health: $e');
-      setState(() => _status = 'Error initializing services: $e');
+    } catch (_) {
+      _addLog('❌ Error checking service health');
+      setState(() => _status = 'Error initializing services');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -268,8 +263,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
         return result ?? false;
       }
       return true; // Non-Android platforms don't need this
-    } catch (e) {
-      _addLog('❌ Error checking notification service enabled: $e');
+    } catch (_) {
+      _addLog('❌ Error checking notification service enabled');
       return false;
     }
   }
@@ -372,8 +367,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
 
       // Update state after operation
       _determineListenerState();
-    } catch (e) {
-      _addLog('❌ Error toggling listener: $e');
+    } catch (_) {
+      _addLog('❌ Error toggling listener');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -405,8 +400,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
       });
 
       _addLog('✅ Listener state refresh completed');
-    } catch (e) {
-      _addLog('❌ Error refreshing listener state: $e');
+    } catch (_) {
+      _addLog('❌ Error refreshing listener state');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -423,8 +418,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
         context,
       );
 
-      setState(() => _status = 'Permission result: ${result.message}');
-      _addLog('📋 Permission result: ${result.message}');
+      setState(() => _status = 'Permission request completed');
+      _addLog(
+          '📋 Permission result: ${result.isGranted ? 'granted' : 'not granted'}');
 
       if (result.isGranted) {
         _addLog('✅ All notification permissions granted');
@@ -435,9 +431,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
         _addLog(
             '💡 You may need to manually enable notification access in system settings');
       }
-    } catch (e) {
-      _addLog('❌ Error requesting permissions: $e');
-      setState(() => _status = 'Permission error: $e');
+    } catch (_) {
+      _addLog('❌ Error requesting permissions');
+      setState(() => _status = 'Permission error');
     } finally {
       setState(() => _isLoading = false);
     }

@@ -82,9 +82,8 @@ class ReallocateBudgetUseCase {
     List<ReallocationSuggestion> suggestions,
   ) async {
     try {
-      debugPrint(
-          '🔧 ReallocateBudgetUseCase: Starting reallocation for $monthId');
-      debugPrint('🔧 Processing ${suggestions.length} suggestions');
+      debugPrint('ReallocateBudgetUseCase: Starting reallocation');
+      debugPrint('reallocate_budget_usecase: Diagnostic output redacted');
 
       // Get current budget
       final currentBudget = await _budgetRepository.getBudget(monthId);
@@ -115,15 +114,11 @@ class ReallocateBudgetUseCase {
 
       debugPrint(
           '✅ ReallocateBudgetUseCase: Reallocation completed successfully');
-      debugPrint(
-          '🔧 New budget total: ${updatedBudget.total} ${updatedBudget.currency}');
-      debugPrint(
-          '🔧 New saving amount: ${updatedBudget.saving} ${updatedBudget.currency}');
 
       return updatedBudget;
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
-      debugPrint('❌ ReallocateBudgetUseCase: Error: ${error.message}');
+      debugPrint('ReallocateBudgetUseCase: Reallocation failed');
       error.log();
       rethrow;
     }
@@ -135,15 +130,14 @@ class ReallocateBudgetUseCase {
     List<ReallocationSuggestion> suggestions,
   ) {
     debugPrint('🔧 Applying reallocation suggestions...');
-    debugPrint('🔧 Total suggestions received: ${suggestions.length}');
+    debugPrint('reallocate_budget_usecase: Diagnostic output redacted');
 
     // Filter to only process High priority suggestions
     final highPrioritySuggestions = suggestions
         .where((suggestion) => suggestion.criticality.toLowerCase() == 'high')
         .toList();
 
-    debugPrint(
-        '🔧 High priority suggestions: ${highPrioritySuggestions.length}');
+    debugPrint('reallocate_budget_usecase: Diagnostic output redacted');
 
     if (highPrioritySuggestions.isEmpty) {
       debugPrint('🔧 No high priority suggestions to apply');
@@ -159,21 +153,14 @@ class ReallocateBudgetUseCase {
       final toCategory = suggestion.toCategory;
       final amount = suggestion.amount;
 
-      debugPrint(
-          '🔧 Processing: $fromCategory → $toCategory: ${amount.toStringAsFixed(2)}');
-
       if (amount <= 0) {
-        debugPrint(
-            '⚠️ Skipping non-positive amount: ${amount.toStringAsFixed(2)}');
+        debugPrint('ReallocateBudgetUseCase: Skipping non-positive transfer');
         continue;
       }
 
       // Normalize category names for matching
       final normalizedToCategory = _normalizeCategoryName(toCategory);
       final normalizedFromCategory = _normalizeCategoryName(fromCategory);
-
-      debugPrint(
-          '🔧 Normalized: $normalizedFromCategory → $normalizedToCategory');
 
       // Handle transfers to/from saving
       if (normalizedToCategory == 'saving' ||
@@ -188,8 +175,7 @@ class ReallocateBudgetUseCase {
 
           // Validate: Don't exceed available amount in category
           if (fromCat.left < amount) {
-            debugPrint(
-                '⚠️ Transfer amount ${amount.toStringAsFixed(2)} exceeds available ${fromCat.left.toStringAsFixed(2)} in $fromCategory. Skipping.');
+            debugPrint('ReallocateBudgetUseCase: Transfer exceeds available funds');
             continue;
           }
 
@@ -204,10 +190,9 @@ class ReallocateBudgetUseCase {
           );
 
           totalReallocated += amount;
-          debugPrint(
-              '💰 Reduced $fromCategory budget by ${amount.toStringAsFixed(2)} (moved to saving)');
+          debugPrint('ReallocateBudgetUseCase: Transfer to savings applied');
         } else {
-          debugPrint('⚠️ Category $fromCategory not found in budget');
+          debugPrint('ReallocateBudgetUseCase: Source category not found');
         }
       } else if (normalizedFromCategory == 'saving' ||
           normalizedFromCategory == 'savings' ||
@@ -219,8 +204,7 @@ class ReallocateBudgetUseCase {
         if (toCategoryKey != null) {
           // Validate: Don't exceed available savings
           if (currentBudget.saving < amount) {
-            debugPrint(
-                '⚠️ Transfer amount ${amount.toStringAsFixed(2)} exceeds available savings ${currentBudget.saving.toStringAsFixed(2)}. Skipping.');
+            debugPrint('ReallocateBudgetUseCase: Transfer exceeds available savings');
             continue;
           }
 
@@ -233,10 +217,9 @@ class ReallocateBudgetUseCase {
           );
 
           totalReallocated += amount;
-          debugPrint(
-              '💰 Increased $toCategory budget by ${amount.toStringAsFixed(2)} (from saving)');
+          debugPrint('ReallocateBudgetUseCase: Transfer from savings applied');
         } else {
-          debugPrint('⚠️ Category $toCategory not found in budget');
+          debugPrint('ReallocateBudgetUseCase: Destination category not found');
         }
       } else {
         // Transfer between categories
@@ -249,8 +232,7 @@ class ReallocateBudgetUseCase {
 
           // Validate: Don't exceed available amount in source category
           if (fromCat.left < amount) {
-            debugPrint(
-                '⚠️ Transfer amount ${amount.toStringAsFixed(2)} exceeds available ${fromCat.left.toStringAsFixed(2)} in $fromCategory. Skipping.');
+            debugPrint('ReallocateBudgetUseCase: Transfer exceeds available funds');
             continue;
           }
 
@@ -270,13 +252,9 @@ class ReallocateBudgetUseCase {
           );
 
           totalReallocated += actualTransferAmount;
-          debugPrint(
-              '💸 Transferred ${actualTransferAmount.toStringAsFixed(2)} from $fromCategory to $toCategory');
+          debugPrint('ReallocateBudgetUseCase: Category transfer applied');
         } else {
-          debugPrint(
-              '⚠️ One or both categories not found: $fromCategory ($fromCategoryKey), $toCategory ($toCategoryKey)');
-          debugPrint(
-              '🔧 Available categories: ${newCategories.keys.join(', ')}');
+          debugPrint('ReallocateBudgetUseCase: Category transfer skipped');
         }
       }
     }
@@ -291,8 +269,7 @@ class ReallocateBudgetUseCase {
         .fold(0.0, (sum, category) => sum + category.budget);
     final newSaving = currentBudget.total - totalCategoryBudgets;
 
-    debugPrint('🔧 Total reallocated: ${totalReallocated.toStringAsFixed(2)}');
-    debugPrint('🔧 New saving amount: ${newSaving.toStringAsFixed(2)}');
+    debugPrint('ReallocateBudgetUseCase: Reallocation totals calculated');
 
     return currentBudget.copyWith(
       categories: newCategories,

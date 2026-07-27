@@ -96,8 +96,7 @@ class BudgetViewModel extends ChangeNotifier {
   Future<void> refreshBudget(String monthId) async {
     try {
       if (kDebugMode) {
-        debugPrint(
-            '🔄 BudgetViewModel: Manual budget refresh requested for month: $monthId');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
       isLoading = true;
       notifyListeners();
@@ -105,38 +104,33 @@ class BudgetViewModel extends ChangeNotifier {
       // First try to get the budget directly from repository to check if it exists
       final existingBudget = await _budgetRepository.getBudget(monthId);
       if (kDebugMode) {
-        debugPrint(
-            '🔄 BudgetViewModel: Existing budget found: ${existingBudget != null}');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
       if (existingBudget != null) {
         if (kDebugMode) {
-          debugPrint(
-              '🔄 BudgetViewModel: Existing budget total: ${existingBudget.total}, currency: ${existingBudget.currency}');
+          debugPrint('budget_viewmodel: Diagnostic output redacted');
         }
       }
 
       // Now use the refresh use case to recalculate with expenses
       final refreshedBudget = await _refreshBudgetUseCase.execute(monthId);
       if (kDebugMode) {
-        debugPrint(
-            '🔄 BudgetViewModel: Refresh use case returned budget: ${refreshedBudget != null}');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
 
       if (refreshedBudget != null) {
         if (kDebugMode) {
-          debugPrint(
-              '🔄 BudgetViewModel: Refreshed budget total: ${refreshedBudget.total}, currency: ${refreshedBudget.currency}');
+          debugPrint('budget_viewmodel: Diagnostic output redacted');
         }
       }
 
       budget = refreshedBudget;
       if (kDebugMode) {
-        debugPrint(
-            '🔄 BudgetViewModel: Budget after refresh: ${budget != null}');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('🔄 BudgetViewModel: Error refreshing budget: $e');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
       errorMessage = 'Failed to refresh budget: ${e.toString()}';
     } finally {
@@ -149,8 +143,7 @@ class BudgetViewModel extends ChangeNotifier {
   Future<void> onCurrencyChanged(String newCurrency) async {
     try {
       if (kDebugMode) {
-        debugPrint(
-            '💱 BudgetViewModel: Currency change requested to: $newCurrency');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
 
       isLoading = true;
@@ -166,7 +159,7 @@ class BudgetViewModel extends ChangeNotifier {
 
       if (currentBudget == null) {
         if (kDebugMode) {
-          debugPrint('💱 BudgetViewModel: No budget found for month: $monthId');
+          debugPrint('budget_viewmodel: Diagnostic output redacted');
         }
         return;
       }
@@ -174,16 +167,14 @@ class BudgetViewModel extends ChangeNotifier {
       // Check if conversion is needed
       if (currentBudget.currency == newCurrency) {
         if (kDebugMode) {
-          debugPrint(
-              '💱 BudgetViewModel: Budget already in target currency: $newCurrency');
+          debugPrint('budget_viewmodel: Diagnostic output redacted');
         }
         budget = currentBudget;
         return;
       }
 
       if (kDebugMode) {
-        debugPrint(
-            '💱 BudgetViewModel: Converting budget from ${currentBudget.currency} to $newCurrency');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
 
       // Perform currency conversion
@@ -206,7 +197,7 @@ class BudgetViewModel extends ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('💱 BudgetViewModel: Error handling currency change: $e');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
       errorMessage =
           'Failed to update budget with new currency: ${e.toString()}';
@@ -219,9 +210,8 @@ class BudgetViewModel extends ChangeNotifier {
   Future<void> saveBudgetWithMonthId(String monthId, Budget newBudget) async {
     try {
       if (kDebugMode) {
-        debugPrint('💾 BudgetViewModel: Saving budget for month: $monthId');
-        debugPrint(
-            '💾 BudgetViewModel: Budget total: ${newBudget.total}, left: ${newBudget.left}, currency: ${newBudget.currency}');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
 
       errorMessage = null;
@@ -241,7 +231,7 @@ class BudgetViewModel extends ChangeNotifier {
       error.log();
       errorMessage = error.message;
       if (kDebugMode) {
-        debugPrint('💾 BudgetViewModel: Error saving budget: ${error.message}');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
     } finally {
       isLoading = false;
@@ -321,7 +311,7 @@ class BudgetViewModel extends ChangeNotifier {
   Future<void> deleteBudget(String monthId) async {
     try {
       if (kDebugMode) {
-        debugPrint('🗑️ BudgetViewModel: Deleting budget for month: $monthId');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
 
       isLoading = true;
@@ -342,8 +332,7 @@ class BudgetViewModel extends ChangeNotifier {
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
       if (kDebugMode) {
-        debugPrint(
-            '🗑️ BudgetViewModel: Error deleting budget: ${error.message}');
+        debugPrint('budget_viewmodel: Diagnostic output redacted');
       }
       errorMessage = 'Failed to delete budget: ${error.message}';
     } finally {

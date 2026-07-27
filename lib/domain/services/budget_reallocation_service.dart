@@ -46,8 +46,7 @@ class BudgetReallocationService {
   /// Returns the updated budget with AI-recommended reallocations applied.
   Future<Budget> reallocateBudget(String userId, String monthId) async {
     try {
-      debugPrint(
-          '🔄 BudgetReallocationService: Starting budget reallocation for $monthId');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
       if (!_isValidMonthId(monthId)) {
         throw ReallocationException('Invalid month ID format: $monthId');
@@ -79,7 +78,7 @@ class BudgetReallocationService {
           '✅ BudgetReallocationService: Reallocation completed successfully');
       return optimizedBudget;
     } catch (e, stackTrace) {
-      debugPrint('❌ BudgetReallocationService: Reallocation failed: $e');
+      debugPrint('BudgetReallocationService: Reallocation failed');
       final error = AppError.from(e, stackTrace);
       error.log();
       rethrow;
@@ -92,8 +91,7 @@ class BudgetReallocationService {
     String monthId,
   ) async {
     try {
-      debugPrint(
-          '🔍 BudgetReallocationService: Getting recommendations for $monthId');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
       final currentBudget = await _budgetRepository.getBudget(monthId);
       if (currentBudget == null) {
@@ -104,8 +102,7 @@ class BudgetReallocationService {
           await _prepareAnalysisRequest(userId, monthId, currentBudget);
       return await _getAIRecommendations(request);
     } catch (e, stackTrace) {
-      debugPrint(
-          '❌ BudgetReallocationService: Failed to get recommendations: $e');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
       final error = AppError.from(e, stackTrace);
       error.log();
       rethrow;
@@ -118,14 +115,14 @@ class BudgetReallocationService {
     String monthId,
     Budget currentBudget,
   ) async {
-    debugPrint('📊 Preparing analysis request for $monthId');
+    debugPrint('BudgetReallocationService: Preparing analysis request');
 
     // 1. Fetch user behavior profile
     final userProfile =
         await _userBehaviorRepository.getUserBehaviorProfile(userId);
     if (userProfile == null) {
       throw ReallocationException(
-        'User behavior profile not found for user $userId',
+        'User behavior profile not found',
         code: 'PROFILE_NOT_FOUND',
       );
     }
@@ -134,19 +131,15 @@ class BudgetReallocationService {
     final spendingAnalysis =
         await _analysisRepository.getLatestAnalysis(userId);
     if (spendingAnalysis == null) {
-      debugPrint(
-          '⚠️ No spending analysis found for user $userId. Using minimal context.');
+      debugPrint('No spending analysis found. Using minimal context.');
     } else {
-      debugPrint(
-          '✅ Found spending analysis from ${spendingAnalysis.metadata['analysis_timestamp']}');
-      debugPrint(
-          '📊 Summary length: ${spendingAnalysis.summary.length} characters');
-      debugPrint('📊 AI Model used: ${spendingAnalysis.metadata['ai_model']}');
+      debugPrint('Found existing spending analysis');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
     }
 
     // 3. Fetch active financial goals
     final activeGoals = await _goalsRepository.getActiveGoals();
-    debugPrint('🎯 Found ${activeGoals.length} active financial goals');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
     // 4. Fetch historical expenses for the last 10 days
     final allExpenses = await _expensesRepository.getExpenses();
@@ -156,14 +149,7 @@ class BudgetReallocationService {
         .where((e) => e.date.isAfter(fromDate) && e.date.isBefore(toDate))
         .toList();
 
-    debugPrint(
-        '💰 Found ${recentExpenses.length} recent expenses (last 10 days)');
-    if (recentExpenses.isNotEmpty) {
-      final totalAmount = recentExpenses.fold(0.0, (sum, e) => sum + e.amount);
-      debugPrint(
-          '💰 Total recent spending: ${totalAmount.toStringAsFixed(2)} ${currentBudget.currency}');
-    }
-
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
     // 5. Create the request model
     final request = BudgetReallocationRequest(
       userProfile: ReallocationUserProfileData.fromProfile(userProfile),
@@ -176,20 +162,17 @@ class BudgetReallocationService {
           spendingAnalysis ?? _createEmptySpendingAnalysis(userId),
     );
 
-    debugPrint('📊 Request prepared with:');
-    debugPrint('  - User profile: ${userProfile.userId}');
-    debugPrint(
-        '  - Budget total: ${currentBudget.total} ${currentBudget.currency}');
-    debugPrint('  - Recent expenses: ${recentExpenses.length}');
-    debugPrint('  - Goals: ${activeGoals.length}');
-    debugPrint('  - Analysis available: ${spendingAnalysis != null}');
+    debugPrint('BudgetReallocationService: Request prepared');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
     return request;
   }
 
   /// Create a minimal spending analysis object when none is available
   SpendingBehaviorAnalysisResult _createEmptySpendingAnalysis(String userId) {
-    debugPrint('🔄 Creating empty spending analysis for user $userId');
+    debugPrint('Creating empty spending analysis');
 
     // Create a minimal metadata map directly
     final metadataMap = {
@@ -215,11 +198,11 @@ class BudgetReallocationService {
 
       debugPrint('🔄 Empty analysis created successfully');
       return result;
-    } catch (e) {
-      debugPrint('❌ Failed to create empty analysis: $e');
+    } catch (_) {
+      debugPrint('Failed to create empty analysis');
       // Fallback - this should not happen but provides safety
       throw ReallocationException(
-        'Failed to create placeholder spending analysis: $e',
+        'Failed to create placeholder spending analysis',
         code: 'PLACEHOLDER_CREATION_FAILED',
         originalError: e,
       );
@@ -237,47 +220,30 @@ class BudgetReallocationService {
 
       debugPrint('🤖 Sending request to budget reallocation API...');
       debugPrint('🤖 Request contains:');
-      debugPrint(
-          '  - Analysis summary: ${request.spendingAnalysis.summary.length} chars');
-      debugPrint(
-          '  - Budget categories: ${request.currentBudget.categories.length}');
-      debugPrint('  - Recent expenses: ${request.recentExpenses.length}');
-      debugPrint('  - Goals: ${request.goals.length}');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
       final response = await _apiClient.analyzeBudgetReallocation(
         request: request,
       );
 
       debugPrint('🤖 API response received');
-      debugPrint('🤖 Response keys: ${response.keys.toList()}');
+      debugPrint('BudgetReallocationService: API response received');
 
       final result = BudgetReallocationResponse.fromJson(response);
 
-      debugPrint(
-          '🤖 Parsed ${result.suggestions.length} reallocation suggestions');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
       if (result.metadata != null) {
-        debugPrint('🤖 Analysis ID: ${result.metadata!.analysisId}');
-        debugPrint('🤖 Model version: ${result.metadata!.modelVersion}');
-      }
-
-      // Log suggestions summary
-      if (result.suggestions.isNotEmpty) {
-        final totalReallocation =
-            result.suggestions.fold(0.0, (sum, s) => sum + s.amount);
-        debugPrint(
-            '🤖 Total suggested reallocation: ${totalReallocation.toStringAsFixed(2)}');
-
-        for (final suggestion in result.suggestions) {
-          debugPrint(
-              '🤖 ${suggestion.fromCategory} → ${suggestion.toCategory}: ${suggestion.amount} (${suggestion.criticality})');
-        }
+        debugPrint('BudgetReallocationService: Analysis metadata received');
       }
 
       return result;
     } catch (e) {
-      debugPrint('❌ Failed to get AI recommendations: $e');
+      debugPrint('BudgetReallocationService: AI recommendations failed');
       throw ReallocationException(
-        'AI analysis failed: $e',
+        'AI analysis failed',
         code: 'AI_ANALYSIS_FAILED',
         originalError: e,
       );
@@ -290,7 +256,7 @@ class BudgetReallocationService {
     BudgetReallocationResponse response,
     String monthId,
   ) async {
-    debugPrint('🔧 Applying ${response.suggestions.length} recommendations');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
     if (response.suggestions.isEmpty) {
       debugPrint('📊 No applicable recommendations found');
@@ -302,8 +268,7 @@ class BudgetReallocationService {
         .where((suggestion) => suggestion.criticality.toLowerCase() == 'high')
         .toList();
 
-    debugPrint(
-        '🔧 High priority suggestions: ${highPrioritySuggestions.length}');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
     if (highPrioritySuggestions.isEmpty) {
       debugPrint('📊 No high priority recommendations to apply');
@@ -317,12 +282,10 @@ class BudgetReallocationService {
     for (final recommendation in highPrioritySuggestions) {
       final transferAmount = recommendation.amount;
 
-      debugPrint(
-          '🔧 Processing: ${recommendation.fromCategory} → ${recommendation.toCategory}: ${transferAmount.toStringAsFixed(2)} (${recommendation.criticality})');
+      debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
       if (transferAmount <= 0) {
-        debugPrint(
-            '⚠️ Skipping non-positive transfer: ${transferAmount.toStringAsFixed(2)}');
+        debugPrint('budget_reallocation_service: Diagnostic output redacted');
         continue;
       }
 
@@ -334,8 +297,7 @@ class BudgetReallocationService {
         if (fromCat != null) {
           // Validate: Do not allow transfer to exceed available amount in category
           if (fromCat.left < transferAmount) {
-            debugPrint(
-                '⚠️ Transfer amount ${transferAmount.toStringAsFixed(2)} exceeds available ${fromCat.left.toStringAsFixed(2)} in ${recommendation.fromCategory}. Skipping.');
+            debugPrint('budget_reallocation_service: Diagnostic output redacted');
             continue;
           }
 
@@ -348,11 +310,9 @@ class BudgetReallocationService {
             left: fromCat.left, // Keep remaining amount unchanged for now
           );
 
-          debugPrint(
-              '💰 Unallocated ${transferAmount.toStringAsFixed(2)} from ${recommendation.fromCategory} to savings');
+          debugPrint('budget_reallocation_service: Diagnostic output redacted');
         } else {
-          debugPrint(
-              '⚠️ Category ${recommendation.fromCategory} not found in budget');
+          debugPrint('budget_reallocation_service: Diagnostic output redacted');
         }
       } else if (recommendation.fromCategory.toLowerCase() == 'savings' ||
           recommendation.fromCategory.toLowerCase() == 'saving') {
@@ -362,8 +322,7 @@ class BudgetReallocationService {
           // Check if we have enough savings to allocate
           final currentSaving = currentBudget.saving;
           if (currentSaving < transferAmount) {
-            debugPrint(
-                '⚠️ Transfer amount ${transferAmount.toStringAsFixed(2)} exceeds available savings ${currentSaving.toStringAsFixed(2)}. Skipping.');
+            debugPrint('budget_reallocation_service: Diagnostic output redacted');
             continue;
           }
 
@@ -372,11 +331,9 @@ class BudgetReallocationService {
             left: toCat.left + transferAmount, // Increase available amount
           );
 
-          debugPrint(
-              '💰 Allocated ${transferAmount.toStringAsFixed(2)} from savings to ${recommendation.toCategory}');
+          debugPrint('budget_reallocation_service: Diagnostic output redacted');
         } else {
-          debugPrint(
-              '⚠️ Category ${recommendation.toCategory} not found in budget');
+          debugPrint('budget_reallocation_service: Diagnostic output redacted');
         }
       } else {
         // Transfer between categories
@@ -386,8 +343,7 @@ class BudgetReallocationService {
         if (fromCat != null && toCat != null) {
           // Validate: Do not allow transfer to exceed available amount in category
           if (fromCat.left < transferAmount) {
-            debugPrint(
-                '⚠️ Transfer amount ${transferAmount.toStringAsFixed(2)} exceeds available ${fromCat.left.toStringAsFixed(2)} in ${recommendation.fromCategory}. Skipping.');
+            debugPrint('budget_reallocation_service: Diagnostic output redacted');
             continue;
           }
 
@@ -407,11 +363,9 @@ class BudgetReallocationService {
                 toCat.left + actualTransferAmount, // Increase available amount
           );
 
-          debugPrint(
-              '💸 Transferred ${actualTransferAmount.toStringAsFixed(2)} from ${recommendation.fromCategory} to ${recommendation.toCategory}');
+          debugPrint('budget_reallocation_service: Diagnostic output redacted');
         } else {
-          debugPrint(
-              '⚠️ Skipping recommendation for unknown categories: ${recommendation.fromCategory} -> ${recommendation.toCategory}');
+          debugPrint('budget_reallocation_service: Diagnostic output redacted');
           continue;
         }
       }
@@ -437,10 +391,8 @@ class BudgetReallocationService {
     // Save the updated budget to ensure persistence
     await _budgetRepository.setBudget(monthId, optimizedBudget);
 
-    debugPrint(
-        '✅ Applied reallocations totaling ${totalReallocated.toStringAsFixed(2)} ${currentBudget.currency}');
-    debugPrint(
-        '💰 Savings changed from ${currentBudget.saving.toStringAsFixed(2)} to ${newSaving.toStringAsFixed(2)} ${currentBudget.currency}');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
+    debugPrint('budget_reallocation_service: Diagnostic output redacted');
 
     return optimizedBudget;
   }

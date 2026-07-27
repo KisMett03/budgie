@@ -65,7 +65,7 @@ class CurrencyConversionService {
       // 2. Check if connected to internet
       final isConnected = await _isNetworkConnected();
       if (kDebugMode) {
-        debugPrint('Network connection status: $isConnected');
+        debugPrint('currency_conversion_service: Diagnostic output redacted');
       }
 
       if (isConnected) {
@@ -76,8 +76,7 @@ class CurrencyConversionService {
         final apiRates = await _fetchFromBnmApi();
         if (apiRates != null && apiRates.isNotEmpty) {
           if (kDebugMode) {
-            debugPrint(
-                'Successfully fetched ${apiRates.length} rates from BNM API: $apiRates');
+            debugPrint('currency_conversion_service: Diagnostic output redacted');
           }
           // Cache the fresh data
           await _cacheRates(apiRates);
@@ -98,7 +97,7 @@ class CurrencyConversionService {
       final cachedRates = await _getCachedRates();
       if (cachedRates != null && cachedRates.isNotEmpty) {
         if (kDebugMode) {
-          debugPrint('Using cached exchange rates: $cachedRates');
+          debugPrint('Using cached exchange rates');
         }
         _updateMemoryCache(cachedRates);
 
@@ -125,16 +124,16 @@ class CurrencyConversionService {
         debugPrint('No exchange rates available from any source');
       }
       return {};
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error getting exchange rates: $e');
+        debugPrint('CurrencyConversionService: Reading exchange rates failed');
       }
 
       // Try cached rates on error
       final cachedRates = await _getCachedRates();
       if (cachedRates != null) {
         if (kDebugMode) {
-          debugPrint('Using cached rates after error: $cachedRates');
+          debugPrint('Using cached rates after error');
         }
         return cachedRates;
       }
@@ -181,22 +180,20 @@ class CurrencyConversionService {
           }
 
           if (kDebugMode) {
-            debugPrint(
-                'Successfully fetched ${rates.length} exchange rates from BNM API');
+            debugPrint('currency_conversion_service: Diagnostic output redacted');
           }
           return rates;
         }
       } else {
         if (kDebugMode) {
-          debugPrint(
-              'BNM API error: ${response.statusCode} - ${response.body}');
+          debugPrint('currency_conversion_service: Diagnostic output redacted');
         }
       }
 
       return null;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error fetching from BNM API: $e');
+        debugPrint('currency_conversion_service: Diagnostic output redacted');
       }
       return null;
     }
@@ -255,7 +252,7 @@ class CurrencyConversionService {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error caching rates: $e');
+        debugPrint('currency_conversion_service: Diagnostic output redacted');
       }
     }
   }
@@ -281,9 +278,9 @@ class CurrencyConversionService {
       final ratesMap = cacheData['rates'] as Map<String, dynamic>;
       return ratesMap
           .map((key, value) => MapEntry(key, (value as num).toDouble()));
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error getting cached rates: $e');
+        debugPrint('CurrencyConversionService: Reading cached rates failed');
       }
       return null;
     }
@@ -293,37 +290,26 @@ class CurrencyConversionService {
   Future<double?> getExchangeRate(
       String fromCurrency, String toCurrency) async {
     if (kDebugMode) {
-      debugPrint('💱 Getting exchange rate: $fromCurrency -> $toCurrency');
+      debugPrint('CurrencyConversionService: Exchange rate lookup started');
     }
 
     if (fromCurrency == toCurrency) return 1.0;
 
     try {
       final rates = await getExchangeRates();
-      if (kDebugMode) {
-        debugPrint('💱 Available exchange rates: $rates');
-      }
-
       if (fromCurrency == 'MYR') {
         // Converting from MYR to other currency
         final rate = rates[toCurrency];
-        if (kDebugMode) {
-          debugPrint('💱 MYR to $toCurrency rate: $rate');
-        }
         return rate;
       } else if (toCurrency == 'MYR') {
         // Converting from other currency to MYR
         final rate = rates[fromCurrency];
         if (rate != null && rate > 0) {
           final myrRate = 1.0 / rate;
-          if (kDebugMode) {
-            debugPrint(
-                '💱 $fromCurrency to MYR rate: $myrRate (inverse of $rate)');
-          }
           return myrRate;
         } else {
           if (kDebugMode) {
-            debugPrint('💱 Invalid rate for $fromCurrency: $rate');
+            debugPrint('CurrencyConversionService: Invalid exchange rate');
           }
           return null;
         }
@@ -331,30 +317,17 @@ class CurrencyConversionService {
         // Converting between two non-MYR currencies
         final fromRate = rates[fromCurrency];
         final toRate = rates[toCurrency];
-        if (kDebugMode) {
-          debugPrint(
-              '💱 Cross conversion: $fromCurrency rate: $fromRate, $toCurrency rate: $toRate');
-        }
-
         if (fromRate != null && toRate != null && fromRate > 0) {
           // Convert via MYR: fromCurrency -> MYR -> toCurrency
           final crossRate = toRate / fromRate;
-          if (kDebugMode) {
-            debugPrint('💱 Cross rate calculated: $crossRate');
-          }
           return crossRate;
         }
       }
 
-      if (kDebugMode) {
-        debugPrint(
-            '💱 No exchange rate found for $fromCurrency -> $toCurrency');
-      }
       return null;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '💱 Error getting exchange rate from $fromCurrency to $toCurrency: $e');
+        debugPrint('CurrencyConversionService: Exchange rate lookup failed');
       }
       return null;
     }
@@ -363,29 +336,14 @@ class CurrencyConversionService {
   /// Convert amount from one currency to another
   Future<double> convertCurrency(
       double amount, String fromCurrency, String toCurrency) async {
-    if (kDebugMode) {
-      debugPrint('💱 Converting $amount from $fromCurrency to $toCurrency');
-    }
-
     if (fromCurrency == toCurrency) {
-      if (kDebugMode) {
-        debugPrint('💱 Same currency, returning original amount: $amount');
-      }
       return _formatAmount(amount);
     }
 
     try {
       final rate = await getExchangeRate(fromCurrency, toCurrency);
-      if (kDebugMode) {
-        debugPrint('💱 Exchange rate from $fromCurrency to $toCurrency: $rate');
-      }
-
       if (rate != null && rate > 0) {
         final convertedAmount = _formatAmount(amount * rate);
-        if (kDebugMode) {
-          debugPrint(
-              '💱 Converted $amount $fromCurrency to $convertedAmount $toCurrency (rate: $rate)');
-        }
         return convertedAmount;
       }
 
@@ -395,15 +353,13 @@ class CurrencyConversionService {
       if (fromCurrency == 'MYR' && _defaultRates.containsKey(toCurrency)) {
         fallbackRate = _defaultRates[toCurrency]!;
         if (kDebugMode) {
-          debugPrint(
-              '💱 Using fallback rate MYR to $toCurrency: $fallbackRate');
+          debugPrint('currency_conversion_service: Diagnostic output redacted');
         }
       } else if (toCurrency == 'MYR' &&
           _defaultRates.containsKey(fromCurrency)) {
         fallbackRate = 1.0 / _defaultRates[fromCurrency]!;
         if (kDebugMode) {
-          debugPrint(
-              '💱 Using fallback rate $fromCurrency to MYR: $fallbackRate (inverse of ${_defaultRates[fromCurrency]})');
+          debugPrint('currency_conversion_service: Diagnostic output redacted');
         }
       } else if (_defaultRates.containsKey(fromCurrency) &&
           _defaultRates.containsKey(toCurrency)) {
@@ -412,29 +368,26 @@ class CurrencyConversionService {
         final myrToToRate = _defaultRates[toCurrency]!;
         fallbackRate = fromToMyrRate * myrToToRate;
         if (kDebugMode) {
-          debugPrint(
-              '💱 Using fallback cross rate $fromCurrency to $toCurrency: $fallbackRate');
+          debugPrint('currency_conversion_service: Diagnostic output redacted');
         }
       }
 
       if (fallbackRate != null && fallbackRate > 0) {
         final convertedAmount = _formatAmount(amount * fallbackRate);
         if (kDebugMode) {
-          debugPrint(
-              '💱 Converted using fallback: $amount $fromCurrency to $convertedAmount $toCurrency');
+          debugPrint('currency_conversion_service: Diagnostic output redacted');
         }
         return convertedAmount;
       }
 
       // If no rate available, return original amount
       if (kDebugMode) {
-        debugPrint(
-            '💱 No conversion rate available from $fromCurrency to $toCurrency, returning original amount');
+        debugPrint('currency_conversion_service: Diagnostic output redacted');
       }
       return _formatAmount(amount);
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('💱 Error converting currency: $e');
+        debugPrint('CurrencyConversionService: Currency conversion failed');
       }
       return _formatAmount(amount);
     }
@@ -477,9 +430,9 @@ class CurrencyConversionService {
         onStatus('Failed to refresh exchange rates', isError: true);
       }
       return false;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error refreshing rates: $e');
+        debugPrint('CurrencyConversionService: Refreshing rates failed');
       }
       if (onStatus != null) {
         onStatus('Error refreshing rates: $e', isError: true);
@@ -499,9 +452,9 @@ class CurrencyConversionService {
       }
 
       return null;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error getting last update time: $e');
+        debugPrint('CurrencyConversionService: Reading update time failed');
       }
       return null;
     }
@@ -534,9 +487,9 @@ class CurrencyConversionService {
       if (kDebugMode) {
         debugPrint('Exchange rate cache cleared');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error clearing cache: $e');
+        debugPrint('CurrencyConversionService: Clearing cache failed');
       }
     }
   }

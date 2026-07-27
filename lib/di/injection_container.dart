@@ -26,6 +26,7 @@ import '../data/datasources/local_data_source.dart';
 import '../data/datasources/local_data_source_impl.dart';
 import '../data/datasources/user_behavior_local_data_source.dart';
 import '../data/datasources/analysis_local_data_source.dart';
+import '../data/infrastructure/storage/settings_storage.dart';
 
 // Services
 import '../data/infrastructure/services/background_task_service.dart';
@@ -73,7 +74,10 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   // App Database - LazyDatabase already handles lazy opening
-  sl.registerLazySingleton(() => AppDatabase());
+  sl.registerLazySingleton<AppDatabase>(
+    () => AppDatabase(),
+    dispose: (database) => database.close(),
+  );
 
   // Register DAOs
   sl.registerLazySingleton(() => sl<AppDatabase>().exchangeRatesDao);
@@ -85,8 +89,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => sl<AppDatabase>().goalHistoryDao);
 
   // External
-  sl.registerLazySingleton(() => http.Client());
+  sl.registerLazySingleton<http.Client>(
+    () => http.Client(),
+    dispose: (client) => client.close(),
+  );
   sl.registerLazySingleton(() => const Uuid());
+  sl.registerLazySingleton(() => SettingsStorage());
 
   // =================================================================
   // DataSources
@@ -117,28 +125,41 @@ Future<void> init() async {
   // =================================================================
   sl.registerLazySingleton<ConnectivityService>(
       () => ConnectivityServiceImpl());
-  sl.registerLazySingleton(() => PermissionHandlerService());
+  sl.registerLazySingleton(
+    () => PermissionHandlerService(),
+    dispose: (service) => service.dispose(),
+  );
   sl.registerLazySingleton(() => NotificationListenerService(
         permissionHandler: sl<PermissionHandlerService>(),
-      ));
+        expenseExtractionServiceProvider: () =>
+            sl<ExpenseExtractionDomainService>(),
+      ),
+      dispose: (service) => service.dispose());
   sl.registerLazySingleton(() => SettingsService(
+        storage: sl<SettingsStorage>(),
         permissionHandler: sl<PermissionHandlerService>(),
         notificationListenerService: sl<NotificationListenerService>(),
-      ));
+        initializeExpenseExtraction: () =>
+            sl<ExpenseExtractionDomainService>().initialize(),
+      ),
+      dispose: (service) => service.dispose());
   sl.registerLazySingleton(() => NotificationService(
         settingsService: sl<SettingsService>(),
-      ));
+      ),
+      dispose: (service) => service.dispose());
   sl.registerLazySingleton(() => GeminiApiClient(
         client: sl<http.Client>(),
         connectivityService: sl<ConnectivityService>(),
-      ));
+      ),
+      dispose: (service) => service.dispose());
 
   sl.registerLazySingleton(() => BackgroundTaskService());
   sl.registerLazySingleton(() => SyncService(
       expensesRepository: sl(),
       budgetRepository: sl(),
       connectivityService: sl(),
-      settingsService: sl()));
+      settingsService: sl()),
+      dispose: (service) => service.dispose());
 
   sl.registerLazySingleton(() => CurrencyConversionService(
         connectivityService: sl<ConnectivityService>(),
@@ -148,7 +169,8 @@ Future<void> init() async {
       () => ExpenseExtractionServiceImpl(
             apiClient: sl<GeminiApiClient>(),
             connectivityService: sl<ConnectivityService>(),
-          ));
+          ),
+      dispose: (service) => (service as ExpenseExtractionServiceImpl).dispose());
 
   // Register ExpenseExtractionDomainService
   sl.registerLazySingleton(() => ExpenseExtractionDomainService(

@@ -41,9 +41,9 @@ abstract class AppError implements Exception {
 
   /// print error log
   void log() {
-    debugPrint('[$code] $message');
+    debugPrint('Application operation failed');
     if (kDebugMode && stackTrace != null) {
-      debugPrint(stackTrace.toString());
+      debugPrint('app_error: Diagnostic output redacted');
     }
   }
 }

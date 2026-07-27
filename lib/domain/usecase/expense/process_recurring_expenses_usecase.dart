@@ -55,7 +55,7 @@ class ProcessRecurringExpensesUseCase {
       final error = AppError.from(e, stackTrace);
       error.log();
       if (kDebugMode) {
-        debugPrint('❌ Error processing recurring expenses: ${error.message}');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
     }
   }
@@ -137,8 +137,7 @@ class ProcessRecurringExpensesUseCase {
       if (!originalExpense.isRecurring ||
           originalExpense.recurringDetails == null) {
         if (kDebugMode) {
-          debugPrint(
-              '⚠️ Expense ${originalExpense.id} is not recurring or has no recurring details');
+          debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
         }
         return;
       }
@@ -149,8 +148,7 @@ class ProcessRecurringExpensesUseCase {
       if (recurringDetails.endDate != null && 
           now.isAfter(recurringDetails.endDate!)) {
         if (kDebugMode) {
-          debugPrint(
-              '⏰ Recurring expense ${originalExpense.id} has ended on ${recurringDetails.endDate}');
+          debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
         }
         return;
       }
@@ -164,8 +162,7 @@ class ProcessRecurringExpensesUseCase {
 
       if (newOccurrences.isEmpty) {
         if (kDebugMode) {
-          debugPrint(
-              '✅ No new occurrences for recurring expense: ${originalExpense.remark}');
+          debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
         }
         return;
       }
@@ -179,8 +176,7 @@ class ProcessRecurringExpensesUseCase {
 
       if (filteredOccurrences.isEmpty) {
         if (kDebugMode) {
-          debugPrint(
-              '✅ All occurrences for ${originalExpense.remark} already exist as expenses');
+          debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
         }
         // Still update the last processed date to prevent future duplicate checks
         final updated = await _updateLastProcessedDate(
@@ -210,15 +206,13 @@ class ProcessRecurringExpensesUseCase {
       await _refreshExistingExpenses(existingExpenses);
 
       if (kDebugMode) {
-        debugPrint(
-            '✅ Processed ${filteredOccurrences.length} new occurrences for recurring expense: ${originalExpense.remark}');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
       error.log();
       if (kDebugMode) {
-        debugPrint(
-            '❌ Error processing recurring expense ${originalExpense.id}: ${error.message}');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
     }
   }
@@ -291,8 +285,7 @@ class ProcessRecurringExpensesUseCase {
       if (!duplicateExists) {
         filteredOccurrences.add(occurrence);
       } else if (kDebugMode) {
-        debugPrint(
-            '🔍 Duplicate expense found for ${originalExpense.remark} on ${occurrence.toIso8601String()}, skipping');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
     }
 
@@ -345,13 +338,12 @@ class ProcessRecurringExpensesUseCase {
       await _expensesRepository.updateExpense(updatedExpense);
 
       if (kDebugMode) {
-        debugPrint(
-            '✅ Updated last processed date for ${originalExpense.remark} to ${lastProcessedDate.toIso8601String()}');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
       return updatedExpense;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Failed to update last processed date: $e');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
       // Don't rethrow - this is not critical for the main functionality
       return null;
@@ -466,14 +458,13 @@ class ProcessRecurringExpensesUseCase {
 
       await _expensesRepository.addExpense(expense);
       if (kDebugMode) {
-        debugPrint(
-            '✅ Created recurring expense: ${expense.remark} for ${occurrenceDate.toIso8601String()}');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
       error.log();
       if (kDebugMode) {
-        debugPrint('❌ Failed to create expense from recurring: ${error.message}');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
       rethrow;
     }
@@ -500,7 +491,7 @@ class ProcessRecurringExpensesUseCase {
           originalExpense.recurringDetails!, originalExpense.date);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error calculating next occurrence: $e');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
       return null;
     }
@@ -526,7 +517,7 @@ class ProcessRecurringExpensesUseCase {
       return occurrences.isNotEmpty;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error checking if due for processing: $e');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
       return false;
     }
@@ -559,7 +550,7 @@ class ProcessRecurringExpensesUseCase {
       return filteredOccurrences.length;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error getting pending occurrences count: $e');
+        debugPrint('process_recurring_expenses_usecase: Diagnostic output redacted');
       }
       return 0;
     }

@@ -19,7 +19,7 @@ class UpdateExpenseUseCase {
   /// Execute the update expense use case
   Future<void> execute(Expense expense) async {
     try {
-      debugPrint('Updating expense: ${expense.id}');
+      debugPrint('UpdateExpenseUseCase: Updating expense');
 
       // Update expense in repository
       await _expensesRepository.updateExpense(expense);
@@ -28,7 +28,8 @@ class UpdateExpenseUseCase {
       await _updateBudgetAfterExpenseChange(expense);
     } catch (e, stackTrace) {
       final appError = AppError.from(e, stackTrace);
-      debugPrint('Error updating expense: ${appError.message}');
+      appError.log();
+      debugPrint('update_expense_usecase: Diagnostic output redacted');
       rethrow;
     }
   }
@@ -43,8 +44,8 @@ class UpdateExpenseUseCase {
 
       // Refresh budget for the month
       await _refreshBudgetUseCase.execute(monthId);
-    } catch (e) {
-      debugPrint('Error updating budget after expense change: $e');
+    } catch (_) {
+      debugPrint('update_expense_usecase: Diagnostic output redacted');
       // Don't rethrow - this is a secondary operation
     }
   }

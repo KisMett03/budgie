@@ -116,7 +116,7 @@ class CalculateExpenseTotalsUseCase {
     }
 
     if (kDebugMode) {
-      debugPrint('No conversion rate found for $from to $to, using 1.0');
+      debugPrint('calculate_expense_totals_usecase: Diagnostic output redacted');
     }
     return 1.0;
   }

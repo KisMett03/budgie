@@ -35,8 +35,7 @@ class AllocateSavingsToGoalsUseCase {
 
       // Get active goals
       final activeGoals = await _goalsRepository.getActiveGoals();
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Found ${activeGoals.length} active goals');
+      debugPrint('allocate_savings_to_goals_usecase: Diagnostic output redacted');
 
       if (activeGoals.isEmpty) {
         debugPrint('🎯 AllocateSavingsUseCase: No active goals to fund');
@@ -45,8 +44,7 @@ class AllocateSavingsToGoalsUseCase {
 
       // Get available savings from all budget months
       final availableSavings = await _getAvailableSavings();
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Available savings: RM $availableSavings');
+      debugPrint('AllocateSavingsUseCase: Available savings loaded');
 
       if (availableSavings <= 0) {
         debugPrint(
@@ -60,8 +58,7 @@ class AllocateSavingsToGoalsUseCase {
         availableSavings: availableSavings,
       );
 
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Distribution calculated: $distribution');
+      debugPrint('AllocateSavingsUseCase: Distribution calculated');
 
       // Calculate total amount being allocated
       final totalAllocated =
@@ -80,8 +77,7 @@ class AllocateSavingsToGoalsUseCase {
           final updatedGoal = goal.copyWithNewAmount(newAmount);
           await _goalsRepository.updateGoal(updatedGoal);
 
-          debugPrint(
-              '🎯 AllocateSavingsUseCase: Added RM $amount to goal "${goal.title}"');
+          debugPrint('AllocateSavingsUseCase: Goal allocation applied');
         }
       }
 
@@ -94,7 +90,7 @@ class AllocateSavingsToGoalsUseCase {
           '🎯 AllocateSavingsUseCase: Savings allocation completed successfully');
       return distribution;
     } catch (e) {
-      debugPrint('🎯 AllocateSavingsUseCase: Error allocating savings: $e');
+      debugPrint('AllocateSavingsUseCase: Error allocating savings');
       rethrow;
     }
   }
@@ -112,12 +108,10 @@ class AllocateSavingsToGoalsUseCase {
         totalSavings += budgetWithMonth.budget.saving;
       }
 
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Found ${budgetsWithSavings.length} previous months with savings, total: RM $totalSavings');
+      debugPrint('allocate_savings_to_goals_usecase: Diagnostic output redacted');
       return totalSavings;
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error getting available savings: $e');
+      debugPrint('AllocateSavingsUseCase: Error getting available savings');
       return 0;
     }
   }
@@ -127,8 +121,7 @@ class AllocateSavingsToGoalsUseCase {
     try {
       return await _budgetRepository.getPreviousMonthBudgetsWithSavings();
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error getting budgets with savings: $e');
+      debugPrint('AllocateSavingsUseCase: Error getting budgets with savings');
       return [];
     }
   }
@@ -148,8 +141,7 @@ class AllocateSavingsToGoalsUseCase {
         availableSavings: availableSavings,
       );
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error previewing distribution: $e');
+      debugPrint('AllocateSavingsUseCase: Error previewing distribution');
       return {};
     }
   }
@@ -172,8 +164,7 @@ class AllocateSavingsToGoalsUseCase {
         availableSavings: customAmount,
       );
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error previewing custom distribution: $e');
+      debugPrint('AllocateSavingsUseCase: Error previewing custom distribution');
       return {};
     }
   }
@@ -181,13 +172,11 @@ class AllocateSavingsToGoalsUseCase {
   /// Execute custom allocation with specific amount
   Future<Map<String, double>> executeCustom(double customAmount) async {
     try {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Starting custom savings allocation of RM $customAmount...');
+      debugPrint('AllocateSavingsUseCase: Starting custom savings allocation');
 
       // Get active goals
       final activeGoals = await _goalsRepository.getActiveGoals();
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Found ${activeGoals.length} active goals');
+      debugPrint('allocate_savings_to_goals_usecase: Diagnostic output redacted');
 
       if (activeGoals.isEmpty) {
         debugPrint('🎯 AllocateSavingsUseCase: No active goals to fund');
@@ -197,8 +186,7 @@ class AllocateSavingsToGoalsUseCase {
       // Validate custom amount against available savings
       final availableSavings = await _getAvailableSavings();
       if (customAmount <= 0 || customAmount > availableSavings) {
-        debugPrint(
-            '🎯 AllocateSavingsUseCase: Invalid custom amount: RM $customAmount (available: RM $availableSavings)');
+        debugPrint('AllocateSavingsUseCase: Invalid custom allocation amount');
         return {};
       }
 
@@ -208,8 +196,7 @@ class AllocateSavingsToGoalsUseCase {
         availableSavings: customAmount,
       );
 
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Custom distribution calculated: $distribution');
+      debugPrint('AllocateSavingsUseCase: Custom distribution calculated');
 
       // Calculate total amount being allocated
       final totalAllocated =
@@ -228,8 +215,7 @@ class AllocateSavingsToGoalsUseCase {
           final updatedGoal = goal.copyWithNewAmount(newAmount);
           await _goalsRepository.updateGoal(updatedGoal);
 
-          debugPrint(
-              '🎯 AllocateSavingsUseCase: Added RM $amount to goal "${goal.title}"');
+          debugPrint('AllocateSavingsUseCase: Goal allocation applied');
         }
       }
 
@@ -242,8 +228,7 @@ class AllocateSavingsToGoalsUseCase {
           '🎯 AllocateSavingsUseCase: Custom savings allocation completed successfully');
       return distribution;
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error allocating custom savings: $e');
+      debugPrint('AllocateSavingsUseCase: Error allocating custom savings');
       rethrow;
     }
   }
@@ -298,13 +283,11 @@ class AllocateSavingsToGoalsUseCase {
           await _reallocateBudgetToOthers(
               budgetWithMonth.monthId, proportionalAmount);
 
-          debugPrint(
-              '🎯 AllocateSavingsUseCase: Created goal funding expense of RM ${proportionalAmount.toStringAsFixed(2)} for month ${budgetWithMonth.monthId}');
+          debugPrint('AllocateSavingsUseCase: Goal funding expense created');
         }
       }
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error creating goal funding expenses: $e');
+      debugPrint('AllocateSavingsUseCase: Error creating goal funding expenses');
       // Don't rethrow - goal funding should still succeed even if expense creation fails
     }
   }
@@ -325,8 +308,7 @@ class AllocateSavingsToGoalsUseCase {
     try {
       final budget = await _budgetRepository.getBudget(monthId);
       if (budget == null) {
-        debugPrint(
-            '🎯 AllocateSavingsUseCase: Budget not found for month $monthId');
+        debugPrint('AllocateSavingsUseCase: Budget not found');
         return;
       }
 
@@ -353,11 +335,9 @@ class AllocateSavingsToGoalsUseCase {
       );
 
       await _budgetRepository.setBudget(monthId, updatedBudget);
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Reallocated RM ${amount.toStringAsFixed(2)} to others category for month $monthId');
+      debugPrint('AllocateSavingsUseCase: Budget reallocation completed');
     } catch (e) {
-      debugPrint(
-          '🎯 AllocateSavingsUseCase: Error reallocating budget to others: $e');
+      debugPrint('AllocateSavingsUseCase: Error reallocating budget to others');
     }
   }
 }

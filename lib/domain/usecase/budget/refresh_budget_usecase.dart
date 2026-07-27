@@ -27,8 +27,7 @@ class RefreshBudgetUseCase {
   /// Execute the refresh budget use case
   Future<Budget?> execute(String monthId) async {
     try {
-      debugPrint(
-          '🔄 RefreshBudgetUseCase: Refreshing budget for month $monthId');
+      debugPrint('refresh_budget_usecase: Diagnostic output redacted');
 
       // Recalculate budget based on local data
       final updatedBudget = await _recalculateBudget(monthId);
@@ -36,8 +35,7 @@ class RefreshBudgetUseCase {
       return updatedBudget;
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
-      debugPrint(
-          '❌ RefreshBudgetUseCase: Error refreshing budget: ${error.message}');
+      debugPrint('refresh_budget_usecase: Diagnostic output redacted');
       error.log();
       rethrow;
     }
@@ -49,8 +47,7 @@ class RefreshBudgetUseCase {
       // Get current budget
       final currentBudget = await _budgetRepository.getBudget(monthId);
       if (currentBudget == null) {
-        debugPrint(
-            '⚠️ RefreshBudgetUseCase: No budget found for month $monthId');
+        debugPrint('refresh_budget_usecase: Diagnostic output redacted');
         return null;
       }
 
@@ -62,8 +59,7 @@ class RefreshBudgetUseCase {
       final month = int.parse(monthId.split('-')[1]);
       final monthExpenses = _getExpensesForMonth(allExpenses, year, month);
 
-      debugPrint(
-          '🧮 RefreshBudgetUseCase: Recalculating budget with ${monthExpenses.length} expenses');
+      debugPrint('refresh_budget_usecase: Diagnostic output redacted');
 
       // Calculate new budget remaining amounts
       final updatedBudget = await _budgetCalculationService.calculateBudget(
@@ -80,8 +76,7 @@ class RefreshBudgetUseCase {
       return updatedBudget;
     } catch (e, stackTrace) {
       final error = AppError.from(e, stackTrace);
-      debugPrint(
-          '❌ RefreshBudgetUseCase: Error recalculating budget: ${error.message}');
+      debugPrint('refresh_budget_usecase: Diagnostic output redacted');
       error.log();
       return await _loadBudgetUseCase
           .execute(monthId); // Fallback to loading existing budget

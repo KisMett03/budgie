@@ -35,7 +35,7 @@ linter:
     
     # Code quality rules
     prefer_single_quotes: true
-    avoid_print: false
+    avoid_print: true
     curly_braces_in_flow_control_structures: true
 
 # Additional information about this file can be found at

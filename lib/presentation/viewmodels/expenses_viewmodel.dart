@@ -146,8 +146,7 @@ class ExpensesViewModel extends ChangeNotifier
     for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
         if (kDebugMode) {
-          debugPrint(
-              '🔄 ExpensesViewModel: Loading expenses attempt ${attempt + 1}/$maxRetries');
+          debugPrint('expenses_viewmodel: Diagnostic output redacted');
         }
 
         final localExpenses = await _expensesRepository.getExpenses();
@@ -165,13 +164,12 @@ class ExpensesViewModel extends ChangeNotifier
         notifyListenersThrottled('expenses_loaded');
 
         if (kDebugMode) {
-          debugPrint(
-              '✅ ExpensesViewModel: Successfully loaded ${_expenses.length} expenses');
+          debugPrint('expenses_viewmodel: Diagnostic output redacted');
         }
         return;
       } catch (e, stackTrace) {
         if (kDebugMode) {
-          debugPrint('⚠️ ExpensesViewModel: Attempt ${attempt + 1} failed: $e');
+          debugPrint('expenses_viewmodel: Diagnostic output redacted');
         }
 
         if (attempt >= maxRetries - 1) {
@@ -181,8 +179,7 @@ class ExpensesViewModel extends ChangeNotifier
 
         final delay = Duration(milliseconds: 500 * (attempt + 1));
         if (kDebugMode) {
-          debugPrint(
-              '🔄 ExpensesViewModel: Retrying in ${delay.inMilliseconds}ms...');
+          debugPrint('expenses_viewmodel: Diagnostic output redacted');
         }
         await Future.delayed(delay);
       }
@@ -243,7 +240,7 @@ class ExpensesViewModel extends ChangeNotifier
       notifyListenersThrottled('month_filter_changed');
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error setting selected month: $e');
+        debugPrint('expenses_viewmodel: Diagnostic output redacted');
       }
     }
   }
@@ -440,8 +437,7 @@ class ExpensesViewModel extends ChangeNotifier
 
     if (rate == null) {
       if (kDebugMode) {
-        debugPrint(
-            '⚠️ ExpensesViewModel: Missing conversion rate for $fromCurrency -> $toCurrency, returning original amount');
+        debugPrint('expenses_viewmodel: Diagnostic output redacted');
       }
       return amount;
     }
@@ -523,7 +519,7 @@ class ExpensesViewModel extends ChangeNotifier
       notifyListenersThrottled('filter_mode_changed');
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error setting filter mode: $e');
+        debugPrint('expenses_viewmodel: Diagnostic output redacted');
       }
     }
   }
@@ -590,12 +586,11 @@ class ExpensesViewModel extends ChangeNotifier
       }
 
       if (kDebugMode) {
-        debugPrint(
-            'ExpensesViewModel: Data refreshed successfully, ${_expenses.length} expenses loaded');
+        debugPrint('expenses_viewmodel: Diagnostic output redacted');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('ExpensesViewModel: Error refreshing data: $e');
+        debugPrint('expenses_viewmodel: Diagnostic output redacted');
       }
     } finally {
       _isLoading = false;

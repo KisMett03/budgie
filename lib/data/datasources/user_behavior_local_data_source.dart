@@ -36,19 +36,16 @@ class UserBehaviorLocalDataSourceImpl implements UserBehaviorLocalDataSource {
 
   @override
   Future<UserBehaviorProfile?> getUserBehaviorProfile(String userId) async {
-    debugPrint(
-        '🔍 UserBehaviorLocalDataSource: Getting profile for user: $userId');
+    debugPrint('UserBehaviorLocalDataSource: Getting profile');
 
     final profilesData = await (_database.select(_database.userProfiles)
           ..where((tbl) => tbl.userId.equals(userId)))
         .get();
 
-    debugPrint(
-        '🔍 UserBehaviorLocalDataSource: Found ${profilesData.length} profiles for user: $userId');
+    debugPrint('user_behavior_local_data_source: Diagnostic output redacted');
 
     if (profilesData.isEmpty) {
-      debugPrint(
-          '🔍 UserBehaviorLocalDataSource: No profiles found for user: $userId');
+      debugPrint('UserBehaviorLocalDataSource: No profiles found');
       return null;
     }
 
@@ -63,13 +60,11 @@ class UserBehaviorLocalDataSourceImpl implements UserBehaviorLocalDataSource {
             ..where((tbl) => tbl.userId.equals(userId)))
           .getSingleOrNull();
 
-      debugPrint(
-          '🔍 UserBehaviorLocalDataSource: After cleanup, found ${cleanedProfile != null ? '1' : '0'} profile(s)');
+      debugPrint('user_behavior_local_data_source: Diagnostic output redacted');
       return cleanedProfile != null ? _mapDataToEntity(cleanedProfile) : null;
     }
 
-    debugPrint(
-        '🔍 UserBehaviorLocalDataSource: Returning single profile for user: $userId');
+    debugPrint('UserBehaviorLocalDataSource: Returning single profile');
     return _mapDataToEntity(profilesData.first);
   }
 

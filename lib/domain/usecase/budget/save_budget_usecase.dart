@@ -36,16 +36,16 @@ class SaveBudgetUseCase {
           now.difference(_lastSaveTime!).inSeconds < 2) {
         // Debounce save requests that come too quickly
         if (kDebugMode) {
-          print('Debouncing budget save for month: $monthId');
+          debugPrint('SaveBudgetUseCase: Debouncing budget save');
         }
         _saveDebounceTimer = Timer(const Duration(seconds: 2), () {
           // After debounce period, check if this is still needed
           if (_pendingSaves.containsKey(monthId)) {
             final budgetToSave = _pendingSaves.remove(monthId);
             if (budgetToSave != null) {
-              _executeSave(monthId, budgetToSave).catchError((error) {
+              _executeSave(monthId, budgetToSave).catchError((_) {
                 if (kDebugMode) {
-                  print('Error in debounced save: $error');
+                  debugPrint('SaveBudgetUseCase: Debounced budget save failed');
                 }
                 // Re-add to pending if save failed
                 _pendingSaves[monthId] = budgetToSave;
@@ -59,9 +59,9 @@ class SaveBudgetUseCase {
       // Not throttled, execute immediately
       _pendingSaves.remove(monthId);
       await _executeSave(monthId, budget);
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        print('Error in save budget use case: $e');
+        debugPrint('SaveBudgetUseCase: Budget save failed');
       }
       // Re-add to pending saves if execution failed
       _pendingSaves[monthId] = budget;
@@ -73,7 +73,7 @@ class SaveBudgetUseCase {
   Future<void> _executeSave(String monthId, Budget budget) async {
     try {
       if (kDebugMode) {
-        print('Executing budget save for month: $monthId');
+        debugPrint('SaveBudgetUseCase: Executing budget save');
       }
       _lastSaveTime = DateTime.now();
 

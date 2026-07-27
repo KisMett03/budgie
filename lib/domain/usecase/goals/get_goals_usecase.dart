@@ -15,8 +15,8 @@ class GetGoalsUseCase {
     try {
       debugPrint('🎯 GetGoalsUseCase: Getting active goals');
       return await _goalsRepository.getActiveGoals();
-    } catch (e) {
-      debugPrint('🎯 GetGoalsUseCase: Error getting active goals: $e');
+    } catch (_) {
+      debugPrint('GetGoalsUseCase: Error getting active goals');
       return [];
     }
   }
@@ -35,8 +35,8 @@ class GetGoalHistoryUseCase {
     try {
       debugPrint('🎯 GetGoalHistoryUseCase: Getting goal history');
       return await _goalsRepository.getGoalHistory();
-    } catch (e) {
-      debugPrint('🎯 GetGoalHistoryUseCase: Error getting goal history: $e');
+    } catch (_) {
+      debugPrint('GetGoalHistoryUseCase: Error getting goal history');
       return [];
     }
   }
@@ -53,10 +53,10 @@ class GetGoalByIdUseCase {
   /// Execute the use case to get a goal by ID
   Future<FinancialGoal?> execute(String id) async {
     try {
-      debugPrint('🎯 GetGoalByIdUseCase: Getting goal by ID: $id');
+      debugPrint('GetGoalByIdUseCase: Getting goal');
       return await _goalsRepository.getGoalById(id);
-    } catch (e) {
-      debugPrint('🎯 GetGoalByIdUseCase: Error getting goal by ID: $e');
+    } catch (_) {
+      debugPrint('GetGoalByIdUseCase: Error getting goal');
       return null;
     }
   }

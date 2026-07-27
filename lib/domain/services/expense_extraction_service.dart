@@ -98,8 +98,7 @@ class ExpenseExtractionDomainService {
         debugPrint(
             '✅ ExpenseExtractionDomainService: Gemini API client initialized');
       } catch (e) {
-        debugPrint(
-            '⚠️ ExpenseExtractionDomainService: Gemini API client initialization failed: $e');
+        debugPrint('expense_extraction_service: Diagnostic output redacted');
       }
 
       // Verify extraction service is healthy
@@ -111,8 +110,8 @@ class ExpenseExtractionDomainService {
 
       _isInitialized = true;
       debugPrint('✅ ExpenseExtractionDomainService: Initialization completed');
-    } catch (e) {
-      debugPrint('❌ ExpenseExtractionDomainService: Initialization failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionDomainService: Initialization failed');
       // Service should fail gracefully if models are not available
       _isInitialized = true;
     }
@@ -133,8 +132,7 @@ class ExpenseExtractionDomainService {
     try {
       await _ensureInitialized();
 
-      debugPrint(
-          '🤖 ExpenseExtractionDomainService: Classifying notification from ${source ?? 'unknown'}');
+      debugPrint('expense_extraction_service: Diagnostic output redacted');
 
       final result = await _extractionService.classifyNotification(
         title: title,
@@ -143,11 +141,10 @@ class ExpenseExtractionDomainService {
         packageName: packageName,
       );
 
-      debugPrint(
-          '✅ ExpenseExtractionDomainService: Classification result: $result');
+      debugPrint('expense_extraction_service: Diagnostic output redacted');
       return result;
-    } catch (e) {
-      debugPrint('❌ ExpenseExtractionDomainService: Classification failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionDomainService: Classification failed');
       return false;
     }
   }
@@ -192,8 +189,8 @@ class ExpenseExtractionDomainService {
         packageName: packageName,
         additionalContext: additionalContext,
       );
-    } catch (e) {
-      debugPrint('❌ ExpenseExtractionDomainService: Processing failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionDomainService: Processing failed');
       return null;
     }
   }
@@ -217,9 +214,8 @@ class ExpenseExtractionDomainService {
     try {
       await _ensureInitialized();
 
-      debugPrint(
-          '🤖 ExpenseExtractionDomainService: Extracting details from $source');
-      debugPrint('🤖 Text length: ${title.length + content.length} characters');
+      debugPrint('expense_extraction_service: Diagnostic output redacted');
+      debugPrint('ExpenseExtractionDomainService: Extraction request started');
 
       final startTime = DateTime.now();
 
@@ -243,8 +239,7 @@ class ExpenseExtractionDomainService {
           _validateExtractionResult(extractionResult, processingTime);
 
       if (validatedResult != null) {
-        debugPrint(
-            '✅ ExpenseExtractionDomainService: Extraction successful with confidence ${validatedResult.confidence}');
+        debugPrint('expense_extraction_service: Diagnostic output redacted');
 
         // Record the detection and send actionable notification
         await _recordAndNotify(
@@ -261,8 +256,8 @@ class ExpenseExtractionDomainService {
       debugPrint(
           '🔍 ExpenseExtractionDomainService: Extraction validation failed');
       return null;
-    } catch (e) {
-      debugPrint('❌ ExpenseExtractionDomainService: Extraction failed: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionDomainService: Extraction failed');
       return null;
     }
   }
@@ -285,9 +280,8 @@ class ExpenseExtractionDomainService {
         detectionId: detectionId,
         extractionResult: result,
       );
-    } catch (e) {
-      debugPrint(
-          '❌ ExpenseExtractionDomainService: Failed to send notification: $e');
+    } catch (_) {
+      debugPrint('ExpenseExtractionDomainService: Failed to send notification');
     }
   }
 
@@ -303,8 +297,7 @@ class ExpenseExtractionDomainService {
 
     // Business Rule 1: Must meet minimum confidence threshold
     if (extractionResult.confidence < _minimumConfidenceThreshold) {
-      debugPrint(
-          '🔍 ExpenseExtractionDomainService: Confidence ${extractionResult.confidence} below threshold $_minimumConfidenceThreshold');
+      debugPrint('expense_extraction_service: Diagnostic output redacted');
       return null;
     }
 
@@ -317,8 +310,7 @@ class ExpenseExtractionDomainService {
 
     // Business Rule 3: Processing time should be reasonable
     if (processingTime > _maxProcessingTime) {
-      debugPrint(
-          '⚠️ ExpenseExtractionDomainService: Processing took ${processingTime.inSeconds}s (max: ${_maxProcessingTime.inSeconds}s)');
+      debugPrint('expense_extraction_service: Diagnostic output redacted');
       // Don't reject, just warn for API calls
     }
 

@@ -14,17 +14,13 @@ class BudgetRepositoryImpl implements BudgetRepository {
   @override
   Future<Budget?> getBudget(String monthId) async {
     try {
-      debugPrint('🔍 BudgetRepository: Getting budget for month: $monthId');
+      debugPrint('BudgetRepository: Getting budget');
       // Get budget from local database
       final localBudget = await _localDataSource.getBudget(monthId);
-      debugPrint('🔍 BudgetRepository: Budget found: ${localBudget != null}');
-      if (localBudget != null) {
-        debugPrint(
-            '🔍 BudgetRepository: Budget total: ${localBudget.total}, left: ${localBudget.left}, currency: ${localBudget.currency}');
-      }
+      debugPrint('budget_repository_impl: Diagnostic output redacted');
       return localBudget;
     } catch (e) {
-      debugPrint('🔍 BudgetRepository: Error getting budget: $e');
+      debugPrint('BudgetRepository: Error getting budget');
       return null;
     }
   }
@@ -32,13 +28,11 @@ class BudgetRepositoryImpl implements BudgetRepository {
   @override
   Future<void> setBudget(String monthId, Budget budget) async {
     try {
-      debugPrint('💾 BudgetRepository: Saving budget for month: $monthId');
-      debugPrint(
-          '💾 BudgetRepository: Budget total: ${budget.total}, left: ${budget.left}, currency: ${budget.currency}');
+      debugPrint('BudgetRepository: Saving budget');
 
       // Validate month ID format
       if (!_isValidMonthId(monthId)) {
-        debugPrint('💾 BudgetRepository: Invalid month ID format: $monthId');
+        debugPrint('BudgetRepository: Invalid month ID format');
         throw ArgumentError.value(monthId, 'monthId', 'Expected YYYY-MM');
       }
 
@@ -55,30 +49,27 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
       // Verify the save worked
       final savedBudget = await _localDataSource.getBudget(monthId);
-      debugPrint(
-          '💾 BudgetRepository: Verified saved budget exists: ${savedBudget != null}');
+      debugPrint('budget_repository_impl: Diagnostic output redacted');
       if (savedBudget != null) {
-        debugPrint(
-            '💾 BudgetRepository: Saved budget total: ${savedBudget.total}, left: ${savedBudget.left}, currency: ${savedBudget.currency}');
       } else {
         debugPrint(
             '💾 BudgetRepository: WARNING - Budget verification failed, saved budget is null');
       }
-    } catch (e) {
-      debugPrint('💾 BudgetRepository: Error setting budget: $e');
-      throw Exception('Failed to save budget: $e');
+    } catch (_) {
+      debugPrint('BudgetRepository: Error setting budget');
+      rethrow;
     }
   }
 
   @override
   Future<void> deleteBudget(String monthId) async {
     try {
-      debugPrint('🗑️ BudgetRepository: Deleting budget for month: $monthId');
+      debugPrint('BudgetRepository: Deleting budget');
 
       // Validate month ID format
       if (!monthId.contains('-') || monthId.split('-').length != 2) {
-        debugPrint('🗑️ BudgetRepository: Invalid month ID format: $monthId');
-        throw Exception('Invalid month ID format');
+        debugPrint('BudgetRepository: Invalid month ID format');
+        throw ArgumentError.value(monthId, 'monthId', 'Expected YYYY-MM');
       }
 
       // Delete from local database
@@ -94,9 +85,9 @@ class BudgetRepositoryImpl implements BudgetRepository {
         debugPrint(
             '🗑️ BudgetRepository: WARNING - Budget deletion verification failed');
       }
-    } catch (e) {
-      debugPrint('🗑️ BudgetRepository: Error deleting budget: $e');
-      throw Exception('Failed to delete budget: $e');
+    } catch (_) {
+      debugPrint('BudgetRepository: Error deleting budget');
+      rethrow;
     }
   }
 
@@ -104,11 +95,10 @@ class BudgetRepositoryImpl implements BudgetRepository {
   Future<List<BudgetWithMonth>> getBudgetsWithSavings(
       List<String> monthIds) async {
     try {
-      debugPrint(
-          '🔍 BudgetRepository: Getting budgets with savings for months: $monthIds');
+      debugPrint('BudgetRepository: Getting budgets with savings');
       return await _localDataSource.getBudgetsForMonths(monthIds);
     } catch (e) {
-      debugPrint('🔍 BudgetRepository: Error getting budgets with savings: $e');
+      debugPrint('BudgetRepository: Error getting budgets with savings');
       return [];
     }
   }
@@ -120,8 +110,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
           '🔍 BudgetRepository: Getting all budgets with available savings');
       return await _localDataSource.getBudgetsWithSavings();
     } catch (e) {
-      debugPrint(
-          '🔍 BudgetRepository: Error getting budgets with available savings: $e');
+      debugPrint('budget_repository_impl: Diagnostic output redacted');
       return [];
     }
   }
@@ -133,8 +122,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
           '🔍 BudgetRepository: Getting previous month budgets with available savings for goal funding');
       return await _localDataSource.getPreviousMonthBudgetsWithSavings();
     } catch (e) {
-      debugPrint(
-          '🔍 BudgetRepository: Error getting previous month budgets with savings: $e');
+      debugPrint('budget_repository_impl: Diagnostic output redacted');
       return [];
     }
   }

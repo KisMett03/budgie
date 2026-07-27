@@ -104,7 +104,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     final settingsService = di.sl<SettingsService>();
     _currency = settingsService.currency;
     if (kDebugMode) {
-      debugPrint('Using currency from settings: $_currency');
+      debugPrint('AddBudgetScreen: Currency loaded from settings');
     }
 
     _setupListeners();
@@ -198,14 +198,13 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
 
     final budget = budgetVM.budget;
     if (kDebugMode) {
-      debugPrint('📊 Loading budget data for monthId: $monthId');
-      debugPrint('📊 Budget exists: ${budget != null}');
+      debugPrint('AddBudgetScreen: Loading budget data');
+      debugPrint('AddBudgetScreen: Budget lookup completed');
     }
 
     if (budget != null) {
       if (kDebugMode) {
-        debugPrint(
-            '📊 Budget total: ${budget.total}, currency: ${budget.currency}');
+        debugPrint('AddBudgetScreen: Budget data loaded');
       }
 
       // Update currency from the loaded budget if it exists
@@ -222,8 +221,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       if (_totalBudgetController.text != newTotalBudget.toString()) {
         _totalBudgetController.text = newTotalBudget.toString();
         if (kDebugMode) {
-          debugPrint(
-              '📊 Updated total budget controller to: ${_totalBudgetController.text}');
+          debugPrint('AddBudgetScreen: Budget controller updated');
         }
       }
 
@@ -254,7 +252,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       }
     } else {
       if (kDebugMode) {
-        debugPrint('📊 No budget found for monthId: $monthId');
+        debugPrint('AddBudgetScreen: No budget found');
       }
 
       // If no budget exists, get currency from settings
@@ -269,7 +267,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       if (_totalBudgetController.text.isNotEmpty) {
         _totalBudgetController.text = '';
         if (kDebugMode) {
-          debugPrint('📊 Cleared total budget controller');
+          debugPrint('AddBudgetScreen: Budget controller cleared');
         }
       }
 
@@ -321,10 +319,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         throw Exception('Please enter a total budget amount');
       }
 
-      debugPrint(
-          '💰 AddBudgetScreen: Saving budget for month: $_currentMonthId');
-      debugPrint(
-          '💰 AddBudgetScreen: Total budget amount: $totalBudget $_currency');
+      debugPrint('AddBudgetScreen: Saving budget');
 
       final Map<String, CategoryBudget> cats = {};
 
@@ -337,7 +332,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
           // Initially set budget left = budget
           cats[catId] = CategoryBudget(budget: val, left: val);
           if (kDebugMode) {
-            debugPrint('💰 AddBudgetScreen: Category $catId budget: $val');
+            debugPrint('AddBudgetScreen: Category budget prepared');
           }
         }
       }
@@ -358,16 +353,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       if (!_currentMonthId.contains('-') ||
           _currentMonthId.split('-').length != 2) {
         if (kDebugMode) {
-          debugPrint(
-              '💰 AddBudgetScreen: Invalid month ID format: $_currentMonthId');
+          debugPrint('AddBudgetScreen: Invalid month ID format');
         }
 
         // Fix the month ID format if needed
         final now = DateTime.now();
         _currentMonthId = '${now.year}-${now.month.toString().padLeft(2, '0')}';
         if (kDebugMode) {
-          debugPrint(
-              '💰 AddBudgetScreen: Using corrected month ID: $_currentMonthId');
+          debugPrint('AddBudgetScreen: Month ID corrected');
         }
       }
 
@@ -412,8 +405,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint(
-              '💰 AddBudgetScreen: Error calculating budget during save: $e');
+          debugPrint('AddBudgetScreen: Error calculating budget during save');
         }
         rethrow; // Re-throw to show error message
       }

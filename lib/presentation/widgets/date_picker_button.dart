@@ -362,7 +362,7 @@ class DatePickerButton extends StatelessWidget {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error showing date picker: $e');
+        debugPrint('date_picker_button: Diagnostic output redacted');
       }
     }
   }

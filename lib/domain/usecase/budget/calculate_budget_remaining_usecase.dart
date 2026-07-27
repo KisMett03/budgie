@@ -48,8 +48,8 @@ class CalculateBudgetRemainingUseCase {
     final result = <Expense>[];
 
     if (kDebugMode) {
-      print(
-          'Converting ${expenses.length} expenses to budget currency: $budgetCurrency');
+      debugPrint(
+          'CalculateBudgetRemainingUseCase: Currency conversion started');
     }
     int convertedCount = 0;
 
@@ -71,8 +71,8 @@ class CalculateBudgetRemainingUseCase {
           if (convertedCount <= 3) {
             // Only log a few conversions to avoid log spam
             if (kDebugMode) {
-              print(
-                  'Converted expense: ${expense.amount} ${expense.currency} → $convertedAmount $budgetCurrency (${expense.remark})');
+              debugPrint(
+                  'CalculateBudgetRemainingUseCase: Expense conversion completed');
             }
           }
 
@@ -83,9 +83,10 @@ class CalculateBudgetRemainingUseCase {
           );
 
           result.add(convertedExpense);
-        } catch (e) {
+        } catch (_) {
           if (kDebugMode) {
-            print('Error converting expense currency: $e');
+            debugPrint(
+                'CalculateBudgetRemainingUseCase: Expense conversion failed');
           }
           // If conversion fails, use original expense
           result.add(expense);
@@ -95,7 +96,8 @@ class CalculateBudgetRemainingUseCase {
 
     if (convertedCount > 3) {
       if (kDebugMode) {
-        print('Converted $convertedCount expenses to $budgetCurrency');
+        debugPrint(
+            'CalculateBudgetRemainingUseCase: Additional expense conversions completed');
       }
     }
 

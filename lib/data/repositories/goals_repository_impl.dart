@@ -23,8 +23,8 @@ class GoalsRepositoryImpl implements GoalsRepository {
       debugPrint('🎯 GoalsRepository: Getting active goals');
       final goals = await _database.getActiveGoals();
       return goals.map(_mapToFinancialGoal).toList();
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error getting active goals: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error getting active goals');
       return [];
     }
   }
@@ -32,14 +32,14 @@ class GoalsRepositoryImpl implements GoalsRepository {
   @override
   Future<domain.FinancialGoal?> getGoalById(String id) async {
     try {
-      debugPrint('🎯 GoalsRepository: Getting goal by ID: $id');
+      debugPrint('GoalsRepository: Getting goal');
       final goal = await _database.getGoalById(id);
       if (goal != null) {
         return _mapToFinancialGoal(goal);
       }
       return null;
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error getting goal by ID: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error getting goal');
       return null;
     }
   }
@@ -47,7 +47,7 @@ class GoalsRepositoryImpl implements GoalsRepository {
   @override
   Future<bool> saveGoal(domain.FinancialGoal goal) async {
     try {
-      debugPrint('🎯 GoalsRepository: Saving goal: ${goal.title}');
+      debugPrint('GoalsRepository: Saving goal');
 
       // Check if we can add more goals
       final canAdd = await canAddMoreGoals();
@@ -72,8 +72,8 @@ class GoalsRepositoryImpl implements GoalsRepository {
 
       await _database.insertGoal(goalData);
       return true;
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error saving goal: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error saving goal');
       return false;
     }
   }
@@ -81,7 +81,7 @@ class GoalsRepositoryImpl implements GoalsRepository {
   @override
   Future<void> updateGoal(domain.FinancialGoal goal) async {
     try {
-      debugPrint('🎯 GoalsRepository: Updating goal: ${goal.title}');
+      debugPrint('GoalsRepository: Updating goal');
 
       // Convert domain entity to database model
       final goalData = FinancialGoalsCompanion(
@@ -98,8 +98,8 @@ class GoalsRepositoryImpl implements GoalsRepository {
       );
 
       await _database.updateGoal(goalData);
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error updating goal: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error updating goal');
       rethrow;
     }
   }
@@ -107,10 +107,10 @@ class GoalsRepositoryImpl implements GoalsRepository {
   @override
   Future<void> deleteGoal(String id) async {
     try {
-      debugPrint('🎯 GoalsRepository: Deleting goal with ID: $id');
+      debugPrint('GoalsRepository: Deleting goal');
       await _database.deleteGoal(id);
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error deleting goal: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error deleting goal');
       rethrow;
     }
   }
@@ -118,7 +118,7 @@ class GoalsRepositoryImpl implements GoalsRepository {
   @override
   Future<void> completeGoal(String id, {String? notes}) async {
     try {
-      debugPrint('🎯 GoalsRepository: Completing goal with ID: $id');
+      debugPrint('GoalsRepository: Completing goal');
 
       // Get the goal to complete
       final goal = await getGoalById(id);
@@ -146,8 +146,8 @@ class GoalsRepositoryImpl implements GoalsRepository {
         await _database.insertGoalHistory(history);
         await _database.deleteGoal(id);
       });
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error completing goal: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error completing goal');
       rethrow;
     }
   }
@@ -158,8 +158,8 @@ class GoalsRepositoryImpl implements GoalsRepository {
       debugPrint('🎯 GoalsRepository: Getting goal history');
       final history = await _database.getGoalHistory();
       return history.map(_mapToGoalHistory).toList();
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error getting goal history: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error getting goal history');
       return [];
     }
   }
@@ -168,8 +168,8 @@ class GoalsRepositoryImpl implements GoalsRepository {
   Future<int> countActiveGoals() async {
     try {
       return await _database.countActiveGoals();
-    } catch (e) {
-      debugPrint('🎯 GoalsRepository: Error counting active goals: $e');
+    } catch (_) {
+      debugPrint('GoalsRepository: Error counting active goals');
       return 0;
     }
   }
@@ -180,8 +180,7 @@ class GoalsRepositoryImpl implements GoalsRepository {
       final count = await countActiveGoals();
       return count < 3;
     } catch (e) {
-      debugPrint(
-          '🎯 GoalsRepository: Error checking if more goals can be added: $e');
+      debugPrint('goals_repository_impl: Diagnostic output redacted');
       return false;
     }
   }

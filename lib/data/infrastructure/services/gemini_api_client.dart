@@ -48,8 +48,8 @@ class GeminiApiClient {
       debugPrint('🤖 BudgieApiClient: Initializing HTTP client...');
       _isInitialized = true;
       debugPrint('🤖 BudgieApiClient: Initialized successfully');
-    } catch (e) {
-      debugPrint('🤖 BudgieApiClient: Initialization error: $e');
+    } catch (_) {
+      debugPrint('BudgieApiClient: Initialization failed');
       throw AIApiException(
         'Failed to initialize BudgieAI API client: $e',
         code: 'CLIENT_INIT_ERROR',
@@ -77,8 +77,9 @@ class GeminiApiClient {
     }
 
     final url = Uri.parse('$_apiBaseUrl$endpoint');
-    debugPrint(
-        '🤖 [API CALL] $method $url'); // <-- Add this line to log the full API URL and method
+    if (AppConfig.enableVerboseLogging && kDebugMode) {
+      debugPrint('gemini_api_client: Diagnostic output redacted');
+    }
     final defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -86,17 +87,6 @@ class GeminiApiClient {
 
     if (headers != null) {
       defaultHeaders.addAll(headers);
-    }
-
-    // Keep verbose logging endpoint-only so financial payloads are never logged.
-    if (AppConfig.enableVerboseLogging && kDebugMode && body != null) {
-      try {
-        final requestBodyJson =
-            const JsonEncoder.withIndent('  ').convert({'endpoint': endpoint});
-        debugPrint('🤖 Request to $endpoint:\n$requestBodyJson');
-      } catch (e) {
-        debugPrint('🤖 Could not format request body for logging: $e');
-      }
     }
 
     http.Response response;
@@ -123,14 +113,13 @@ class GeminiApiClient {
     } on SocketException {
       throw AIApiException('Network error: Unable to connect to server',
           code: 'NETWORK_ERROR');
-    } on HttpException catch (e) {
-      throw AIApiException('HTTP error: ${e.message}', code: 'HTTP_ERROR');
+    } on HttpException {
+      throw AIApiException('HTTP error', code: 'HTTP_ERROR');
     } on TimeoutException {
       throw AIApiException('Request timeout: Server took too long to respond',
           code: 'TIMEOUT');
-    } catch (e) {
-      throw AIApiException('Unexpected error: ${e.toString()}',
-          code: 'UNKNOWN_ERROR');
+    } catch (_) {
+      throw AIApiException('Unexpected API error', code: 'UNKNOWN_ERROR');
     }
 
     return _handleResponse(response);
@@ -150,7 +139,7 @@ class GeminiApiClient {
           _extractErrorMessage(responseData, statusCode),
           code: 'API_ERROR',
           statusCode: statusCode,
-          details: responseData, // Log the full response body for debugging
+          details: {'statusCode': statusCode},
         );
       }
     } catch (e) {
@@ -179,9 +168,6 @@ class GeminiApiClient {
       await _ensureInitialized();
 
       debugPrint('🤖 BudgieApiClient: Extracting expense from notification...');
-      debugPrint(
-          '🤖 Notification content: "${request.title}: ${request.content}"');
-
       // Use the structured request model directly
       final requestBody = request.toJson();
 
@@ -195,8 +181,8 @@ class GeminiApiClient {
       debugPrint(
           '🤖 BudgieApiClient: Expense extraction response received successfully');
       return response;
-    } catch (e) {
-      debugPrint('🤖 BudgieApiClient: Error extracting expense: $e');
+    } catch (_) {
+      debugPrint('BudgieApiClient: Expense extraction request failed');
       rethrow;
     }
   }
@@ -220,8 +206,8 @@ class GeminiApiClient {
       debugPrint(
           '🤖 BudgieApiClient: Budget reallocation response received successfully');
       return response;
-    } catch (e) {
-      debugPrint('🤖 BudgieApiClient: Error analyzing budget reallocation: $e');
+    } catch (_) {
+      debugPrint('BudgieApiClient: Budget reallocation request failed');
       rethrow;
     }
   }
@@ -245,8 +231,8 @@ class GeminiApiClient {
       debugPrint(
           '🤖 BudgieApiClient: Spending behavior response received successfully');
       return response;
-    } catch (e) {
-      debugPrint('🤖 BudgieApiClient: Error analyzing spending behavior: $e');
+    } catch (_) {
+      debugPrint('BudgieApiClient: Spending behavior request failed');
       rethrow;
     }
   }
@@ -298,8 +284,8 @@ class GeminiApiClient {
       }
 
       return healthStatus;
-    } catch (e) {
-      debugPrint('🤖 BudgieApiClient: Error checking services health: $e');
+    } catch (_) {
+      debugPrint('BudgieApiClient: Service health check failed');
       return {
         'expense_detection': false,
         'budget_reallocation': false,

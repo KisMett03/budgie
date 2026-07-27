@@ -133,8 +133,7 @@ class Budget {
 
     // Log only if in debug mode
     if (kDebugMode) {
-      debugPrint(
-          '💱 Converting budget: $currency → $newCurrency (rate: $conversionRate)');
+      debugPrint('budget: Diagnostic output redacted');
     }
 
     // Convert total, left, and saving amounts with 2 decimal precision

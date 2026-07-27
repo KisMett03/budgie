@@ -28,10 +28,9 @@ class FilterExpensesUseCase {
     // Filter synchronously to avoid state inconsistency
     try {
       if (kDebugMode) {
-        debugPrint('Filtering expenses for ${selectedMonth.toString()}');
-        debugPrint('Total expenses available: ${expenses.length}');
-        debugPrint(
-            'Filtering for year: ${selectedMonth.year}, month: ${selectedMonth.month}');
+        debugPrint('filter_expenses_usecase: Diagnostic output redacted');
+        debugPrint('filter_expenses_usecase: Diagnostic output redacted');
+        debugPrint('filter_expenses_usecase: Diagnostic output redacted');
       }
 
       List<Expense> filteredExpenses;
@@ -45,8 +44,7 @@ class FilterExpensesUseCase {
           return matches;
         }).toList();
         if (shouldTraceMatches) {
-          debugPrint(
-              'Day filtering result: ${filteredExpenses.length} expenses for ${selectedMonth.year}-${selectedMonth.month}-${selectedMonth.day}');
+          debugPrint('filter_expenses_usecase: Diagnostic output redacted');
         }
       } else {
         // Filter by month only
@@ -54,14 +52,12 @@ class FilterExpensesUseCase {
           final matches = expense.date.year == selectedMonth.year &&
               expense.date.month == selectedMonth.month;
           if (matches && shouldTraceMatches) {
-            debugPrint(
-                'Expense matches filter: ${expense.remark} - ${expense.date} (${expense.date.year}-${expense.date.month})');
+            debugPrint('filter_expenses_usecase: Diagnostic output redacted');
           }
           return matches;
         }).toList();
         if (shouldTraceMatches) {
-          debugPrint(
-              'Month filtering result: ${filteredExpenses.length} expenses for ${selectedMonth.year}-${selectedMonth.month}');
+          debugPrint('filter_expenses_usecase: Diagnostic output redacted');
         }
       }
 
@@ -75,7 +71,7 @@ class FilterExpensesUseCase {
 
       return result;
     } catch (e) {
-      debugPrint('Error during expense filtering: $e');
+      debugPrint('filter_expenses_usecase: Diagnostic output redacted');
       return const <Expense>[];
     }
   }

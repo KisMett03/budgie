@@ -17,7 +17,7 @@ class SaveGoalUseCase {
   /// Returns true if successful, false if the limit is reached
   Future<bool> execute(FinancialGoal goal) async {
     try {
-      debugPrint('🎯 SaveGoalUseCase: Saving goal: ${goal.title}');
+      debugPrint('SaveGoalUseCase: Saving goal');
 
       // Generate ID if needed
       final goalToSave = goal.id.isEmpty
@@ -35,8 +35,8 @@ class SaveGoalUseCase {
           : goal;
 
       return await _goalsRepository.saveGoal(goalToSave);
-    } catch (e) {
-      debugPrint('🎯 SaveGoalUseCase: Error saving goal: $e');
+    } catch (_) {
+      debugPrint('SaveGoalUseCase: Error saving goal');
       return false;
     }
   }
@@ -53,7 +53,7 @@ class UpdateGoalUseCase {
   /// Execute the use case to update a goal
   Future<void> execute(FinancialGoal goal) async {
     try {
-      debugPrint('🎯 UpdateGoalUseCase: Updating goal: ${goal.title}');
+      debugPrint('UpdateGoalUseCase: Updating goal');
 
       // Ensure we have an ID
       if (goal.id.isEmpty) {
@@ -61,8 +61,8 @@ class UpdateGoalUseCase {
       }
 
       await _goalsRepository.updateGoal(goal);
-    } catch (e) {
-      debugPrint('🎯 UpdateGoalUseCase: Error updating goal: $e');
+    } catch (_) {
+      debugPrint('UpdateGoalUseCase: Error updating goal');
       rethrow;
     }
   }
@@ -79,10 +79,10 @@ class DeleteGoalUseCase {
   /// Execute the use case to delete a goal
   Future<void> execute(String id) async {
     try {
-      debugPrint('🎯 DeleteGoalUseCase: Deleting goal with ID: $id');
+      debugPrint('DeleteGoalUseCase: Deleting goal');
       await _goalsRepository.deleteGoal(id);
-    } catch (e) {
-      debugPrint('🎯 DeleteGoalUseCase: Error deleting goal: $e');
+    } catch (_) {
+      debugPrint('DeleteGoalUseCase: Error deleting goal');
       rethrow;
     }
   }
@@ -99,10 +99,10 @@ class CompleteGoalUseCase {
   /// Execute the use case to complete a goal
   Future<void> execute(String id, {String? notes}) async {
     try {
-      debugPrint('🎯 CompleteGoalUseCase: Completing goal with ID: $id');
+      debugPrint('CompleteGoalUseCase: Completing goal');
       await _goalsRepository.completeGoal(id, notes: notes);
-    } catch (e) {
-      debugPrint('🎯 CompleteGoalUseCase: Error completing goal: $e');
+    } catch (_) {
+      debugPrint('CompleteGoalUseCase: Error completing goal');
       rethrow;
     }
   }
@@ -121,8 +121,7 @@ class CanAddGoalUseCase {
     try {
       return await _goalsRepository.canAddMoreGoals();
     } catch (e) {
-      debugPrint(
-          '🎯 CanAddGoalUseCase: Error checking if more goals can be added: $e');
+      debugPrint('manage_goals_usecase: Diagnostic output redacted');
       return false;
     }
   }

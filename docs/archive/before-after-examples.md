@@ -1,5 +1,7 @@
 # Before & After Examples
 
+> Archived proposal: this document does not describe the current running architecture. See `docs/architecture.md` for the source of truth.
+
 ## Example 1: Settings Management
 
 ### ❌ Before (Monolithic)

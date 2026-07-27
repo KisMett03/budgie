@@ -51,14 +51,12 @@ class PermissionHandlerService with WidgetsBindingObserver {
           await platform.invokeMethod<int>('getAndroidSdkVersion');
       _isMethodChannelReady = sdkVersion != null;
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Method channel test successful, SDK version: $sdkVersion');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
-    } catch (e) {
+    } catch (_) {
       _isMethodChannelReady = false;
       if (kDebugMode) {
-        debugPrint(
-            '⚠️ PermissionHandlerService: Method channel not ready yet: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
     }
   }
@@ -74,15 +72,13 @@ class PermissionHandlerService with WidgetsBindingObserver {
 
         if (_isMethodChannelReady) {
           if (kDebugMode) {
-            debugPrint(
-                '✅ PermissionHandlerService: Method channel ready after retry attempt $attempt');
+            debugPrint('permission_handler_service: Diagnostic output redacted');
           }
           return;
         }
-      } catch (e) {
+      } catch (_) {
         if (kDebugMode) {
-          debugPrint(
-              '⚠️ PermissionHandlerService: Retry attempt $attempt failed: $e');
+          debugPrint('permission_handler_service: Diagnostic output redacted');
         }
       }
     }
@@ -125,10 +121,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
         return status.isGranted;
       }
       return true; // Default to true for other platforms
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Error checking notification permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -158,10 +153,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
 
       final result = await platform.invokeMethod('checkNotificationAccess');
       return result as bool? ?? false;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Error checking notification listener permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -184,10 +178,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
         return photos.isGranted;
       }
       return true; // Default to true for other platforms
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Error checking storage permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -198,10 +191,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
     try {
       final status = await Permission.camera.status;
       return status.isGranted;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Error checking camera permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -212,10 +204,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
     try {
       final status = await Permission.location.status;
       return status.isGranted;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Error checking location permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -229,10 +220,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
         return status.isGranted;
       }
       return true; // Not applicable on other platforms
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Error checking battery optimization permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -289,17 +279,15 @@ class PermissionHandlerService with WidgetsBindingObserver {
         final granted = status.isGranted;
 
         if (kDebugMode) {
-          debugPrint(
-              '🔐 PermissionHandlerService: Notification permission ${granted ? 'granted' : 'denied'}');
+          debugPrint('permission_handler_service: Diagnostic output redacted');
         }
         return granted;
       }
 
       return true; // Default to true for other platforms
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request notification permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -363,10 +351,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
       }
       await platform.invokeMethod('requestNotificationAccess');
       return true; // We can't know the result without context, assume success
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request notification listener permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -380,10 +367,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
         return status.isGranted;
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Error requesting battery optimization permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -414,10 +400,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
       }
 
       return true; // Default to true for other platforms
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request storage permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -433,10 +418,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
 
       final status = await Permission.camera.request();
       return status.isGranted;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request camera permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -452,10 +436,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
 
       final status = await Permission.location.request();
       return status.isGranted;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request location permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -563,15 +546,14 @@ class PermissionHandlerService with WidgetsBindingObserver {
                 : 'Some permissions were denied',
           );
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request permissions for $feature: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return PermissionStatus(
         isGranted: false,
         feature: feature,
-        message: 'Error requesting permissions: $e',
+        message: 'Error requesting permissions',
       );
     }
   }
@@ -582,10 +564,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
   Future<void> openAppSettings() async {
     try {
       await openAppSettings();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to open app settings: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
     }
   }
@@ -602,10 +583,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
       } else {
         await openAppSettings();
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to open notification settings: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
     }
   }
@@ -620,10 +600,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
         debugPrint(
             '🔐 PermissionHandlerService: Opened notification listener settings for disabling');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to open notification listener settings: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
     }
   }
@@ -634,10 +613,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
       if (!Platform.isAndroid) return false;
 
       return await hasNotificationListenerPermission();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Error checking if notification access can be revoked: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -658,10 +636,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
       }
 
       await openNotificationListenerSettingsForDisabling();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request revoke notification listener permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
     }
   }
@@ -680,13 +657,12 @@ class PermissionHandlerService with WidgetsBindingObserver {
         'location': await hasLocationPermission(),
         'timestamp': DateTime.now().toIso8601String(),
       };
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Error getting permission status: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return {
-        'error': e.toString(),
+        'error': 'Permission status unavailable',
         'timestamp': DateTime.now().toIso8601String(),
       };
     }
@@ -709,8 +685,7 @@ class PermissionHandlerService with WidgetsBindingObserver {
         final status = await permission.status;
         completer.complete(status.isGranted);
         if (kDebugMode) {
-          debugPrint(
-              '📱 Resumed and completed permission check for $permission: ${status.isGranted}');
+          debugPrint('permission_handler_service: Diagnostic output redacted');
         }
       }
     }
@@ -797,8 +772,7 @@ class PermissionHandlerService with WidgetsBindingObserver {
       BuildContext context, Permission permission) async {
     try {
       if (kDebugMode) {
-        debugPrint(
-            '🔐 PermissionHandlerService: Requesting ${permission.toString()} permission...');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
 
       if (!context.mounted) return false;
@@ -807,20 +781,17 @@ class PermissionHandlerService with WidgetsBindingObserver {
 
       if (isGranted) {
         if (kDebugMode) {
-          debugPrint(
-              '🔐 PermissionHandlerService: ${permission.toString()} permission granted');
+          debugPrint('permission_handler_service: Diagnostic output redacted');
         }
       } else {
         if (kDebugMode) {
-          debugPrint(
-              '🔐 PermissionHandlerService: ${permission.toString()} permission denied');
+          debugPrint('permission_handler_service: Diagnostic output redacted');
         }
       }
       return isGranted;
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Failed to request ${permission.toString()} permission: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -853,10 +824,9 @@ class PermissionHandlerService with WidgetsBindingObserver {
         return result ?? false;
       }
       return true; // Non-Android platforms don't need this special permission
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint(
-            '❌ PermissionHandlerService: Error checking notification service status: $e');
+        debugPrint('permission_handler_service: Diagnostic output redacted');
       }
       return false;
     }
@@ -879,30 +849,26 @@ class PermissionHandlerService with WidgetsBindingObserver {
             await platform.invokeMethod<int>('getAndroidSdkVersion');
         return (sdkVersion ?? 0) >= 33; // Android 13 is API level 33
       }
-    } catch (e) {
-      debugPrint(
-          '❌ PermissionHandlerService: Error checking Android version via method channel: $e');
+    } catch (_) {
+      debugPrint('permission_handler_service: Diagnostic output redacted');
     }
 
     // Fallback: try to get Android version using Platform.operatingSystemVersion
     try {
       final versionString = Platform.operatingSystemVersion;
-      debugPrint(
-          '🔧 PermissionHandlerService: Using fallback version check: $versionString');
+      debugPrint('permission_handler_service: Diagnostic output redacted');
 
       // Parse version string like "Android 14.0.0"
       if (versionString.contains('Android')) {
         final versionMatch = RegExp(r'Android (\d+)').firstMatch(versionString);
         if (versionMatch != null) {
           final version = int.tryParse(versionMatch.group(1) ?? '0') ?? 0;
-          debugPrint(
-              '🔧 PermissionHandlerService: Parsed Android version: $version');
+          debugPrint('permission_handler_service: Diagnostic output redacted');
           return version >= 13; // Android 13 is version 13
         }
       }
     } catch (fallbackError) {
-      debugPrint(
-          '❌ PermissionHandlerService: Fallback version check also failed: $fallbackError');
+      debugPrint('permission_handler_service: Diagnostic output redacted');
     }
 
     // Default to false if we can't determine the version

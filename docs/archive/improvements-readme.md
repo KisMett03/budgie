@@ -1,5 +1,7 @@
 # 🎉 Architecture Improvements Summary
 
+> Archived proposal: this document does not describe the current running architecture. See `docs/architecture.md` for the source of truth.
+
 ## ✅ Implementation Complete
 
 This implementation provides **production-ready** modularization, database optimization, and performance tooling improvements for the Budgie app.

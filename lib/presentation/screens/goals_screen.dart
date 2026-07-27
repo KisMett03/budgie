@@ -58,7 +58,7 @@ class _GoalsScreenState extends State<GoalsScreen>
     try {
       await _goalsViewModel.init(force: true);
     } catch (e) {
-      debugPrint('Error loading goals data: $e');
+      debugPrint('GoalsScreen: Error loading goals data');
     } finally {
       setState(() {
         _loading = false;

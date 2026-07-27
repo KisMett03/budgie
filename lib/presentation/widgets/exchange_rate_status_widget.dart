@@ -40,7 +40,7 @@ class _ExchangeRateStatusWidgetState extends State<ExchangeRateStatusWidget> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error checking exchange rate status: $e');
+        debugPrint('exchange_rate_status_widget: Diagnostic output redacted');
       }
     }
   }
@@ -91,7 +91,7 @@ class _ExchangeRateStatusWidgetState extends State<ExchangeRateStatusWidget> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error refreshing rates: $e');
+        debugPrint('exchange_rate_status_widget: Diagnostic output redacted');
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -260,7 +260,7 @@ class _CompactExchangeRateStatusWidgetState
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error checking exchange rate status: $e');
+        debugPrint('exchange_rate_status_widget: Diagnostic output redacted');
       }
     }
   }
@@ -329,7 +329,7 @@ class _CompactExchangeRateStatusWidgetState
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error refreshing rates: $e');
+        debugPrint('exchange_rate_status_widget: Diagnostic output redacted');
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

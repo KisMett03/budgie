@@ -1,5 +1,7 @@
 # Architecture Improvements - Quick Start Guide
 
+> Archived proposal: this document does not describe the current running architecture. See `docs/architecture.md` for the source of truth.
+
 > Historical document: the checklist below describes an earlier proposal and may not match the running application. See [the current architecture guide](architecture.md) for source-of-truth structure.
 
 ## ✅ What Was Implemented

@@ -1,5 +1,7 @@
 # Architecture Improvements - Implementation Guide
 
+> Archived proposal: this document does not describe the current running architecture. See `docs/architecture.md` for the source of truth.
+
 ## Overview
 This document outlines the modularization, database optimization, and performance tooling improvements implemented in the Budgie app.
 

@@ -44,7 +44,7 @@ class LocalDataSourceImpl implements LocalDataSource {
               jsonDecode(row.recurringDetailsJson!) as Map<String, dynamic>;
           recurringDetails = domain.RecurringDetails.fromJson(jsonData);
         } catch (e) {
-          debugPrint('Error parsing recurring details JSON: $e');
+          debugPrint('LocalDataSource: Error parsing recurring details');
         }
       }
 
@@ -123,7 +123,7 @@ class LocalDataSourceImpl implements LocalDataSource {
   @override
   Future<domain.Budget?> getBudget(String monthId) async {
     try {
-      debugPrint('📊 LocalDataSource: Getting budget for month: $monthId');
+      debugPrint('LocalDataSource: Getting budget');
 
       // Add null check for monthId
       if (monthId.isEmpty) {
@@ -136,7 +136,7 @@ class LocalDataSourceImpl implements LocalDataSource {
           .getSingleOrNull();
 
       if (budgetRow == null) {
-        debugPrint('📊 LocalDataSource: No budget found for month: $monthId');
+        debugPrint('LocalDataSource: No budget found');
         return null;
       }
 
@@ -154,7 +154,7 @@ class LocalDataSourceImpl implements LocalDataSource {
             categories[key] =
                 domain.CategoryBudget.fromMap(Map<String, dynamic>.from(value));
           } catch (e) {
-            debugPrint('📊 LocalDataSource: Error parsing category budget: $e');
+            debugPrint('LocalDataSource: Error parsing category budget');
           }
         }
       });
@@ -167,11 +167,9 @@ class LocalDataSourceImpl implements LocalDataSource {
         currency: budgetRow.currency,
       );
 
-      debugPrint(
-          '📊 LocalDataSource: Budget found with total: ${budget.total}, left: ${budget.left}, currency: ${budget.currency}');
       return budget;
     } catch (e) {
-      debugPrint('📊 LocalDataSource: Error getting budget: $e');
+      debugPrint('LocalDataSource: Error getting budget');
       return null;
     }
   }
@@ -179,9 +177,7 @@ class LocalDataSourceImpl implements LocalDataSource {
   @override
   Future<void> saveBudget(String monthId, domain.Budget budget) async {
     try {
-      debugPrint('📊 LocalDataSource: Saving budget for month: $monthId');
-      debugPrint(
-          '📊 LocalDataSource: Budget total: ${budget.total}, left: ${budget.left}, currency: ${budget.currency}');
+      debugPrint('LocalDataSource: Saving budget');
 
       final categoriesJson = jsonEncode(budget.toMap()['categories']);
 
@@ -204,22 +200,19 @@ class LocalDataSourceImpl implements LocalDataSource {
             ..where((tbl) => tbl.monthId.equals(monthId)))
           .getSingleOrNull();
 
-      debugPrint(
-          '📊 LocalDataSource: Verified budget row exists: ${savedRow != null}');
+      debugPrint('local_data_source_impl: Diagnostic output redacted');
       if (savedRow != null) {
-        debugPrint(
-            '📊 LocalDataSource: Saved budget total: ${savedRow.total}, left: ${savedRow.left}, currency: ${savedRow.currency}');
       }
     } catch (e) {
-      debugPrint('📊 LocalDataSource: Error saving budget: $e');
-      throw Exception('Failed to save budget: $e');
+      debugPrint('LocalDataSource: Error saving budget');
+      rethrow;
     }
   }
 
   @override
   Future<void> deleteBudget(String monthId) async {
     try {
-      debugPrint('📊 LocalDataSource: Deleting budget for month: $monthId');
+      debugPrint('LocalDataSource: Deleting budget');
 
       // Delete the budget from the database using a delete query
       await (_database.delete(_database.budgets)
@@ -227,9 +220,9 @@ class LocalDataSourceImpl implements LocalDataSource {
           .go();
 
       debugPrint('📊 LocalDataSource: Budget deleted successfully');
-    } catch (e) {
-      debugPrint('📊 LocalDataSource: Error deleting budget: $e');
-      throw Exception('Failed to delete budget: $e');
+    } catch (_) {
+      debugPrint('LocalDataSource: Error deleting budget');
+      rethrow;
     }
   }
 
@@ -258,7 +251,7 @@ class LocalDataSourceImpl implements LocalDataSource {
 
       return doubleRatesMap;
     } catch (e) {
-      debugPrint('Error getting exchange rates from local database: $e');
+      debugPrint('LocalDataSource: Error getting exchange rates');
       return null;
     }
   }
@@ -280,7 +273,7 @@ class LocalDataSourceImpl implements LocalDataSource {
             ),
           );
     } catch (e) {
-      debugPrint('Error saving exchange rates to local database: $e');
+      debugPrint('LocalDataSource: Error saving exchange rates');
     }
   }
 
@@ -313,8 +306,7 @@ class LocalDataSourceImpl implements LocalDataSource {
               categories[key] = domain.CategoryBudget.fromMap(
                   Map<String, dynamic>.from(value));
             } catch (e) {
-              debugPrint(
-                  '📊 LocalDataSource: Error parsing category budget: $e');
+              debugPrint('LocalDataSource: Error parsing category budget');
             }
           }
         });
@@ -335,7 +327,7 @@ class LocalDataSourceImpl implements LocalDataSource {
 
       return budgets;
     } catch (e) {
-      debugPrint('📊 LocalDataSource: Error getting budgets for months: $e');
+      debugPrint('LocalDataSource: Error getting budgets for months');
       return [];
     }
   }
@@ -359,8 +351,7 @@ class LocalDataSourceImpl implements LocalDataSource {
               categories[key] = domain.CategoryBudget.fromMap(
                   Map<String, dynamic>.from(value));
             } catch (e) {
-              debugPrint(
-                  '📊 LocalDataSource: Error parsing category budget: $e');
+              debugPrint('LocalDataSource: Error parsing category budget');
             }
           }
         });
@@ -381,7 +372,7 @@ class LocalDataSourceImpl implements LocalDataSource {
 
       return budgets;
     } catch (e) {
-      debugPrint('📊 LocalDataSource: Error getting budgets with savings: $e');
+      debugPrint('LocalDataSource: Error getting budgets with savings');
       return [];
     }
   }
@@ -394,8 +385,7 @@ class LocalDataSourceImpl implements LocalDataSource {
       final currentMonthId =
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
-      debugPrint(
-          '📊 LocalDataSource: Getting previous month budgets with savings, excluding current month: $currentMonthId');
+      debugPrint('LocalDataSource: Getting previous month budgets with savings');
 
       // Get budgets that have savings > 0 and are not from current month
       final budgetRows = await (_database.select(_database.budgets)
@@ -404,8 +394,7 @@ class LocalDataSourceImpl implements LocalDataSource {
                 tbl.monthId.isNotValue(currentMonthId)))
           .get();
 
-      debugPrint(
-          '📊 LocalDataSource: Found ${budgetRows.length} previous month budgets with savings');
+      debugPrint('local_data_source_impl: Diagnostic output redacted');
 
       final budgets = <BudgetWithMonth>[];
       for (final row in budgetRows) {
@@ -419,8 +408,7 @@ class LocalDataSourceImpl implements LocalDataSource {
               categories[key] = domain.CategoryBudget.fromMap(
                   Map<String, dynamic>.from(value));
             } catch (e) {
-              debugPrint(
-                  '📊 LocalDataSource: Error parsing category budget: $e');
+              debugPrint('LocalDataSource: Error parsing category budget');
             }
           }
         });
@@ -433,9 +421,6 @@ class LocalDataSourceImpl implements LocalDataSource {
           currency: row.currency,
         );
 
-        debugPrint(
-            '📊 LocalDataSource: Month ${row.monthId} has savings: ${row.saving}');
-
         budgets.add(BudgetWithMonth(
           monthId: row.monthId,
           budget: budget,
@@ -443,9 +428,8 @@ class LocalDataSourceImpl implements LocalDataSource {
       }
 
       return budgets;
-    } catch (e) {
-      debugPrint(
-          '📊 LocalDataSource: Error getting previous month budgets with savings: $e');
+    } catch (_) {
+      debugPrint('LocalDataSource: Error getting previous month budgets with savings');
       return [];
     }
   }

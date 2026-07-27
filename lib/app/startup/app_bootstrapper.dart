@@ -41,10 +41,10 @@ class AppBootstrapper {
       final settingsService = di.sl<SettingsService>();
       await settingsService.loadPersistedSettings();
 
-  _refreshThemeFromSettings();
-    } catch (e) {
+      _refreshThemeFromSettings();
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? SettingsService warmup error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -55,9 +55,9 @@ class AppBootstrapper {
       if (kDebugMode) {
         debugPrint('? ThemeViewModel refreshed from settings');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? ThemeViewModel refresh error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -82,9 +82,9 @@ class AppBootstrapper {
         if (kDebugMode) {
           debugPrint('? Essential services initialized');
         }
-      } catch (e) {
+      } catch (_) {
         if (kDebugMode) {
-          debugPrint('?? Essential services initialization error: $e');
+          debugPrint('app_bootstrapper: Diagnostic output redacted');
         }
       }
     }));
@@ -99,9 +99,9 @@ class AppBootstrapper {
         if (kDebugMode) {
           debugPrint('? Optional services initialized');
         }
-      } catch (e) {
+      } catch (_) {
         if (kDebugMode) {
-          debugPrint('?? Optional services initialization error: $e');
+          debugPrint('app_bootstrapper: Diagnostic output redacted');
         }
       }
     }));
@@ -123,9 +123,9 @@ class AppBootstrapper {
       await settingsService.initialize();
 
       _refreshThemeFromSettings();
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? SettingsService deferred initialization error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -143,9 +143,9 @@ class AppBootstrapper {
       if (kDebugMode) {
         debugPrint('? Firebase initialized');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? Firebase initialization error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -177,11 +177,9 @@ class AppBootstrapper {
               debugPrint('? Main: Expense extraction service initialized');
             }
           }
-        } catch (e) {
+        } catch (_) {
           if (kDebugMode) {
-            debugPrint(
-              '?? Main: Failed to initialize expense extraction service: $e',
-            );
+            debugPrint('app_bootstrapper: Diagnostic output redacted');
           }
         }
       } else if (kDebugMode) {
@@ -189,9 +187,9 @@ class AppBootstrapper {
           '?? Main: Expense extraction service skipped (notifications disabled)',
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('? Main: Failed to initialize notification services: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -212,9 +210,9 @@ class AppBootstrapper {
           if (kDebugMode) {
             debugPrint('? Main: ExpensesViewModel refreshed');
           }
-        } catch (e) {
+        } catch (_) {
           if (kDebugMode) {
-            debugPrint('?? Main: Failed to refresh ExpensesViewModel: $e');
+            debugPrint('app_bootstrapper: Diagnostic output redacted');
           }
         }
       } else if (kDebugMode) {
@@ -227,13 +225,11 @@ class AppBootstrapper {
           final monthId = '${now.year}-${now.month.toString().padLeft(2, '0')}';
           await di.sl<BudgetViewModel>().refreshBudget(monthId);
           if (kDebugMode) {
-            debugPrint(
-              '? Main: BudgetViewModel refreshed for month $monthId',
-            );
+            debugPrint('app_bootstrapper: Diagnostic output redacted');
           }
-        } catch (e) {
+        } catch (_) {
           if (kDebugMode) {
-            debugPrint('?? Main: Failed to refresh BudgetViewModel: $e');
+            debugPrint('app_bootstrapper: Diagnostic output redacted');
           }
         }
       } else if (kDebugMode) {
@@ -243,9 +239,9 @@ class AppBootstrapper {
       if (kDebugMode) {
         debugPrint('?? Main: App data refresh completed successfully');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('? Main: Error refreshing app data: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -276,9 +272,9 @@ class AppBootstrapper {
           }
         }));
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? Sync service initialization error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -298,9 +294,9 @@ class AppBootstrapper {
       if (kDebugMode) {
         debugPrint('? Recurring expense service started');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? Recurring expense service error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }
@@ -321,9 +317,9 @@ class AppBootstrapper {
       } else if (kDebugMode) {
         debugPrint('?? Welcome screen will handle permissions on last page');
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('?? Welcome status check error: $e');
+        debugPrint('app_bootstrapper: Diagnostic output redacted');
       }
     }
   }

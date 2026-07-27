@@ -58,7 +58,7 @@ class _SettingScreenState extends State<SettingScreen> {
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Error initializing SettingsService: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         // Create a new instance if DI fails
         _settingsService = di.sl<SettingsService>();
@@ -71,7 +71,7 @@ class _SettingScreenState extends State<SettingScreen> {
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Error initializing SyncService: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         // We'll handle null _syncService in methods that use it
       }
@@ -83,7 +83,7 @@ class _SettingScreenState extends State<SettingScreen> {
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Error initializing PermissionHandlerService: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         // We'll handle null _permissionHandler in methods that use it
       }
@@ -95,7 +95,7 @@ class _SettingScreenState extends State<SettingScreen> {
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Error initializing BackgroundTaskService: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         // We'll handle null _backgroundTaskService in methods that use it
       }
@@ -119,7 +119,7 @@ class _SettingScreenState extends State<SettingScreen> {
       await _checkNotificationPermissionStatus();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error loading settings: $e');
+        debugPrint('setting_screen: Diagnostic output redacted');
       }
       setState(() {
         _isLoading = false;
@@ -149,7 +149,7 @@ class _SettingScreenState extends State<SettingScreen> {
         _permissionHandler = di.sl<PermissionHandlerService>();
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Failed to initialize PermissionHandler: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         return; // Exit early if we can't get the permission handler
       }
@@ -172,7 +172,7 @@ class _SettingScreenState extends State<SettingScreen> {
       // Do NOT update the app setting here!
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error checking notification permission status: $e');
+        debugPrint('setting_screen: Diagnostic output redacted');
       }
     }
   }
@@ -185,7 +185,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
       if (kDebugMode) {
         debugPrint(
-            'Currency change initiated: from ${_settingsService.currency} to $value');
+            'SettingsScreen: Currency change initiated');
       }
 
       // Update local state immediately and set loading state
@@ -197,13 +197,13 @@ class _SettingScreenState extends State<SettingScreen> {
       // Update the currency in settings
       await _settingsService.updateCurrency(value);
       if (kDebugMode) {
-        debugPrint('Settings updated with new currency: $value');
+        debugPrint('SettingsScreen: Currency updated');
       }
 
       // Trigger budget currency conversion - this will convert all budget amounts
       // and save them to Firebase with the new currency
       if (kDebugMode) {
-        debugPrint('Triggering budget currency conversion to: $value');
+        debugPrint('SettingsScreen: Budget currency conversion started');
       }
       await budgetViewModel.onCurrencyChanged(value);
 
@@ -222,9 +222,9 @@ class _SettingScreenState extends State<SettingScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('Error updating currency: $e');
+        debugPrint('SettingsScreen: Error updating currency');
       }
 
       // Revert local state on error and clear loading state
@@ -313,7 +313,7 @@ class _SettingScreenState extends State<SettingScreen> {
       }
 
       if (kDebugMode) {
-        debugPrint('Notification setting updated to: $value');
+        debugPrint('setting_screen: Diagnostic output redacted');
       }
 
       // Show confirmation
@@ -330,7 +330,7 @@ class _SettingScreenState extends State<SettingScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error handling notification toggle: $e');
+        debugPrint('setting_screen: Diagnostic output redacted');
       }
       // Ensure the setting is off if any catastrophic error occurs.
       if (_settingsService.allowNotification) {
@@ -368,7 +368,7 @@ class _SettingScreenState extends State<SettingScreen> {
         _backgroundTaskService = di.sl<BackgroundTaskService>();
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Failed to initialize BackgroundTaskService: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         throw Exception('Background service is not available');
       }
@@ -409,7 +409,7 @@ class _SettingScreenState extends State<SettingScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error updating auto budget setting: $e');
+        debugPrint('setting_screen: Diagnostic output redacted');
       }
       if (mounted) {
         // Reset UI state on error
@@ -445,7 +445,7 @@ class _SettingScreenState extends State<SettingScreen> {
         _backgroundTaskService = di.sl<BackgroundTaskService>();
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('❌ Failed to initialize required services: $e');
+          debugPrint('setting_screen: Diagnostic output redacted');
         }
         throw Exception('Required services are not available');
       }
@@ -491,7 +491,7 @@ class _SettingScreenState extends State<SettingScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error updating sync setting: $e');
+        debugPrint('setting_screen: Diagnostic output redacted');
       }
       if (mounted) {
         // Reset UI state on error
